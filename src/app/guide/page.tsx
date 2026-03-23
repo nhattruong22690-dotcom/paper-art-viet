@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { 
   Search, 
   ChevronRight, 
@@ -14,8 +14,6 @@ import {
 import { GUIDE_DATA, NEWS_UPDATES, GuideSection } from '@/data/guide';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-import { Suspense } from 'react';
 
 function GuideContent() {
   const searchParams = useSearchParams();
