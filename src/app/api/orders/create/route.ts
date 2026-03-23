@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order must have at least one item' }, { status: 400 });
     }
 
-    const { order, productionOrders } = await createSalesOrder({
+    const { order } = await createSalesOrder({
       customerId: data.customerId,
       deadlineDelivery: new Date(data.deadlineDelivery),
       items: data.items
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       orderId: order.id, 
-      taskCount: productionOrders.length 
+      taskCount: 0 
     });
   } catch (error: any) {
     console.error('Order Creation API Error:', error);

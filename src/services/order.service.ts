@@ -64,18 +64,29 @@ export async function createSalesOrder(data: {
   }[]
 }) {
   return await prisma.$transaction(async (tx) => {
-    // 0. Tính toán Mã Hợp đồng mới (Nếu chưa có)
-    const lastOrder = await tx.order.findFirst({
-      orderBy: { orderDate: 'desc' }
-    });
-    let nextCode = "PAV-HĐ001";
-    if ((lastOrder as any)?.contractCode) {
-      const match = (lastOrder as any).contractCode.match(/\d+/);
-      if (match) {
-        const num = parseInt(match[0]) + 1;
-        nextCode = `PAV-HĐ${num.toString().padStart(3, '0')}`;
+    // 0. Tính toán Mã Hợp đồng mới (Theo chuẩn: CUSTOMERCODE-HD-XXXX-MMDDYYYY)
+    const customer = await tx.customer.findUnique({
+      where: { id: data.customerId },
+      include: {
+        _count: {
+          select: { orders: true }
+        }
       }
-    }
+    });
+
+    if (!customer) throw new Error('Customer not found');
+    
+    const customerCode = (customer as any).customerCode || customer.name.substring(0, 3).toUpperCase();
+    const nextNumber = (customer._count?.orders || 0) + 1;
+    const formattedNumber = nextNumber.toString().padStart(4, '0');
+    
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const dateStr = `${mm}${dd}${yyyy}`;
+
+    const nextCode = `${customerCode}-HD${formattedNumber}-${dateStr}`;
 
     // 1. Tạo Đơn hàng (Order)
     const order = await tx.order.create({
