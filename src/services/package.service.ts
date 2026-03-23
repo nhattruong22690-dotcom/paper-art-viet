@@ -1,6 +1,4 @@
-'use server';
-
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 /**
  * Sinh mã thùng theo định dạng: XINH-YYYYMMDD-00X
@@ -11,15 +9,14 @@ export async function generatePackageCode() {
   const prefix = `XINH-${dateStr}`;
 
   // Đếm xem trong hôm nay đã có bao nhiêu thùng được tạo với prefix này
-  const countToday = await prisma.package.count({
-    where: {
-      packageCode: {
-        startsWith: prefix,
-      },
-    },
-  });
+  const { count, error } = await supabase
+    .from('Package')
+    .select('*', { count: 'exact', head: true })
+    .ilike('package_code', `${prefix}%`);
 
-  const nextIndex = (countToday + 1).toString().padStart(3, '0');
+  if (error) throw error;
+
+  const nextIndex = ((count || 0) + 1).toString().padStart(3, '0');
   return `${prefix}-${nextIndex}`;
 }
 
@@ -30,44 +27,62 @@ export async function createPackageFromProduction(
   orderId: string, 
   items: { productionOrderId: string; productId: string; quantity: number }[]
 ) {
-  return await prisma.$transaction(async (tx) => {
-    // 1. Sinh mã thùng mới
-    const packageCode = await generatePackageCode();
+  // 1. Sinh mã thùng mới
+  const packageCode = await generatePackageCode();
 
-    // 2. Tạo record Package
-    const newPackage = await tx.package.create({
-      data: {
-        orderId,
-        packageCode,
-        status: 'packing',
-      },
-    });
+  // 2. Tạo record Package
+  const { data: newPackage, error: pkgError } = await supabase
+    .from('Package')
+    .insert({
+      order_id: orderId,
+      package_code: packageCode,
+      status: 'packing',
+    })
+    .select()
+    .single();
 
-    // 3. Tạo Packing List Details và Cập nhật Production Orders
-    for (const item of items) {
-      // Lưu chi tiết đóng gói
-      await tx.packingListDetail.create({
-        data: {
-          packageId: newPackage.id,
-          productId: item.productId,
-          quantity: item.quantity,
-        },
-      });
+  if (pkgError) throw pkgError;
 
-      // Cập nhật trạng thái sản xuất (Ví dụ: Trừ bớt số lượng chờ đóng gói nếu có logic đó)
-      // Ở đây ta giả định việc đóng gói hoàn tất một phần công việc
-    }
+  // 3. Tạo Packing List Details
+  if (items.length > 0) {
+    const { error: itemsError } = await supabase
+      .from('PackingListDetail')
+      .insert(items.map(item => ({
+        package_id: newPackage.id,
+        product_id: item.productId,
+        quantity: item.quantity,
+      })));
+    
+    if (itemsError) throw itemsError;
+  }
 
-    return await tx.package.findUnique({
-      where: { id: newPackage.id },
-      include: {
-        packingListDetails: {
-          include: { product: true },
-        },
-        order: {
-          include: { customer: true },
-        },
-      },
-    });
-  });
+  // 4. Lấy lại full thông tin để trả về
+  const { data: finalPkg, error: finalError } = await supabase
+    .from('Package')
+    .select(`
+      *,
+      packingListDetails:PackingListDetail(
+        *,
+        product:Product(*)
+      ),
+      order:Order(
+        *,
+        customer:Customer(*)
+      )
+    `)
+    .eq('id', newPackage.id)
+    .single();
+
+  if (finalError) throw finalError;
+
+  return {
+    ...finalPkg,
+    packageCode: finalPkg.package_code,
+    orderId: finalPkg.order_id,
+    packingListDetails: (finalPkg.packingListDetails || []).map((pd: any) => ({
+      ...pd,
+      packageId: pd.package_id,
+      productId: pd.product_id
+    }))
+  };
 }

@@ -1,28 +1,25 @@
-'use server';
-
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 export async function getFinishedProductionItems() {
-  const items = await prisma.productionOrder.findMany({
-    where: {
-      quantityCompleted: { gt: 0 },
-      // currentStatus: 'completed' // Optionally filter by status
-    },
-    include: {
-      product: true,
-      order: {
-        include: {
-          customer: true
-        }
-      }
-    }
-  });
+  const { data: items, error } = await supabase
+    .from('ProductionOrder')
+    .select(`
+      *,
+      product:Product(*),
+      order:Order(
+        *,
+        customer:Customer(*)
+      )
+    `)
+    .gt('quantity_completed', 0);
 
-  return items.map(po => ({
+  if (error) throw error;
+
+  return (items || []).map(po => ({
     id: po.id,
     productName: po.product?.name || 'Sản phẩm',
     sku: po.product?.sku || 'N/A',
-    quantityCompleted: po.quantityCompleted || 0,
+    quantityCompleted: po.quantity_completed || 0,
     quantityPacked: 0, // In a real app, we'd sum up PackingListDetail for this PO
     customerName: po.order?.customer?.name || 'Khách lẻ'
   }));
@@ -34,29 +31,63 @@ export async function createPackage(data: {
 }) {
   const packageCode = `XINH-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
-  return await prisma.package.create({
-    data: {
-      packageCode,
-      orderId: data.orderId,
+  const { data: pkg, error: pkgError } = await supabase
+    .from('Package')
+    .insert({
+      package_code: packageCode,
+      order_id: data.orderId,
       status: 'packing',
-      packingListDetails: {
-        create: data.items.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity
-        }))
-      }
-    },
-    include: {
-      packingListDetails: {
-        include: {
-          product: true
-        }
-      },
-      order: {
-        include: {
-          customer: true
-        }
-      }
-    }
-  });
+    })
+    .select(`
+      *,
+      order:Order(
+        *,
+        customer:Customer(*)
+      )
+    `)
+    .single();
+
+  if (pkgError) throw pkgError;
+
+  if (data.items.length > 0) {
+    const { error: itemsError } = await supabase
+      .from('PackingListDetail')
+      .insert(data.items.map(item => ({
+        package_id: pkg.id,
+        product_id: item.productId,
+        quantity: item.quantity
+      })));
+    
+    if (itemsError) throw itemsError;
+  }
+
+  // Fetch with full details for response
+  const { data: finalPkg, error: finalError } = await supabase
+    .from('Package')
+    .select(`
+      *,
+      packingListDetails:PackingListDetail(
+        *,
+        product:Product(*)
+      ),
+      order:Order(
+        *,
+        customer:Customer(*)
+      )
+    `)
+    .eq('id', pkg.id)
+    .single();
+
+  if (finalError) throw finalError;
+
+  return {
+    ...finalPkg,
+    packageCode: finalPkg.package_code,
+    orderId: finalPkg.order_id,
+    packingListDetails: (finalPkg.packingListDetails || []).map((pd: any) => ({
+      ...pd,
+      packageId: pd.package_id,
+      productId: pd.product_id
+    }))
+  };
 }

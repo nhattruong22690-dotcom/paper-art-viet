@@ -168,20 +168,29 @@ async function calculateProductCOGS(productId) {
 }
 async function createSalesOrder(data) {
     return await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].$transaction(async (tx)=>{
-        // 0. Tính toán Mã Hợp đồng mới (Nếu chưa có)
-        const lastOrder = await tx.order.findFirst({
-            orderBy: {
-                orderDate: 'desc'
+        // 0. Tính toán Mã Hợp đồng mới (Theo chuẩn: CUSTOMERCODE-HD-XXXX-MMDDYYYY)
+        const customer = await tx.customer.findUnique({
+            where: {
+                id: data.customerId
+            },
+            include: {
+                _count: {
+                    select: {
+                        orders: true
+                    }
+                }
             }
         });
-        let nextCode = "PAV-HĐ001";
-        if (lastOrder?.contractCode) {
-            const match = lastOrder.contractCode.match(/\d+/);
-            if (match) {
-                const num = parseInt(match[0]) + 1;
-                nextCode = `PAV-HĐ${num.toString().padStart(3, '0')}`;
-            }
-        }
+        if (!customer) throw new Error('Customer not found');
+        const customerCode = customer.customerCode || customer.name.substring(0, 3).toUpperCase();
+        const nextNumber = (customer._count?.orders || 0) + 1;
+        const formattedNumber = nextNumber.toString().padStart(4, '0');
+        const now = new Date();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const dateStr = `${mm}${dd}${yyyy}`;
+        const nextCode = `${customerCode}-HD${formattedNumber}-${dateStr}`;
         // 1. Tạo Đơn hàng (Order)
         const order = await tx.order.create({
             data: {
@@ -398,7 +407,7 @@ async function POST(req) {
                 status: 400
             });
         }
-        const { order, productionOrders } = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$order$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["createSalesOrder"])({
+        const { order } = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$services$2f$order$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["createSalesOrder"])({
             customerId: data.customerId,
             deadlineDelivery: new Date(data.deadlineDelivery),
             items: data.items
@@ -406,7 +415,7 @@ async function POST(req) {
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             success: true,
             orderId: order.id,
-            taskCount: productionOrders.length
+            taskCount: 0
         });
     } catch (error) {
         console.error('Order Creation API Error:', error);

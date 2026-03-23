@@ -1,7 +1,4 @@
-'use server';
-
-import { prisma } from '@/lib/prisma';
-import { PurchaseOrder, PurchaseOrderItem, Prisma } from '@prisma/client';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 /**
  * Lấy danh sách Đơn mua hàng (PO).
@@ -12,52 +9,87 @@ export async function getPurchaseOrders(params: {
   supplierId?: string;
 }) {
   const { search, status, supplierId } = params;
-  const where: Prisma.PurchaseOrderWhereInput = {};
+  let query = supabase
+    .from('PurchaseOrder')
+    .select(`
+      *,
+      supplier:Partner(*),
+      purchaseOrderItems:PurchaseOrderItem(count)
+    `)
+    .order('created_at', { ascending: false });
 
   if (search) {
-    where.poNumber = { contains: search, mode: 'insensitive' };
+    query = query.ilike('po_number', `%${search}%`);
   }
 
   if (status) {
-    where.status = status;
+    query = query.eq('status', status);
   }
 
   if (supplierId) {
-    where.supplierId = supplierId;
+    query = query.eq('supplier_id', supplierId);
   }
 
-  const result = await prisma.purchaseOrder.findMany({
-    where,
-    include: {
-      supplier: true,
-      _count: {
-        select: { items: true }
-      }
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  const { data, error } = await query;
+  if (error) throw error;
 
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+  return (data || []).map(po => ({
+    id: po.id,
+    poNumber: po.po_number,
+    supplierId: po.supplier_id,
+    status: po.status,
+    totalAmount: po.total_amount,
+    expectedDeliveryDate: po.expected_delivery_date,
+    notes: po.notes,
+    createdAt: po.created_at,
+    supplier: po.supplier,
+    itemCount: po.purchaseOrderItems?.[0]?.count || 0
+  }));
 }
 
 /**
  * Lấy chi tiết một PO kèm danh sách sản phẩm.
  */
 export async function getPOWithItems(id: string) {
-  const result = await prisma.purchaseOrder.findUnique({
-    where: { id },
-    include: {
-      supplier: true,
-      items: {
-        include: {
-          material: true
-        }
-      }
-    }
-  });
+  const { data: po, error } = await supabase
+    .from('PurchaseOrder')
+    .select(`
+      *,
+      supplier:Partner(*),
+      purchaseOrderItems:PurchaseOrderItem(
+        *,
+        material:Material(*)
+      )
+    `)
+    .eq('id', id)
+    .single();
 
-  if (!result) return null;
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw error;
+  }
+
+  return {
+    id: po.id,
+    poNumber: po.po_number,
+    supplierId: po.supplier_id,
+    status: po.status,
+    totalAmount: po.total_amount,
+    expectedDeliveryDate: po.expected_delivery_date,
+    notes: po.notes,
+    createdAt: po.created_at,
+    supplier: po.supplier,
+    items: (po.purchaseOrderItems || []).map((item: any) => ({
+      id: item.id,
+      purchaseOrderId: item.purchase_order_id,
+      materialId: item.material_id,
+      quantityOrdered: item.quantity_ordered,
+      quantityReceived: item.quantity_received,
+      expectedPrice: item.expected_price,
+      totalExpected: item.total_expected,
+      material: item.material
+    }))
+  };
 }
 
 /**
@@ -76,75 +108,105 @@ export async function createPurchaseOrder(data: {
   // Sinh số PO tự động: PO-YYYYMMDD-XXXX
   const today = new Date();
   const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
-  const count = await prisma.purchaseOrder.count({
-    where: {
-      createdAt: {
-        gte: new Date(new Date().setHours(0, 0, 0, 0))
-      }
-    }
-  });
-  const poNumber = `PO-${dateStr}-${(count + 1).toString().padStart(4, '0')}`;
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const { count, error: countError } = await supabase
+    .from('PurchaseOrder')
+    .select('*', { count: 'exact', head: true })
+    .gte('created_at', startOfDay.toISOString());
+
+  if (countError) throw countError;
+
+  const poNumber = `PO-${dateStr}-${((count || 0) + 1).toString().padStart(4, '0')}`;
 
   const totalAmount = data.items.reduce((acc, item) => 
     acc + (item.quantityOrdered * item.expectedPrice), 0);
 
-  const result = await prisma.purchaseOrder.create({
-    data: {
-      poNumber,
-      supplierId: data.supplierId,
-      expectedDeliveryDate: data.expectedDeliveryDate ? new Date(data.expectedDeliveryDate) : null,
+  const { data: po, error: poError } = await supabase
+    .from('PurchaseOrder')
+    .insert({
+      po_number: poNumber,
+      supplier_id: data.supplierId,
+      expected_delivery_date: data.expectedDeliveryDate ? new Date(data.expectedDeliveryDate).toISOString() : null,
       notes: data.notes,
-      totalAmount,
+      total_amount: totalAmount,
       status: 'draft',
-      items: {
-        create: data.items.map(item => ({
-          materialId: item.materialId,
-          quantityOrdered: item.quantityOrdered,
-          expectedPrice: item.expectedPrice,
-          totalExpected: item.quantityOrdered * item.expectedPrice
-        }))
-      }
-    },
-    include: {
-      items: true
-    }
-  });
+    })
+    .select()
+    .single();
 
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+  if (poError) throw poError;
+
+  if (data.items.length > 0) {
+    const { error: itemsError } = await supabase
+      .from('PurchaseOrderItem')
+      .insert(data.items.map(item => ({
+        purchase_order_id: po.id,
+        material_id: item.materialId,
+        quantity_ordered: item.quantityOrdered,
+        expected_price: item.expectedPrice,
+        total_expected: item.quantityOrdered * item.expectedPrice
+      })));
+    
+    if (itemsError) throw itemsError;
+  }
+
+  return {
+    ...po,
+    poNumber: po.po_number,
+    supplierId: po.supplier_id,
+    totalAmount: po.total_amount,
+    status: po.status
+  };
 }
 
 /**
  * Cập nhật trạng thái Đơn mua hàng.
  */
 export async function updatePOStatus(id: string, status: string) {
-  const result = await prisma.purchaseOrder.update({
-    where: { id },
-    data: { status }
-  });
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+  const { data, error } = await supabase
+    .from('PurchaseOrder')
+    .update({ status })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return {
+    ...data,
+    status: data.status
+  };
 }
 
 /**
- * Lấy danh sách Nhà cung cấp (Partners where isSupplier = true).
+ * Lấy danh sách Nhà cung cấp.
  */
 export async function getSuppliers() {
-  const result = await prisma.partner.findMany({
-    where: { isSupplier: true },
-    orderBy: { name: 'asc' }
-  });
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+  const { data, error } = await supabase
+    .from('Partner')
+    .select('*')
+    .eq('is_supplier', true)
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+  return data;
 }
 
 /**
  * Cập nhật một Partner thành Nhà cung cấp.
  */
 export async function setAsSupplier(id: string, category?: string) {
-  const result = await prisma.partner.update({
-    where: { id },
-    data: { 
-      isSupplier: true,
-      partnerCategory: category 
-    }
-  });
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+  const { data, error } = await supabase
+    .from('Partner')
+    .update({ 
+      is_supplier: true,
+      partner_category: category 
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }

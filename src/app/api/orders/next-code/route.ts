@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -10,22 +10,19 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const customer = await prisma.customer.findUnique({
-      where: { id: customerId },
-      include: {
-        _count: {
-          select: { orders: true }
-        }
-      }
-    });
+    const { data: customer, error: customerError } = await supabase
+      .from('Customer')
+      .select('*, Order(count)')
+      .eq('id', customerId)
+      .single();
 
-    if (!customer) {
+    if (customerError || !customer) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    // Lấy mã khách hàng (Ưu tiên customerCode, fallback lấy 3 chữ cái đầu hoa)
-    const customerCode = (customer as any).customerCode || customer.name.substring(0, 3).toUpperCase();
-    const nextNumber = (customer._count?.orders || 0) + 1;
+    // Lấy mã khách hàng (Ưu tiên customer_code, fallback lấy 3 chữ cái đầu hoa)
+    const customerCode = customer.customer_code || customer.name.substring(0, 3).toUpperCase();
+    const nextNumber = (customer.Order?.[0]?.count || 0) + 1;
     const formattedNumber = nextNumber.toString().padStart(4, '0');
     
     // Ngày hiện tại định dạng MMDDYYYY

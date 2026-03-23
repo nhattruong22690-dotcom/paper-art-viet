@@ -1,26 +1,46 @@
-'use server';
-
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 export async function getProductionOrdersWithDeadline() {
-  const productionOrders = await prisma.productionOrder.findMany({
-    include: {
-      product: true,
-      order: true,
-    },
-    orderBy: { deadlineProduction: 'asc' }, // Xếp deadline sắp tới lên trước
-  });
+  const { data: productionOrders, error } = await supabase
+    .from('ProductionOrder')
+    .select(`
+      *,
+      product:Product(*),
+      order:Order(*)
+    `)
+    .order('deadline_production', { ascending: true });
+
+  if (error) throw error;
 
   const now = new Date();
 
   // Map trả về kèm UI Computed Status để cảnh báo Deadline
-  return productionOrders.map((po) => {
-    // Logic: Nếu ngày hôm nay hoặc ngay lúc query > deadlineProduction
-    const isOverdue = po.deadlineProduction ? now > po.deadlineProduction : false;
+  return (productionOrders || []).map((po) => {
+    const deadline = po.deadline_production ? new Date(po.deadline_production) : null;
+    const isOverdue = deadline ? now > deadline : false;
     
     return {
-      ...po,
-      isOverdue, // UI Computed Status trả lại Frontend
+      id: po.id,
+      orderId: po.order_id,
+      productId: po.product_id,
+      quantityTarget: po.quantity_target,
+      quantityCompleted: po.quantity_completed,
+      deadlineProduction: po.deadline_production,
+      currentStatus: po.current_status,
+      allocationType: po.allocation_type,
+      assignedTo: po.assigned_to,
+      contractPrice: po.contract_price,
+      product: po.product ? {
+        id: po.product.id,
+        name: po.product.name,
+        sku: po.product.sku
+      } : null,
+      order: po.order ? {
+        id: po.order.id,
+        contractCode: po.order.contract_code,
+        deadlineDelivery: po.order.deadline_delivery
+      } : null,
+      isOverdue,
       deadlineStatus: isOverdue ? 'Quá hạn' : 'Đúng tiến độ',
     };
   });
@@ -29,52 +49,81 @@ export async function getProductionOrdersWithDeadline() {
 export async function getWorkLogs(params: { date?: string; skip?: number; take?: number }) {
   const { date, skip = 0, take = 20 } = params;
   
-  const where: any = {};
+  let query = supabase
+    .from('WorkLog')
+    .select(`
+      *,
+      productionOrder:ProductionOrder(
+        *,
+        product:Product(*)
+      ),
+      user:User(*)
+    `)
+    .range(skip, skip + take - 1)
+    .order('created_at', { ascending: false });
+
   if (date) {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
-    where.createdAt = {
-      gte: startOfDay,
-      lte: endOfDay
-    };
+    
+    query = query
+      .gte('created_at', startOfDay.toISOString())
+      .lte('created_at', endOfDay.toISOString());
   }
 
-  return await prisma.workLog.findMany({
-    where,
-    skip,
-    take,
-    include: {
-      productionOrder: {
-        include: {
-          product: true
-        }
-      },
-      user: true
-    },
-    orderBy: { createdAt: 'desc' }
-  });
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return (data || []).map(log => ({
+    id: log.id,
+    productionOrderId: log.production_order_id,
+    userId: log.user_id,
+    staffName: log.staff_name,
+    startTime: log.start_time,
+    endTime: log.end_time,
+    quantityProduced: log.quantity_produced,
+    technicalErrorCount: log.technical_error_count,
+    materialErrorCount: log.material_error_count,
+    errorNote: log.error_note,
+    status: log.status,
+    note: log.note,
+    createdAt: log.created_at,
+    productionOrder: log.productionOrder ? {
+      id: log.productionOrder.id,
+      productId: log.productionOrder.product_id,
+      quantityTarget: log.productionOrder.quantity_target,
+      product: log.productionOrder.product ? {
+        id: log.productionOrder.product.id,
+        name: log.productionOrder.product.name,
+        sku: log.productionOrder.product.sku
+      } : null
+    } : null,
+    user: log.user
+  }));
 }
 
 export async function getWorkerPerformance() {
-  const users = await prisma.user.findMany({
-    where: { role: 'worker', active: true },
-    include: {
-      workLogs: {
-        include: {
-          productionOrder: true
-        }
-      }
-    }
-  });
+  const { data: users, error } = await supabase
+    .from('User')
+    .select(`
+      *,
+      workLogs:WorkLog(
+        *,
+        productionOrder:ProductionOrder(*)
+      )
+    `)
+    .eq('role', 'worker')
+    .eq('active', true);
 
-  return users.map(user => {
-    const totalQty = user.workLogs.reduce((sum, log) => sum + (log.quantityProduced || 0), 0);
-    const techErrors = user.workLogs.reduce((sum, log) => sum + (log.technicalErrorCount || 0), 0);
-    const matErrors = user.workLogs.reduce((sum, log) => sum + (log.materialErrorCount || 0), 0);
+  if (error) throw error;
+
+  return (users || []).map(user => {
+    const totalQty = (user.workLogs || []).reduce((sum: number, log: any) => sum + (log.quantity_produced || 0), 0);
+    const techErrors = (user.workLogs || []).reduce((sum: number, log: any) => sum + (log.technical_error_count || 0), 0);
+    const matErrors = (user.workLogs || []).reduce((sum: number, log: any) => sum + (log.material_error_count || 0), 0);
     
-    // Simple KPI: (Produced - TechErrors) / Total (if any produced)
     const kpi = totalQty > 0 ? Math.round(((totalQty - techErrors) / totalQty) * 100) : 0;
 
     return {
@@ -89,32 +138,48 @@ export async function getWorkerPerformance() {
     };
   });
 }
-export async function updateProductionOrder(id: string, data: any) {
-  const currentPO = await prisma.productionOrder.findUnique({
-    where: { id },
-    include: { workLogs: true }
-  });
 
-  if (!currentPO) throw new Error("Production Order not found");
+export async function updateProductionOrder(id: string, data: any) {
+  const { data: currentPO, error: fetchError } = await supabase
+    .from('ProductionOrder')
+    .select('*, workLogs:WorkLog(id)')
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !currentPO) throw new Error("Production Order not found");
 
   // Ràng buộc: Không cho phép đổi orderId nếu đã có Work Log
-  if (data.orderId && data.orderId !== currentPO.orderId) {
-    if (currentPO.workLogs.length > 0) {
+  if (data.orderId && data.orderId !== currentPO.order_id) {
+    if (currentPO.workLogs?.length > 0) {
       throw new Error("Không thể thay đổi Đơn hàng liên kết khi lệnh sản xuất đã bắt đầu có ghi chép sản lượng (Work Log).");
     }
   }
 
-  return await prisma.productionOrder.update({
-    where: { id },
-    data
-  });
+  // Transform data to snake_case
+  const dbData: any = {};
+  if ('orderId' in data) dbData.order_id = data.orderId;
+  if ('productId' in data) dbData.product_id = data.productId;
+  if ('quantityTarget' in data) dbData.quantity_target = data.quantityTarget;
+  if ('quantityCompleted' in data) dbData.quantity_completed = data.quantityCompleted;
+  if ('deadlineProduction' in data) dbData.deadline_production = data.deadlineProduction;
+  if ('currentStatus' in data) dbData.current_status = data.currentStatus;
+  if ('allocationType' in data) dbData.allocation_type = data.allocationType;
+  if ('assignedTo' in data) dbData.assigned_to = data.assignedTo;
+  if ('contractPrice' in data) dbData.contract_price = data.contractPrice;
+
+  const { data: updated, error: updateError } = await supabase
+    .from('ProductionOrder')
+    .update(dbData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (updateError) throw updateError;
+  return updated;
 }
 
 /**
  * Chia nhỏ Lệnh sản xuất cho một sản phẩm trong đơn hàng.
- * @param orderId ID Đơn hàng tổng
- * @param productId ID Sản phẩm cụ thể
- * @param allocations Danh sách phân bổ { assignedTo, type, quantity }
  */
 export async function splitProductionOrders(
   orderId: string, 
@@ -122,47 +187,49 @@ export async function splitProductionOrders(
   allocations: { assignedTo: string; type: 'internal' | 'outsourced'; quantity: number }[]
 ) {
   // 1. Kiểm tra xem có lệnh nào của sản phẩm này đã có Work Log chưa
-  const existingPOs = await prisma.productionOrder.findMany({
-    where: { orderId, productId },
-    include: { workLogs: true }
-  });
+  const { data: existingPOs, error: fetchError } = await supabase
+    .from('ProductionOrder')
+    .select('*, workLogs:WorkLog(id)')
+    .eq('order_id', orderId)
+    .eq('product_id', productId);
 
-  const hasLogs = existingPOs.some(po => po.workLogs.length > 0);
+  if (fetchError) throw fetchError;
+
+  const hasLogs = (existingPOs || []).some(po => po.workLogs?.length > 0);
   if (hasLogs) {
     throw new Error("Không thể chia lại lệnh sản xuất khi đã có ghi chép sản lượng (Work Log).");
   }
 
-  // 2. Thực hiện xóa và tạo mới trong Transaction
-  return await prisma.$transaction(async (tx) => {
-    // Tìm deadline của đơn hàng để kế thừa (optional)
-    const order = await tx.order.findUnique({
-      where: { id: orderId },
-      select: { deadlineDelivery: true }
-    });
+  // 2. Thực hiện xóa và tạo mới
+  const { data: order, error: orderError } = await supabase
+    .from('Order')
+    .select('deadline_delivery')
+    .eq('id', orderId)
+    .single();
 
-    // Xóa các lệnh cũ của sản phẩm này trong đơn này
-    await tx.productionOrder.deleteMany({
-      where: { orderId, productId }
-    });
+  const { error: deleteError } = await supabase
+    .from('ProductionOrder')
+    .delete()
+    .eq('order_id', orderId)
+    .eq('product_id', productId);
 
-    // Tạo các lệnh mới dựa trên phân bổ
-    const created = await Promise.all(allocations.map(alloc => 
-      tx.productionOrder.create({
-        data: {
-          orderId,
-          productId,
-          quantityTarget: alloc.quantity,
-          quantityCompleted: 0,
-          allocationType: alloc.type,
-          assignedTo: alloc.assignedTo,
-          // Legacy field backup
-          outsourcedName: alloc.type === 'outsourced' ? alloc.assignedTo : null,
-          currentStatus: alloc.type === 'internal' ? 'pending' : 'outsourced',
-          deadlineProduction: order?.deadlineDelivery || new Date()
-        } as any
-      })
-    ));
+  if (deleteError) throw deleteError;
 
-    return created;
-  });
+  const { data: created, error: insertError } = await supabase
+    .from('ProductionOrder')
+    .insert(allocations.map(alloc => ({
+      order_id: orderId,
+      product_id: productId,
+      quantity_target: alloc.quantity,
+      quantity_completed: 0,
+      allocation_type: alloc.type,
+      assigned_to: alloc.assignedTo,
+      outsourced_name: alloc.type === 'outsourced' ? alloc.assignedTo : null,
+      current_status: alloc.type === 'internal' ? 'pending' : 'outsourced',
+      deadline_production: order?.deadline_delivery || new Date()
+    })))
+    .select();
+
+  if (insertError) throw insertError;
+  return created;
 }

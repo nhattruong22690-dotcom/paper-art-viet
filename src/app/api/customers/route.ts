@@ -1,24 +1,22 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const customers = await prisma.customer.findMany({
-      orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: { orders: true }
-        }
-      }
-    });
+    const { data: customers, error } = await supabase
+      .from('Customer')
+      .select('*, Order(count)')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
 
     // Manually map to ensure 'customerCode' is always present from the DB field 'customer_code'
-    const mappedCustomers = customers.map((c: any) => {
-      const code = c.customerCode || c.customer_code || '';
+    const mappedCustomers = (customers || []).map((c: any) => {
+      const code = c.customer_code || '';
       return {
         ...c,
         customerCode: code,
-        customer_code: code // Ensure snake_case is also present for absolute safety
+        orderCount: c.Order?.[0]?.count || 0
       };
     });
 
@@ -32,27 +30,36 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const code = (data.customerCode || data.customer_code || '').toUpperCase();
+    const code = (data.customerCode || data.customer_code || '').trim().toUpperCase();
 
     if (code) {
-      const existing = await prisma.customer.findUnique({
-        where: { customerCode: code }
-      });
+      const { data: existing, error: checkError } = await supabase
+        .from('Customer')
+        .select('id')
+        .eq('customer_code', code)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
       if (existing) {
         return NextResponse.json({ error: 'Mã khách hàng này đã tồn tại, vui lòng kiểm tra lại' }, { status: 409 });
       }
     }
 
-    const customer = await prisma.customer.create({
-      data: {
-        customerCode: code.trim(),
+    const { data: customer, error } = await supabase
+      .from('Customer')
+      .insert({
+        customer_code: code,
         name: data.name,
         phone: data.phone || '',
         email: data.email || '',
         address: data.address || '',
         notes: data.notes || '',
-      }
-    });
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    
     return NextResponse.json(customer);
   } catch (error: any) {
     console.error('Create Customer API Error:', error);

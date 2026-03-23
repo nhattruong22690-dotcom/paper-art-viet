@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 export async function PUT(
   req: Request,
@@ -8,32 +8,38 @@ export async function PUT(
   try {
     const { id } = await params;
     const data = await req.json();
-    const code = data.customerCode || data.customer_code || '';
+    const code = (data.customerCode || data.customer_code || '').trim().toUpperCase();
 
     // Check unique if code changes
     if (code) {
-      const existing = await prisma.customer.findFirst({
-        where: { 
-          customerCode: code,
-          id: { not: id }
-        }
-      });
+      const { data: existing, error: checkError } = await supabase
+        .from('Customer')
+        .select('id')
+        .eq('customer_code', code)
+        .neq('id', id)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
       if (existing) {
         return NextResponse.json({ error: 'Mã khách hàng này đã tồn tại, vui lòng kiểm tra lại' }, { status: 409 });
       }
     }
     
-    const customer = await prisma.customer.update({
-      where: { id },
-      data: {
-        customerCode: code.trim().toUpperCase(),
+    const { data: customer, error } = await supabase
+      .from('Customer')
+      .update({
+        customer_code: code,
         name: data.name,
         phone: data.phone || '',
         email: data.email || '',
         address: data.address || '',
         notes: data.notes || '',
-      }
-    });
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
     
     return NextResponse.json(customer);
   } catch (error: any) {
@@ -49,9 +55,12 @@ export async function DELETE(
   try {
     const { id } = await params;
     
-    await prisma.customer.delete({
-      where: { id }
-    });
+    const { error } = await supabase
+      .from('Customer')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

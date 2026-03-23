@@ -1,7 +1,4 @@
-'use server';
-
-import { prisma } from '@/lib/prisma';
-import { Material, MaterialTransaction, Prisma } from '@prisma/client';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 /**
  * Lấy danh sách vật tư kèm tìm kiếm và lọc.
@@ -11,32 +8,27 @@ export async function getMaterials(params: {
   type?: string;
 }) {
   const { search, type } = params;
-  const where: Prisma.MaterialWhereInput = {};
+  let query = supabase.from('Material').select('*').order('name', { ascending: true });
 
   if (search) {
-    where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { sku: { contains: search, mode: 'insensitive' } },
-    ];
+    query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
   }
 
   if (type) {
-    where.type = type;
+    query = query.eq('type', type);
   }
 
-  const result = await prisma.material.findMany({
-    where,
-    orderBy: { name: 'asc' },
-  });
+  const { data, error } = await query;
+  if (error) throw error;
 
   // Convert to numbers and apply smart price logic for all consumers
-  const mapped = result.map(m => {
-    const minStock = Number(m.minStock || 0);
-    const stockQuantity = Number(m.stockQuantity || 0);
-    let refPrice = Number(m.referencePrice || 0);
-    const purchasePrice = Number(m.purchasePrice || 0);
-    const purchaseQuantity = Number(m.purchaseQuantity || 0);
-    const unitPrice = Number(m.unitPrice || 0);
+  const mapped = (data || []).map(m => {
+    const minStock = Number(m.min_stock || 0);
+    const stockQuantity = Number(m.stock_quantity || 0);
+    let refPrice = Number(m.reference_price || 0);
+    const purchasePrice = Number(m.purchase_price || 0);
+    const purchaseQuantity = Number(m.purchase_quantity || 0);
+    const unitPrice = Number(m.unit_price || 0);
 
     // Fallback: Nếu referencePrice = 0, thử tính từ purchasePrice/purchaseQuantity
     if (refPrice === 0 && purchasePrice > 0 && purchaseQuantity > 0) {
@@ -44,46 +36,81 @@ export async function getMaterials(params: {
     }
 
     return {
-      ...m,
+      id: m.id,
+      name: m.name,
+      sku: m.sku,
+      unit: m.unit,
+      type: m.type,
       minStock,
       stockQuantity,
       referencePrice: refPrice,
-      purchasePrice: m.purchasePrice ? purchasePrice : null,
-      purchaseQuantity: m.purchaseQuantity ? purchaseQuantity : null,
-      unitPrice: m.unitPrice ? unitPrice : null
+      purchasePrice: m.purchase_price ? purchasePrice : null,
+      purchaseQuantity: m.purchase_quantity ? purchaseQuantity : null,
+      unitPrice: m.unit_price ? unitPrice : null,
+      notes: m.notes,
+      createdAt: m.created_at,
+      updatedAt: m.updated_at
     };
   });
 
-  return JSON.parse(JSON.stringify(mapped)) as any;
+  return mapped;
 }
 
 /**
  * Thêm hoặc cập nhật thông tin vật tư.
  */
-export async function upsertMaterial(data: Partial<Material>) {
+export async function upsertMaterial(data: any) {
+  const dbData: any = {};
+  if ('name' in data) dbData.name = data.name;
+  if ('sku' in data) dbData.sku = data.sku;
+  if ('unit' in data) dbData.unit = data.unit;
+  if ('type' in data) dbData.type = data.type;
+  if ('minStock' in data) dbData.min_stock = data.minStock;
+  if ('stockQuantity' in data) dbData.stock_quantity = data.stockQuantity;
+  if ('referencePrice' in data) dbData.reference_price = data.referencePrice;
+  if ('purchasePrice' in data) dbData.purchase_price = data.purchasePrice;
+  if ('purchaseQuantity' in data) dbData.purchase_quantity = data.purchaseQuantity;
+  if ('unitPrice' in data) dbData.unit_price = data.unitPrice;
+  if ('notes' in data) dbData.notes = data.notes;
+
   let result;
   if (data.id) {
-    result = await prisma.material.update({
-      where: { id: data.id },
-      data,
-    });
+    const { data: updated, error } = await supabase
+      .from('Material')
+      .update(dbData)
+      .eq('id', data.id)
+      .select()
+      .single();
+    if (error) throw error;
+    result = updated;
   } else {
-    result = await prisma.material.create({
-      data: data as Prisma.MaterialCreateInput,
-    });
+    const { data: created, error } = await supabase
+      .from('Material')
+      .insert(dbData)
+      .select()
+      .single();
+    if (error) throw error;
+    result = created;
   }
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+
+  return {
+    ...result,
+    minStock: result.min_stock,
+    stockQuantity: result.stock_quantity,
+    referencePrice: result.reference_price
+  };
 }
 
 /**
  * Lấy thống kê tồn kho (Cards).
  */
 export async function getInventoryStats() {
-  const materials = await prisma.material.findMany();
+  const { data: materials, error } = await supabase.from('Material').select('*');
+  if (error) throw error;
   
   const totalTypes = materials.length;
-  const lowStockCount = materials.filter(m => Number(m.stockQuantity) < Number(m.minStock)).length;
-  const totalValue = materials.reduce((acc, m) => acc + (Number(m.stockQuantity) * Number(m.referencePrice)), 0);
+  const lowStockCount = materials.filter(m => Number(m.stock_quantity) < Number(m.min_stock)).length;
+  const totalValue = materials.reduce((acc, m) => acc + (Number(m.stock_quantity) * Number(m.reference_price)), 0);
 
   return {
     totalTypes,
@@ -100,130 +127,166 @@ export async function createMaterialBatchInward(data: {
   items: {
     materialId: string;
     sku: string;
-    quantity: number; // Tổng số lượng đơn vị
-    price: number; // Đơn giá mỗi đơn vị (giá thực tế)
+    quantity: number;
+    price: number;
     location?: string;
     note?: string;
-    poItemId?: string; // Liên kết tới PO Item nếu có
+    poItemId?: string;
   }[];
 }) {
-  const result = await prisma.$transaction(async (tx) => {
-    const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const transactions = [];
+  const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  const transactions = [];
 
-    for (const item of data.items) {
-      // 1. Tạo Mã Lô: [SKU]-[YYYYMMDD]-[STT]
-      // Lấy số thứ tự lô trong ngày của vật tư này
-      const batchCount = await tx.materialBatch.count({
-        where: {
-          materialId: item.materialId,
-          createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          }
-        }
-      });
-      const stt = (batchCount + 1).toString().padStart(3, '0');
-      const batchCode = `${item.sku}-${todayStr}-${stt}`;
+  for (const item of data.items) {
+    // 1. Tạo Mã Lô: [SKU]-[YYYYMMDD]-[STT]
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const { count, error: countError } = await supabase
+      .from('MaterialBatch')
+      .select('*', { count: 'exact', head: true })
+      .eq('material_id', item.materialId)
+      .gte('created_at', startOfDay.toISOString());
 
-      // 2. Liên kết tới PO Item nếu có
-      if (item.poItemId) {
-        // Cập nhật số lượng đã nhận trong PO Item
-        const poItem = await tx.purchaseOrderItem.update({
-          where: { id: item.poItemId },
-          data: {
-            quantityReceived: {
-              increment: item.quantity
-            }
-          },
-          include: {
-            purchaseOrder: {
-              include: {
-                items: true
-              }
-            }
-          }
-        });
+    if (countError) throw countError;
 
-        // Kiểm tra trạng thái toàn bộ PO
-        const allItems = poItem.purchaseOrder.items;
-        const totalOrdered = allItems.reduce((acc: number, i: any) => acc + Number(i.quantityOrdered), 0);
-        const totalReceived = allItems.reduce((acc: number, i: any) => acc + Number(i.quantityReceived), 0);
+    const stt = ((count || 0) + 1).toString().padStart(3, '0');
+    const batchCode = `${item.sku}-${todayStr}-${stt}`;
+
+    // 2. Liên kết tới PO Item nếu có
+    if (item.poItemId) {
+      const { data: poItem, error: poItemError } = await supabase
+        .from('PurchaseOrderItem')
+        .select('*, purchaseOrder:PurchaseOrder(*, purchaseOrderItems:PurchaseOrderItem(*))')
+        .eq('id', item.poItemId)
+        .single();
+
+      if (poItemError) throw poItemError;
+
+      const newReceived = (poItem.quantity_received || 0) + item.quantity;
+      await supabase
+        .from('PurchaseOrderItem')
+        .update({ quantity_received: newReceived })
+        .eq('id', item.poItemId);
+
+      // Refresh PO data for status check
+      const { data: refreshedPO } = await supabase
+        .from('PurchaseOrder')
+        .select('*, purchaseOrderItems:PurchaseOrderItem(*)')
+        .eq('id', poItem.purchase_order_id)
+        .single();
+
+      if (refreshedPO) {
+        const totalOrdered = (refreshedPO.purchaseOrderItems || []).reduce((acc: number, i: any) => acc + Number(i.quantity_ordered), 0);
+        const totalReceived = (refreshedPO.purchaseOrderItems || []).reduce((acc: number, i: any) => acc + Number(i.quantity_received), 0);
 
         let newStatus = 'partially_received';
         if (totalReceived >= totalOrdered) {
           newStatus = 'completed';
         }
 
-        await tx.purchaseOrder.update({
-          where: { id: poItem.purchaseOrderId },
-          data: { status: newStatus }
-        });
+        await supabase
+          .from('PurchaseOrder')
+          .update({ status: newStatus })
+          .eq('id', refreshedPO.id);
       }
-
-      // 3. Tạo lô hàng (MaterialBatch)
-      const batch = await tx.materialBatch.create({
-        data: {
-          batchCode,
-          materialId: item.materialId,
-          purchasePrice: item.price,
-          initialQuantity: item.quantity,
-          remainQuantity: item.quantity,
-          location: item.location,
-          sourcePoItemId: item.poItemId, // Trace back to PO
-        }
-      });
-
-      // 4. Tạo bản ghi Transaction
-      const trans = await tx.materialTransaction.create({
-        data: {
-          materialId: item.materialId,
-          partnerId: data.partnerId,
-          batchId: batch.id,
-          type: 'inward',
-          quantity: item.quantity,
-          price: item.price,
-          note: item.note || `Nhập lô mới: ${batchCode}`,
-        },
-      });
-      transactions.push(trans);
-
-      // 4. Cập nhật tồn kho tổng của Material
-      await tx.material.update({
-        where: { id: item.materialId },
-        data: {
-          stockQuantity: { increment: item.quantity },
-          referencePrice: item.price
-        },
-      });
     }
 
-    return transactions;
-  });
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+    // 3. Tạo lô hàng (MaterialBatch)
+    const { data: batch, error: batchError } = await supabase
+      .from('MaterialBatch')
+      .insert({
+        batch_code: batchCode,
+        material_id: item.materialId,
+        purchase_price: item.price,
+        initial_quantity: item.quantity,
+        remain_quantity: item.quantity,
+        location: item.location,
+        source_po_item_id: item.poItemId,
+      })
+      .select()
+      .single();
+
+    if (batchError) throw batchError;
+
+    // 4. Tạo bản ghi Transaction
+    const { data: trans, error: transError } = await supabase
+      .from('MaterialTransaction')
+      .insert({
+        material_id: item.materialId,
+        partner_id: data.partnerId,
+        batch_id: batch.id,
+        type: 'inward',
+        quantity: item.quantity,
+        price: item.price,
+        note: item.note || `Nhập lô mới: ${batchCode}`,
+      })
+      .select()
+      .single();
+
+    if (transError) throw transError;
+    transactions.push(trans);
+
+    // 5. Cập nhật tồn kho tổng của Material
+    const { data: material } = await supabase.from('Material').select('stock_quantity').eq('id', item.materialId).single();
+    if (material) {
+      await supabase
+        .from('Material')
+        .update({
+          stock_quantity: (material.stock_quantity || 0) + item.quantity,
+          reference_price: item.price
+        })
+        .eq('id', item.materialId);
+    }
+  }
+
+  return transactions;
 }
 
 /**
  * Lấy danh sách lô hàng còn tồn của 1 vật tư (FIFO).
  */
 export async function getMaterialBatches(materialId: string) {
-  const result = await prisma.materialBatch.findMany({
-    where: { 
-      materialId,
-      remainQuantity: { gt: 0 }
-    },
-    orderBy: { createdAt: 'asc' }, // FIFO
-  });
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+  const { data, error } = await supabase
+    .from('MaterialBatch')
+    .select('*')
+    .eq('material_id', materialId)
+    .gt('remain_quantity', 0)
+    .order('created_at', { ascending: true }); // FIFO
+
+  if (error) throw error;
+  
+  return (data || []).map(b => ({
+    ...b,
+    batchCode: b.batch_code,
+    materialId: b.material_id,
+    purchasePrice: b.purchase_price,
+    initialQuantity: b.initial_quantity,
+    remainQuantity: b.remain_quantity
+  }));
 }
 
 /**
  * Lấy lịch sử giao dịch của 1 vật tư.
  */
 export async function getMaterialHistory(materialId: string) {
-  const result = await prisma.materialTransaction.findMany({
-    where: { materialId },
-    include: { partner: true },
-    orderBy: { createdAt: 'desc' },
-  });
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+  const { data, error } = await supabase
+    .from('MaterialTransaction')
+    .select(`
+      *,
+      partner:Partner(*)
+    `)
+    .eq('material_id', materialId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map(t => ({
+    ...t,
+    materialId: t.material_id,
+    partnerId: t.partner_id,
+    batchId: t.batch_id,
+    quantity: t.quantity,
+    price: t.price
+  }));
 }

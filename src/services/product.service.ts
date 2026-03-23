@@ -1,124 +1,143 @@
-'use server';
-
-import { prisma } from '@/lib/prisma';
-import { Product, Prisma } from '@prisma/client';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 /**
  * Lấy toàn bộ danh sách sản phẩm.
  */
 export async function getAllProducts() {
-  const products = await prisma.product.findMany({
-    include: {
-      bomItems: {
-        include: {
-          material: true
-        }
-      }
-    },
-    orderBy: { name: 'asc' },
-  });
+  const { data: products, error } = await supabase
+    .from('Product')
+    .select(`
+      *,
+      bomItems:BOMItem(
+        *,
+        material:Material(*)
+      )
+    `)
+    .order('name', { ascending: true });
 
-  // Normalize materials in BOM
-  const mapped = products.map(p => ({
-    ...p,
-    bomItems: p.bomItems.map(bi => {
-      let refPrice = Number(bi.material.referencePrice || 0);
-      if (refPrice === 0 && bi.material.purchasePrice && bi.material.purchaseQuantity && Number(bi.material.purchaseQuantity) > 0) {
-        refPrice = Number(bi.material.purchasePrice) / Number(bi.material.purchaseQuantity);
+  if (error) throw error;
+
+  // Normalize and transform to camelCase
+  const mapped = (products || []).map(p => {
+    const bomItems = (p.bomItems || []).map((bi: any) => {
+      let refPrice = Number(bi.material?.reference_price || 0);
+      if (refPrice === 0 && bi.material?.purchase_price && bi.material?.purchase_quantity && Number(bi.material?.purchase_quantity) > 0) {
+        refPrice = Number(bi.material.purchase_price) / Number(bi.material.purchase_quantity);
       }
       return {
-        ...bi,
-        material: {
-          ...bi.material,
+        id: bi.id,
+        productId: bi.product_id,
+        materialId: bi.material_id,
+        quantity: Number(bi.quantity || 0),
+        material: bi.material ? {
+          id: bi.material.id,
+          sku: bi.material.sku,
+          name: bi.material.name,
+          unit: bi.material.unit,
           referencePrice: refPrice,
-          unitPrice: Number(bi.material.unitPrice || 0)
-        }
+          unitPrice: Number(bi.material.unit_price || 0),
+          stockQuantity: Number(bi.material.stock_quantity || 0)
+        } : null
       };
-    })
-  }));
+    });
 
-  return JSON.parse(JSON.stringify(mapped)) as any;
+    return {
+      id: p.id,
+      sku: p.sku,
+      name: p.name,
+      basePrice: Number(p.base_price || 0),
+      costPrice: Number(p.cost_price || 0),
+      wholesalePrice: Number(p.wholesale_price || 0),
+      exportPrice: Number(p.export_price || 0),
+      productionTimeStd: p.production_time_std,
+      cogsConfig: p.cogs_config,
+      bomItems
+    };
+  });
+
+  return mapped;
 }
 
 /**
  * Lấy chi tiết sản phẩm kèm BOM.
  */
 export async function getProductDetail(id: string) {
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      bomItems: {
-        include: {
-          material: true
-        }
-      }
-    }
-  });
+  const { data: product, error } = await supabase
+    .from('Product')
+    .select(`
+      *,
+      bomItems:BOMItem(
+        *,
+        material:Material(*)
+      )
+    `)
+    .eq('id', id)
+    .single();
 
-  if (!product) return null;
+  if (error) {
+    if (error.code === 'PGRST116') return null; // Not found
+    throw error;
+  }
 
   // Normalize materials in BOM and product prices
-  const mapped = {
-    ...product,
-    basePrice: Number(product.basePrice || 0),
-    wholesalePrice: Number(product.wholesalePrice || 0),
-    exportPrice: Number(product.exportPrice || 0),
-    bomItems: product.bomItems.map(bi => {
-      let refPrice = Number(bi.material.referencePrice || 0);
-      if (refPrice === 0 && bi.material.purchasePrice && bi.material.purchaseQuantity && Number(bi.material.purchaseQuantity) > 0) {
-        refPrice = Number(bi.material.purchasePrice) / Number(bi.material.purchaseQuantity);
-      }
-      return {
-        ...bi,
-        material: {
-          ...bi.material,
-          referencePrice: refPrice,
-          unitPrice: Number(bi.material.unitPrice || 0)
-        }
-      };
-    })
-  };
+  const bomItems = (product.bomItems || []).map((bi: any) => {
+    let refPrice = Number(bi.material?.reference_price || 0);
+    if (refPrice === 0 && bi.material?.purchase_price && bi.material?.purchase_quantity && Number(bi.material?.purchase_quantity) > 0) {
+      refPrice = Number(bi.material.purchase_price) / Number(bi.material.purchase_quantity);
+    }
+    return {
+      id: bi.id,
+      productId: bi.product_id,
+      materialId: bi.material_id,
+      quantity: Number(bi.quantity || 0),
+      material: bi.material ? {
+        id: bi.material.id,
+        sku: bi.material.sku,
+        name: bi.material.name,
+        unit: bi.material.unit,
+        referencePrice: refPrice,
+        unitPrice: Number(bi.material.unit_price || 0)
+      } : null
+    };
+  });
 
-  return JSON.parse(JSON.stringify(mapped)) as any;
+  return {
+    id: product.id,
+    sku: product.sku,
+    name: product.name,
+    basePrice: Number(product.base_price || 0),
+    costPrice: Number(product.cost_price || 0),
+    wholesalePrice: Number(product.wholesale_price || 0),
+    exportPrice: Number(product.export_price || 0),
+    productionTimeStd: product.production_time_std,
+    cogsConfig: product.cogs_config,
+    bomItems
+  };
 }
 
 /**
- * Tính toán lại giá vốn từ BOM và cập nhật vào bảng products.
+ * Tính toán lại giá vốn từ BOM và cập nhật vào bảng Product.
  */
 export async function recalculateProductCostPrice(productId: string) {
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    include: {
-      bomItems: {
-        include: {
-          material: true
-        }
-      }
-    }
-  });
-
+  const product = await getProductDetail(productId);
   if (!product) return null;
 
   let totalCost = 0;
   product.bomItems.forEach(item => {
-    let price = Number(item.material.unitPrice || item.material.referencePrice || 0);
-    
-    // Fallback to purchase history if price is 0
-    if (price === 0 && item.material.purchasePrice && item.material.purchaseQuantity && Number(item.material.purchaseQuantity) > 0) {
-      price = Number(item.material.purchasePrice) / Number(item.material.purchaseQuantity);
-    }
-    
+    const price = Number(item.material?.unitPrice || item.material?.referencePrice || 0);
     totalCost += price * Number(item.quantity);
   });
 
-  const oldPrice = Number((product as any).costPrice || 0);
+  const oldPrice = Number(product.costPrice || 0);
   
-  // Use raw query to bypass client-side validation if client is out of sync
-  await prisma.$executeRaw`UPDATE products SET cost_price = ${totalCost} WHERE id = ${productId}::uuid`;
+  const { error: updateError } = await supabase
+    .from('Product')
+    .update({ cost_price: totalCost })
+    .eq('id', productId);
 
-  const updatedProduct = await prisma.product.findUnique({
-    where: { id: productId }
-  });
+  if (updateError) throw updateError;
+
+  const updatedProduct = await getProductDetail(productId);
 
   return {
     oldPrice,
@@ -134,32 +153,31 @@ export async function updateProductBOM(
   productId: string, 
   items: { materialId: string, quantity: number }[]
 ) {
-  const result = await prisma.$transaction(async (tx) => {
-    // 1. Xóa BOM cũ
-    await tx.bOMItem.deleteMany({
-      where: { productId }
-    });
+  // 1. Xóa BOM cũ
+  const { error: deleteError } = await supabase
+    .from('BOMItem')
+    .delete()
+    .eq('product_id', productId);
 
-    // 2. Thêm BOM mới
-    if (items.length > 0) {
-      await tx.bOMItem.createMany({
-        data: items.map(item => ({
-          productId,
-          materialId: item.materialId,
-          quantity: item.quantity
-        }))
-      });
-    }
+  if (deleteError) throw deleteError;
 
-    return await tx.product.findUnique({
-      where: { id: productId }
-    });
-  });
+  // 2. Thêm BOM mới
+  if (items.length > 0) {
+    const { error: insertError } = await supabase
+      .from('BOMItem')
+      .insert(items.map(item => ({
+        product_id: productId,
+        material_id: item.materialId,
+        quantity: item.quantity
+      })));
+    
+    if (insertError) throw insertError;
+  }
 
   // 3. Tự động tính lại giá vốn
   await recalculateProductCostPrice(productId);
 
-  return JSON.parse(JSON.stringify(result)) as any;
+  return await getProductDetail(productId);
 }
 
 /**
@@ -169,55 +187,66 @@ export async function updateProductCOGS(
   productId: string, 
   cogsConfig: any
 ) {
-  const result = await prisma.product.update({
-    where: { id: productId },
-    data: { cogsConfig: cogsConfig ? (cogsConfig as any) : Prisma.JsonNull }
-  });
-  return JSON.parse(JSON.stringify(result)) as typeof result;
+  const { data, error } = await supabase
+    .from('Product')
+    .update({ cogs_config: cogsConfig })
+    .eq('id', productId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  
+  return {
+    ...data,
+    id: data.id,
+    cogsConfig: data.cogs_config
+  };
 }
 
 /**
  * Thêm hoặc cập nhật sản phẩm.
  */
-export async function upsertProduct(data: Partial<Product>) {
+export async function upsertProduct(data: any) {
   const { id, ...updateData } = data;
   
-  // Extract price fields to update via raw SQL to bypass client sync issues
-  const priceFields: any = {};
-  if ('basePrice' in updateData) priceFields.base_price = updateData.basePrice;
-  if ('wholesalePrice' in updateData) priceFields.wholesale_price = updateData.wholesalePrice;
-  if ('exportPrice' in updateData) priceFields.export_price = updateData.exportPrice;
-  if ('costPrice' in updateData) priceFields.cost_price = updateData.costPrice;
-
-  // Remove them from the standard prisma update to avoid validation errors
-  const standardFields = { ...updateData };
-  delete (standardFields as any).basePrice;
-  delete (standardFields as any).wholesalePrice;
-  delete (standardFields as any).exportPrice;
-  delete (standardFields as any).costPrice;
+  // Transform to snake_case for DB
+  const dbData: any = {};
+  if ('sku' in updateData) dbData.sku = updateData.sku;
+  if ('name' in updateData) dbData.name = updateData.name;
+  if ('basePrice' in updateData) dbData.base_price = updateData.basePrice;
+  if ('wholesalePrice' in updateData) dbData.wholesale_price = updateData.wholesalePrice;
+  if ('exportPrice' in updateData) dbData.export_price = updateData.exportPrice;
+  if ('costPrice' in updateData) dbData.cost_price = updateData.costPrice;
+  if ('productionTimeStd' in updateData) dbData.production_time_std = updateData.productionTimeStd;
+  if ('cogsConfig' in updateData) dbData.cogs_config = updateData.cogsConfig;
 
   let result;
   if (id) {
-    // 1. Update standard fields
-    if (Object.keys(standardFields).length > 0) {
-      await prisma.product.update({
-        where: { id },
-        data: standardFields as any,
-      });
-    }
-
-    // 2. Update price fields via raw SQL
-    for (const [key, value] of Object.entries(priceFields)) {
-      await prisma.$executeRawUnsafe(`UPDATE products SET ${key} = $1 WHERE id = $2::uuid`, value, id);
-    }
-
-    result = await prisma.product.findUnique({ where: { id } });
+    const { data: updated, error } = await supabase
+      .from('Product')
+      .update(dbData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    result = updated;
   } else {
-    // For creation, we still try standard create but might need to handle it differently 
-    // if creation is also blocked. But usually creation is safer or rare in existing items.
-    result = await prisma.product.create({
-      data: updateData as any,
-    });
+    const { data: created, error } = await supabase
+      .from('Product')
+      .insert(dbData)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    result = created;
   }
-  return JSON.parse(JSON.stringify(result)) as any;
+
+  return {
+    ...result,
+    basePrice: Number(result.base_price || 0),
+    costPrice: Number(result.cost_price || 0),
+    wholesalePrice: Number(result.wholesale_price || 0),
+    exportPrice: Number(result.export_price || 0)
+  };
 }

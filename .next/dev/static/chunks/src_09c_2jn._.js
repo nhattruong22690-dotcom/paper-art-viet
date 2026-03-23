@@ -8,7 +8,6 @@ __turbopack_context__.s([
     "NEWS_UPDATES",
     ()=>NEWS_UPDATES
 ]);
-"use client";
 const GUIDE_DATA = [
     {
         id: 'orders-guide',

@@ -1,6 +1,4 @@
-'use server';
-
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 /**
  * Bắt đầu một phiên làm việc mới cho công nhân.
@@ -10,20 +8,30 @@ export async function startWorkSession(data: {
   userId: string;
   staffName?: string;
 }) {
-  return await prisma.workLog.create({
-    data: {
-      productionOrderId: data.productionOrderId,
-      userId: data.userId,
-      staffName: data.staffName,
+  const { data: newLog, error } = await supabase
+    .from('WorkLog')
+    .insert({
+      production_order_id: data.productionOrderId,
+      user_id: data.userId,
+      staff_name: data.staffName,
       status: 'processing',
-      startTime: new Date(),
-    },
-  });
+      start_time: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return {
+    ...newLog,
+    productionOrderId: newLog.production_order_id,
+    userId: newLog.user_id,
+    staffName: newLog.staff_name,
+    startTime: newLog.start_time
+  };
 }
 
 /**
  * Kết thúc phiên làm việc và cập nhật toàn bộ hệ thống (Log, Pipeline, Kho).
- * Sử dụng Transaction để đảm bảo tính toàn vẹn dữ liệu.
  */
 export async function submitWorkSession(data: {
   workLogId: string;
@@ -38,124 +46,161 @@ export async function submitWorkSession(data: {
   const totalWaste = data.technicalErrorCount + data.materialErrorCount;
   const totalConsumed = totalProduced + totalWaste;
 
-  return await prisma.$transaction(async (tx) => {
-    // 1. Cập nhật Nhật ký công việc (Work Log)
-    const workLog = await tx.workLog.update({
-      where: { id: data.workLogId },
-      data: {
-        endTime: new Date(),
-        quantityProduced: data.quantityProduced,
-        technicalErrorCount: data.technicalErrorCount,
-        materialErrorCount: data.materialErrorCount,
-        errorNote: data.errorNote,
-        evidenceImageUrl: data.evidenceImageUrl,
-        note: data.note,
-        status: 'completed',
-      },
-      include: {
-        productionOrder: {
-          include: {
-            product: true
-          }
-        }
-      }
-    });
+  // 1. Cập nhật Nhật ký công việc (Work Log)
+  const { data: workLog, error: logError } = await supabase
+    .from('WorkLog')
+    .update({
+      end_time: new Date().toISOString(),
+      quantity_produced: data.quantityProduced,
+      technical_error_count: data.technicalErrorCount,
+      material_error_count: data.materialErrorCount,
+      error_note: data.errorNote,
+      evidence_image_url: data.evidenceImageUrl,
+      note: data.note,
+      status: 'completed',
+    })
+    .eq('id', data.workLogId)
+    .select(`
+      *,
+      productionOrder:ProductionOrder(
+        *,
+        product:Product(*)
+      )
+    `)
+    .single();
 
-    // 2. Cập nhật tiến độ Lệnh sản xuất (Production Order)
-    const updatedPO = await tx.productionOrder.update({
-      where: { id: workLog.productionOrderId },
-      data: {
-        quantityCompleted: {
-          increment: data.quantityProduced
-        }
-      }
-    });
+  if (logError) throw logError;
 
-    // Trigger 3 & 4: Tự động chuyển trạng thái Task dựa trên sản lượng
-    let newTaskStatus = updatedPO.currentStatus;
-    const currentCompleted = updatedPO.quantityCompleted ?? 0;
-    const currentTarget = updatedPO.quantityTarget ?? 0;
+  // 2. Cập nhật tiến độ Lệnh sản xuất (Production Order)
+  const { data: currentPO, error: poFetchError } = await supabase
+    .from('ProductionOrder')
+    .select('*')
+    .eq('id', workLog.production_order_id)
+    .single();
+    
+  if (poFetchError) throw poFetchError;
 
-    // Nếu có sản lượng báo cáo > 0, chuyển sang 'in_progress'
-    if (currentCompleted > 0 && updatedPO.currentStatus !== 'completed') {
-      newTaskStatus = 'in_progress';
-    }
-    // Nếu đạt 100% sản lượng, chuyển sang 'completed'
-    if (currentTarget > 0 && currentCompleted >= currentTarget) {
-      newTaskStatus = 'completed';
-    }
+  const newCompleted = (currentPO.quantity_completed || 0) + data.quantityProduced;
+  
+  const { data: finalPO, error: finalPOError } = await supabase
+    .from('ProductionOrder')
+    .update({ quantity_completed: newCompleted })
+    .eq('id', workLog.production_order_id)
+    .select()
+    .single();
 
-    if (newTaskStatus !== updatedPO.currentStatus) {
-      await tx.productionOrder.update({
-        where: { id: updatedPO.id },
-        data: { currentStatus: newTaskStatus || 'pending' }
-      });
+  if (finalPOError) throw finalPOError;
 
-      // Trigger cascading: Nếu task hoàn thành, kiểm tra toàn bộ đơn hàng
-      if (newTaskStatus === 'completed') {
-        const allTasks = await tx.productionOrder.findMany({
-          where: { orderId: updatedPO.orderId }
-        });
-        const allDone = allTasks.every(t => t.currentStatus === 'completed');
-        if (allDone) {
-          await tx.order.update({
-            where: { id: updatedPO.orderId },
-            data: { status: 'packing' }
-          });
-        }
-      }
-    }
+  // Trigger 3 & 4: Tự động chuyển trạng thái Task dựa trên sản lượng
+  let newTaskStatus = finalPO.current_status;
+  const currentTarget = finalPO.quantity_target ?? 0;
 
-    // 3. Cập nhật Kho vật tư (Inventory)
-    // Giả định: Mỗi sản phẩm tiêu thụ 1 đơn vị vật tư chính trong inventory_locations
-    // Trong thực tế, cần mapping qua bảng ProductionMaterialEstimate
-    if (workLog.productionOrder.product?.name) {
-      const material = await tx.inventoryLocation.findFirst({
-        where: { 
-          itemName: {
-            contains: workLog.productionOrder.product.name, // Tìm vật tư liên quan
-            mode: 'insensitive'
-          }
-        }
-      });
+  if (newCompleted > 0 && finalPO.current_status !== 'completed') {
+    newTaskStatus = 'in_progress';
+  }
+  if (currentTarget > 0 && newCompleted >= currentTarget) {
+    newTaskStatus = 'completed';
+  }
 
-      if (material) {
-        await tx.inventoryLocation.update({
-          where: { id: material.id },
-          data: {
-            quantity: {
-              decrement: totalConsumed
-            },
-            lastUpdated: new Date()
-          }
-        });
+  if (newTaskStatus !== finalPO.current_status) {
+    await supabase
+      .from('ProductionOrder')
+      .update({ current_status: newTaskStatus || 'pending' })
+      .eq('id', finalPO.id);
+
+    // Trigger cascading: Nếu task hoàn thành, kiểm tra toàn bộ đơn hàng
+    if (newTaskStatus === 'completed') {
+      const { data: allTasks } = await supabase
+        .from('ProductionOrder')
+        .select('current_status')
+        .eq('order_id', finalPO.order_id);
+      
+      const allDone = (allTasks || []).every(t => t.current_status === 'completed');
+      if (allDone) {
+        await supabase
+          .from('Order')
+          .update({ status: 'packing' })
+          .eq('id', finalPO.order_id);
       }
     }
+  }
 
-    return workLog;
-  });
+  // 3. Cập nhật Kho vật tư (Inventory) - Manual lookup simplified
+  if (workLog.productionOrder?.product?.name) {
+    const { data: material } = await supabase
+      .from('InventoryLocation')
+      .select('*')
+      .ilike('item_name', `%${workLog.productionOrder.product.name}%`)
+      .limit(1)
+      .single();
+
+    if (material) {
+      await supabase
+        .from('InventoryLocation')
+        .update({
+          quantity: (material.quantity || 0) - totalConsumed,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', material.id);
+    }
+  }
+
+  return {
+    ...workLog,
+    productionOrderId: workLog.production_order_id,
+    quantityProduced: workLog.quantity_produced,
+    productionOrder: {
+      ...workLog.productionOrder,
+      productId: workLog.productionOrder.product_id,
+      quantityTarget: workLog.productionOrder.quantity_target
+    }
+  };
 }
 
 /**
  * Lấy lịch sử 10 phiên làm việc gần nhất của một nhân viên.
  */
 export async function getPersonalWorkHistory(userId: string) {
-  return await prisma.workLog.findMany({
-    where: { userId },
-    take: 10,
-    orderBy: { startTime: 'desc' },
-    include: {
-      productionOrder: {
-        include: {
-          product: true
-        }
-      }
-    }
-  });
+  const { data, error } = await supabase
+    .from('WorkLog')
+    .select(`
+      *,
+      productionOrder:ProductionOrder(
+        *,
+        product:Product(*)
+      )
+    `)
+    .eq('user_id', userId)
+    .limit(10)
+    .order('start_time', { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map(log => ({
+    ...log,
+    id: log.id,
+    productionOrderId: log.production_order_id,
+    userId: log.user_id,
+    staffName: log.staff_name,
+    startTime: log.start_time,
+    endTime: log.end_time,
+    quantityProduced: log.quantity_produced,
+    status: log.status,
+    productionOrder: log.productionOrder ? {
+      ...log.productionOrder,
+      productId: log.productionOrder.product_id,
+      quantityTarget: log.productionOrder.quantity_target,
+      product: log.productionOrder.product ? {
+        id: log.productionOrder.product.id,
+        name: log.productionOrder.product.name,
+        sku: log.productionOrder.product.sku
+      } : null
+    } : null
+  }));
 }
+
 /**
- * Tạo nhiều nhật ký công việc cùng lúc (Dành cho Trưởng nhóm).
- * Đồng bộ hóa tiến độ Sản xuất và Kho.
+ * Tạo nhiều nhật ký công việc cùng lúc.
  */
 export async function createBatchWorkLogs(
   logs: {
@@ -176,135 +221,138 @@ export async function createBatchWorkLogs(
     quantity: number;
   }[]
 ) {
-  return await prisma.$transaction(async (tx) => {
-    const results = [];
+  const results: any[] = [];
 
-    // 1. Create logs and collect workLog IDs
-    for (const log of logs) {
-      const newLog = await tx.workLog.create({
-        data: {
-          productionOrderId: log.productionOrderId,
-          userId: log.userId,
-          staffName: log.staffName,
-          quantityProduced: log.quantityProduced,
-          technicalErrorCount: log.technicalErrorCount,
-          materialErrorCount: log.materialErrorCount,
-          errorNote: log.errorNote,
-          note: log.note,
-          status: 'completed',
-          startTime: log.startTime || new Date(),
-          endTime: log.endTime || new Date(),
+  // 1. Create logs
+  for (const log of logs) {
+    const { data: newLog, error: logError } = await supabase
+      .from('WorkLog')
+      .insert({
+        production_order_id: log.productionOrderId,
+        user_id: log.userId,
+        staff_name: log.staffName,
+        quantity_produced: log.quantityProduced,
+        technical_error_count: log.technicalErrorCount,
+        material_error_count: log.materialErrorCount,
+        error_note: log.errorNote,
+        note: log.note,
+        status: 'completed',
+        start_time: (log.startTime || new Date()).toISOString(),
+        end_time: (log.endTime || new Date()).toISOString(),
+      })
+      .select()
+      .single();
+
+    if (logError) throw logError;
+
+    // 2. Update Production Order progress
+    const { data: currentPO } = await supabase
+      .from('ProductionOrder')
+      .select('*')
+      .eq('id', log.productionOrderId)
+      .single();
+    
+    if (currentPO) {
+      const newCompleted = (currentPO.quantity_completed || 0) + log.quantityProduced;
+      const { data: updatedPO } = await supabase
+        .from('ProductionOrder')
+        .update({ quantity_completed: newCompleted })
+        .eq('id', log.productionOrderId)
+        .select()
+        .single();
+
+      if (updatedPO) {
+        let newTaskStatus = updatedPO.current_status;
+        const currentTarget = updatedPO.quantity_target ?? 0;
+
+        if (newCompleted > 0 && updatedPO.current_status !== 'completed') {
+          newTaskStatus = 'in_progress';
         }
-      });
+        if (currentTarget > 0 && newCompleted >= currentTarget) {
+          newTaskStatus = 'completed';
+        }
 
-      // 2. Update Production Order progress
-      const updatedPO = await tx.productionOrder.update({
-        where: { id: log.productionOrderId },
-        data: {
-          quantityCompleted: {
-            increment: log.quantityProduced
+        if (newTaskStatus !== updatedPO.current_status) {
+          await supabase
+            .from('ProductionOrder')
+            .update({ current_status: newTaskStatus || 'pending' })
+            .eq('id', updatedPO.id);
+
+          if (newTaskStatus === 'completed') {
+            const { data: allTasks } = await supabase
+              .from('ProductionOrder')
+              .select('current_status')
+              .eq('order_id', updatedPO.order_id);
+            
+            const allDone = (allTasks || []).every(t => t.current_status === 'completed');
+            if (allDone) {
+              await supabase
+                .from('Order')
+                .update({ status: 'packing' })
+                .eq('id', updatedPO.order_id);
+            }
           }
         }
-      });
-
-      // Trigger 3 & 4 for Batch Logs
-      let newTaskStatus = updatedPO.currentStatus;
-      const currentCompleted = updatedPO.quantityCompleted ?? 0;
-      const currentTarget = updatedPO.quantityTarget ?? 0;
-
-      if (currentCompleted > 0 && updatedPO.currentStatus !== 'completed') {
-        newTaskStatus = 'in_progress';
       }
-      if (currentTarget > 0 && currentCompleted >= currentTarget) {
-        newTaskStatus = 'completed';
-      }
-
-      if (newTaskStatus !== updatedPO.currentStatus) {
-        await tx.productionOrder.update({
-          where: { id: updatedPO.id },
-          data: { currentStatus: newTaskStatus || 'pending' }
-        });
-
-        if (newTaskStatus === 'completed') {
-          const allTasks = await tx.productionOrder.findMany({
-            where: { orderId: updatedPO.orderId }
-          });
-          const allDone = allTasks.every(t => t.currentStatus === 'completed');
-          if (allDone) {
-            await tx.order.update({
-              where: { id: updatedPO.orderId },
-              data: { status: 'packing' }
-            });
-          }
-        }
-      }
-
-      results.push(newLog);
     }
 
-    // 3. Process Batch Consumption (one set of batches shared for this production run)
-    // We link these consumption transactions to the FIRST log in the batch for traceability
+    results.push(newLog);
+  }
+
+  // 3. Process Batch Consumption
+  if (results.length > 0) {
     const primaryWorkLogId = results[0].id;
 
     for (const consumption of batchesUsed) {
       // Deduct from Batch
-      await tx.materialBatch.update({
-        where: { id: consumption.batchId },
-        data: {
-          remainQuantity: {
-            decrement: consumption.quantity
-          }
-        }
-      });
+      const { data: batch } = await supabase.from('MaterialBatch').select('remain_quantity').eq('id', consumption.batchId).single();
+      if (batch) {
+        await supabase.from('MaterialBatch').update({ remain_quantity: (batch.remain_quantity || 0) - consumption.quantity }).eq('id', consumption.batchId);
+      }
 
       // Deduct from Material total
-      await tx.material.update({
-        where: { id: consumption.materialId },
-        data: {
-          stockQuantity: {
-            decrement: consumption.quantity
-          }
-        }
-      });
+      const { data: material } = await supabase.from('Material').select('stock_quantity').eq('id', consumption.materialId).single();
+      if (material) {
+        await supabase.from('Material').update({ stock_quantity: (material.stock_quantity || 0) - consumption.quantity }).eq('id', consumption.materialId);
+      }
 
       // Log Transaction
-      await tx.materialTransaction.create({
-        data: {
-          materialId: consumption.materialId,
-          batchId: consumption.batchId,
-          quantity: consumption.quantity,
-          type: 'production_usage',
-          workLogId: primaryWorkLogId,
-          note: `Tiêu thụ sản xuất - PO: ${logs[0].productionOrderId}`
-        }
+      await supabase.from('MaterialTransaction').insert({
+        material_id: consumption.materialId,
+        batch_id: consumption.batchId,
+        quantity: consumption.quantity,
+        type: 'production_usage',
+        work_log_id: primaryWorkLogId,
+        note: `Tiêu thụ sản xuất - PO: ${logs[0].productionOrderId}`
       });
     }
+  }
 
-    return results;
-  });
+  return results;
 }
 
 export async function getProductionOrderProfit(orderId: string) {
-  const order = await prisma.productionOrder.findUnique({
-    where: { id: orderId },
-    include: {
-      workLogs: {
-        include: {
-          materialTransactions: true
-        }
-      }
-    }
-  });
+  const { data: order, error } = await supabase
+    .from('ProductionOrder')
+    .select(`
+      *,
+      workLogs:WorkLog(
+        *,
+        materialTransactions:MaterialTransaction(*)
+      )
+    `)
+    .eq('id', orderId)
+    .single();
 
-  if (!order) throw new Error("Order not found");
+  if (error || !order) throw new Error("Order not found");
 
-  const contractPrice = Number(order.contractPrice || 0);
-  const totalQuantity = order.quantityTarget || 0;
+  const contractPrice = Number(order.contract_price || 0);
+  const totalQuantity = order.quantity_target || 0;
   const totalRevenue = contractPrice * totalQuantity;
 
   let totalActualCOGS = 0;
-  (order as any).workLogs.forEach((log: any) => {
-    log.materialTransactions.forEach((tx: any) => {
+  (order.workLogs || []).forEach((log: any) => {
+    (log.materialTransactions || []).forEach((tx: any) => {
       totalActualCOGS += Number(tx.quantity) * Number(tx.price || 0);
     });
   });
@@ -318,28 +366,37 @@ export async function getProductionOrderProfit(orderId: string) {
     totalActualCOGS,
     profit,
     margin,
-    isLowMargin: margin < 20 // 20% Threshold
+    isLowMargin: margin < 20
   };
 }
 
 /**
- * Lấy BOM cho một sản phẩm của PO để hiển thị gợi ý nhập lô.
+ * Lấy BOM cho một sản phẩm của PO.
  */
 export async function getPOMaterialNeeds(productionOrderId: string) {
-  const po = await prisma.productionOrder.findUnique({
-    where: { id: productionOrderId },
-    include: {
-      product: {
-        include: {
-          bomItems: {
-            include: {
-              material: true
-            }
-          }
-        }
-      }
-    }
-  });
+  const { data: po, error } = await supabase
+    .from('ProductionOrder')
+    .select(`
+      product:Product(
+        bomItems:BOMItem(
+          *,
+          material:Material(*)
+        )
+      )
+    `)
+    .eq('id', productionOrderId)
+    .single();
 
-  return po?.product?.bomItems || [];
+  if (error || !po) return [];
+
+  const product: any = Array.isArray(po.product) ? po.product[0] : po.product;
+  return (product?.bomItems || []).map((bi: any) => ({
+    ...bi,
+    materialId: bi.material_id,
+    material: bi.material ? {
+      ...bi.material,
+      referencePrice: bi.material.reference_price,
+      unitPrice: bi.material.unit_price
+    } : null
+  }));
 }
