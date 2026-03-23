@@ -1,0 +1,17 @@
+{
+  "node": {
+    "60c61b9c305e2850619094f20517412774506b2f15": {
+      "workers": {
+        "app/production/page": {
+          "moduleId": "[project]/.next-internal/server/app/production/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/workLog.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "createBatchWorkLogs",
+          "filename": "src/services/workLog.service.ts"
+        }
+      },
+      "exportedName": "createBatchWorkLogs",
+      "filename": "src/services/workLog.service.ts"
+    }
+  },
+  "edge": {}
+}

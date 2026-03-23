@@ -1,0 +1,228 @@
+{
+  "node": {
+    "403268e94cd4bb47fa6e26d4b6a7816734590ef6b7": {
+      "workers": {
+        "app/orders/page": {
+          "moduleId": "[project]/.next-internal/server/app/orders/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/product.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "upsertProduct",
+          "filename": "src/services/product.service.ts"
+        },
+        "app/production/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/production/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/product.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "upsertProduct",
+          "filename": "src/services/product.service.ts"
+        }
+      },
+      "filename": "src/services/product.service.ts",
+      "exportedName": "upsertProduct"
+    },
+    "40411d17973ac39f7809f6e76c7c56e2c3feb12ab3": {
+      "workers": {
+        "app/logistics/inventory/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/inventory/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getMaterials",
+          "filename": "src/services/material.service.ts"
+        },
+        "app/logistics/inward/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/inward/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/purchase.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getMaterials",
+          "filename": "src/services/material.service.ts"
+        },
+        "app/logistics/materials/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/materials/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getMaterials",
+          "filename": "src/services/material.service.ts"
+        },
+        "app/logistics/purchase/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/purchase/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/purchase.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getMaterials",
+          "filename": "src/services/material.service.ts"
+        },
+        "app/production/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/production/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/product.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getMaterials",
+          "filename": "src/services/material.service.ts"
+        }
+      },
+      "filename": "src/services/material.service.ts",
+      "exportedName": "getMaterials"
+    },
+    "404e23392a6ca1de33ad8867213bbca26ea757b407": {
+      "workers": {
+        "app/logistics/materials/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/materials/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "upsertMaterial",
+          "filename": "src/services/material.service.ts"
+        }
+      },
+      "filename": "src/services/material.service.ts",
+      "exportedName": "upsertMaterial"
+    },
+    "009aa125f521e2ef86a59285a59bbc9a045d3cb2a4": {
+      "workers": {
+        "app/logistics/inventory/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/inventory/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getInventoryStats",
+          "filename": "src/services/material.service.ts"
+        }
+      },
+      "filename": "src/services/material.service.ts",
+      "exportedName": "getInventoryStats"
+    },
+    "40b63a285cb03c5495e181c43a922691ec54ebfcb9": {
+      "workers": {
+        "app/logistics/inventory/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/inventory/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getMaterialBatches",
+          "filename": "src/services/material.service.ts"
+        }
+      },
+      "filename": "src/services/material.service.ts",
+      "exportedName": "getMaterialBatches"
+    },
+    "400d7cdc3f493dc147fbc65bbaf765585fb26fafa5": {
+      "workers": {
+        "app/logistics/inward/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/inward/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/purchase.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getPurchaseOrders",
+          "filename": "src/services/purchase.service.ts"
+        },
+        "app/logistics/purchase/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/purchase/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/purchase.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getPurchaseOrders",
+          "filename": "src/services/purchase.service.ts"
+        }
+      },
+      "filename": "src/services/purchase.service.ts",
+      "exportedName": "getPurchaseOrders"
+    },
+    "005971e302cf1dc16184293836508638389dfd1507": {
+      "workers": {
+        "app/logistics/inward/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/inward/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/purchase.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getSuppliers",
+          "filename": "src/services/purchase.service.ts"
+        },
+        "app/logistics/purchase/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/purchase/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/purchase.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getSuppliers",
+          "filename": "src/services/purchase.service.ts"
+        }
+      },
+      "filename": "src/services/purchase.service.ts",
+      "exportedName": "getSuppliers"
+    },
+    "40bafa2077fb6f3447f76b137fcdd32467dba29392": {
+      "workers": {
+        "app/logistics/purchase/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/purchase/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/purchase.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "createPurchaseOrder",
+          "filename": "src/services/purchase.service.ts"
+        }
+      },
+      "filename": "src/services/purchase.service.ts",
+      "exportedName": "createPurchaseOrder"
+    },
+    "400016df048d672d1e01378647f4469f0297f542dc": {
+      "workers": {
+        "app/logistics/inward/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/inward/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/purchase.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "createMaterialBatchInward",
+          "filename": "src/services/material.service.ts"
+        }
+      },
+      "filename": "src/services/material.service.ts",
+      "exportedName": "createMaterialBatchInward"
+    },
+    "40145668a09125533943af97fb4c3632abdb9fa7da": {
+      "workers": {
+        "app/logistics/inward/page": {
+          "moduleId": "[project]/.next-internal/server/app/logistics/inward/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/purchase.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getPOWithItems",
+          "filename": "src/services/purchase.service.ts"
+        }
+      },
+      "filename": "src/services/purchase.service.ts",
+      "exportedName": "getPOWithItems"
+    },
+    "0016bf72398ceb1725924502daf9b34ba55119c5ed": {
+      "workers": {
+        "app/production/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/production/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/product.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getAllProducts",
+          "filename": "src/services/product.service.ts"
+        }
+      },
+      "filename": "src/services/product.service.ts",
+      "exportedName": "getAllProducts"
+    },
+    "60b3ff09166c86dc02cf167d2a20aeaa0e7892fd39": {
+      "workers": {
+        "app/production/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/production/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/product.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "updateProductBOM",
+          "filename": "src/services/product.service.ts"
+        }
+      },
+      "filename": "src/services/product.service.ts",
+      "exportedName": "updateProductBOM"
+    },
+    "4078cc7ebd362a7b22ee15f629bc28edffb378b895": {
+      "workers": {
+        "app/production/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/production/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/product.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "getProductDetail",
+          "filename": "src/services/product.service.ts"
+        }
+      },
+      "filename": "src/services/product.service.ts",
+      "exportedName": "getProductDetail"
+    },
+    "40e443cc3897a222c54e311390d3ec9642f398b72b": {
+      "workers": {
+        "app/production/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/production/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/product.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "recalculateProductCostPrice",
+          "filename": "src/services/product.service.ts"
+        }
+      },
+      "filename": "src/services/product.service.ts",
+      "exportedName": "recalculateProductCostPrice"
+    },
+    "60230639ea26485d42ea5ff77cb564769c8bfc497e": {
+      "workers": {
+        "app/production/products/page": {
+          "moduleId": "[project]/.next-internal/server/app/production/products/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/product.service.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/services/material.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "updateProductCOGS",
+          "filename": "src/services/product.service.ts"
+        }
+      },
+      "filename": "src/services/product.service.ts",
+      "exportedName": "updateProductCOGS"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "irT7WwJ1prqx1iwYusKZOgb+E871zzbzaa89E1wAz8w="
+}

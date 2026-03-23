@@ -1,0 +1,17 @@
+{
+  "node": {
+    "403268e94cd4bb47fa6e26d4b6a7816734590ef6b7": {
+      "workers": {
+        "app/orders/page": {
+          "moduleId": "[project]/.next-internal/server/app/orders/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/services/product.service.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true,
+          "exportedName": "upsertProduct",
+          "filename": "src/services/product.service.ts"
+        }
+      },
+      "exportedName": "upsertProduct",
+      "filename": "src/services/product.service.ts"
+    }
+  },
+  "edge": {}
+}
