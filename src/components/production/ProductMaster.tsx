@@ -31,6 +31,9 @@ interface Product {
   sku: string | null;
   name: string | null;
   basePrice: any;
+  costPrice: any;
+  wholesalePrice: any;
+  exportPrice: any;
   productionTimeStd: number | null;
   bomItems?: any[];
 }

@@ -15,7 +15,9 @@ import { GUIDE_DATA, NEWS_UPDATES, GuideSection } from '@/data/guide';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function GuidePage() {
+import { Suspense } from 'react';
+
+function GuideContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
@@ -196,5 +198,13 @@ export default function GuidePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function GuidePage() {
+  return (
+    <Suspense fallback={<div className="p-20 text-center uppercase font-black text-gray-100 tracking-widest animate-pulse">Đang tải hướng dẫn...</div>}>
+      <GuideContent />
+    </Suspense>
   );
 }
