@@ -1,5 +1,3 @@
-"use client";
-
 export interface GuideStep {
   title: string;
   description: string;
