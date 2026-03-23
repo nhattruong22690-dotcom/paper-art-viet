@@ -12,12 +12,11 @@ import {
   BookOpen
 } from 'lucide-react';
 import { GUIDE_DATA, NEWS_UPDATES, GuideSection } from '@/data/guide';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 function GuideContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeGuideId, setActiveGuideId] = useState(GUIDE_DATA[0].id);
 
