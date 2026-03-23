@@ -1,6 +1,0 @@
-{"timestamp":"00:00:01.044","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:21.671","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
-{"timestamp":"00:00:23.257","source":"Server","level":"ERROR","message":"API Error /dashboard/stats: {}"}
-{"timestamp":"00:00:40.160","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
-{"timestamp":"00:00:41.247","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
-{"timestamp":"00:00:41.548","source":"Server","level":"ERROR","message":"API Error /dashboard/stats: {}"}
