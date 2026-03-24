@@ -201,6 +201,20 @@ export default function TeamWorkLog() {
           quantity: totalBatchQty * item.requiredPerUnit
         }));
 
+      const validEntries = entries
+        .filter(e => e.userId && (e.quantityProduced > 0 || e.technicalErrorCount > 0 || e.materialErrorCount > 0))
+        .map(e => ({
+          productionOrderId: selectedOrderId,
+          employeeId: e.userId,
+          staffName: workers.find(w => w.id === e.userId)?.name,
+          quantityProduced: e.quantityProduced,
+          technicalErrorCount: e.technicalErrorCount,
+          materialErrorCount: e.materialErrorCount,
+          errorNote: e.errorNote,
+          startTime: new Date(workDate),
+          endTime: new Date(workDate)
+        }));
+
       await createBatchWorkLogs(validEntries, batchesUsed);
       showToast('success', `Đã lưu thành công ${validEntries.length} bản ghi báo cáo!`);
       setEntries([entries[0]]); // Reset

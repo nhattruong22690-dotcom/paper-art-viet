@@ -105,7 +105,7 @@ export default function QuickWorkLogModal({
     try {
       const logsToSave = validEntries.map(e => ({
         productionOrderId,
-        userId: e.userId,
+        employeeId: e.userId,
         staffName: workers.find(w => w.id === e.userId)?.name,
         quantityProduced: e.quantityProduced,
         technicalErrorCount: e.technicalErrorCount,
