@@ -41,7 +41,7 @@ export default function PerformanceTable({ onSelect }: { onSelect: (emp: Employe
     fetch('/api/production/performance')
       .then(res => res.json())
       .then(data => {
-        setEmployees(data);
+        setEmployees(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(err => {

@@ -93,8 +93,8 @@ export default function TeamWorkLog() {
         const ordersData = await ordersRes.json();
         const workersData = await workersRes.json();
         
-        setOrders(ordersData);
-        setWorkers(workersData);
+        setOrders(Array.isArray(ordersData) ? ordersData : []);
+        setWorkers(Array.isArray(workersData) ? workersData : []);
         
         // Initial empty entry
         if (entries.length === 0) {

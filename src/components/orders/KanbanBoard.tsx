@@ -36,7 +36,7 @@ export default function KanbanBoard() {
     try {
       const res = await fetch('/api/orders');
       const data = await res.json();
-      setOrders(data);
+      setOrders(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Fetch error:', error);
     } finally {
