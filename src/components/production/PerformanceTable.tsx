@@ -31,27 +31,20 @@ interface EmployeePerformance {
   trend: number[]; // Last 7 days productivity
 }
 
-export default function PerformanceTable({ onSelect }: { onSelect: (emp: EmployeePerformance) => void }) {
-  const [employees, setEmployees] = useState<EmployeePerformance[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function PerformanceTable({ 
+  onSelect, 
+  initialData = [], 
+  loading = false 
+}: { 
+  onSelect: (emp: EmployeePerformance) => void,
+  initialData?: EmployeePerformance[],
+  loading?: boolean
+}) {
   const [sortConfig, setSortConfig] = useState<{ key: keyof EmployeePerformance, direction: 'asc' | 'desc' } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetch('/api/production/performance')
-      .then(res => res.json())
-      .then(data => {
-        setEmployees(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Failed to load performance:', err);
-        setLoading(false);
-      });
-  }, []);
-
   const sortedEmployees = useMemo(() => {
-    let items = [...employees];
+    let items = [...initialData];
     if (searchQuery) {
       items = items.filter(emp => emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || emp.id.toLowerCase().includes(searchQuery.toLowerCase()));
     }
@@ -71,7 +64,8 @@ export default function PerformanceTable({ onSelect }: { onSelect: (emp: Employe
       });
     }
     return items;
-  }, [employees, sortConfig, searchQuery]);
+  }, [initialData, sortConfig, searchQuery]);
+
 
   const requestSort = (key: keyof EmployeePerformance) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -221,7 +215,12 @@ export default function PerformanceTable({ onSelect }: { onSelect: (emp: Employe
         </table>
       </div>
       
-      {sortedEmployees.length === 0 && (
+      {loading ? (
+        <div className="p-20 text-center flex flex-col items-center justify-center">
+           <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mb-4" />
+           <p className="text-sm font-black text-gray-400 uppercase tracking-widest animate-pulse">Đang tải dữ liệu hiệu suất...</p>
+        </div>
+      ) : sortedEmployees.length === 0 && (
         <div className="p-20 text-center flex flex-col items-center justify-center grayscale opacity-30">
            <User size={48} className="text-gray-300 mb-4" />
            <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Không tìm thấy nhân viên nào</p>

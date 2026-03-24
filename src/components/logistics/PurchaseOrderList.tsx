@@ -14,6 +14,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { getPurchaseOrders, updatePOStatus } from '@/services/purchase.service';
+import SupplierManagementModal from './SupplierManagementModal';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -36,6 +37,7 @@ export default function PurchaseOrderList({ onAddNew }: { onAddNew: () => void }
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
 
   const loadPOs = async () => {
     setLoading(true);
@@ -90,14 +92,27 @@ export default function PurchaseOrderList({ onAddNew }: { onAddNew: () => void }
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">Theo dõi quy trình thu mua nguyên vật liệu</p>
         </div>
         
-        <button 
-          onClick={onAddNew}
-          className="flex items-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-[24px] text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-gray-200 active:scale-95 group"
-        >
-          <Plus size={18} className="group-hover:rotate-90 transition-transform" />
-          Tạo Đơn Mới
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowSupplierModal(true)}
+            className="flex items-center gap-3 px-6 py-4 bg-white border-2 border-gray-900 text-gray-900 rounded-[24px] text-[11px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95 group"
+          >
+            🏢 Quản lý Nhà cung cấp
+          </button>
+          
+          <button 
+            onClick={onAddNew}
+            className="flex items-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-[24px] text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-gray-200 active:scale-95 group"
+          >
+            <Plus size={18} className="group-hover:rotate-90 transition-transform" />
+            Tạo Đơn Mới
+          </button>
+        </div>
       </div>
+
+      {showSupplierModal && (
+        <SupplierManagementModal onClose={() => { setShowSupplierModal(false); loadPOs(); }} />
+      )}
 
       {/* FILTERS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

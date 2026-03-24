@@ -12,6 +12,8 @@ export const metadata: Metadata = {
 }
 
 import { NotificationProvider } from '@/context/NotificationContext'
+import { AuthProvider } from '@/context/AuthContext'
+import MaintenanceGuard from '@/components/layout/MaintenanceGuard'
 
 export default function RootLayout({
   children,
@@ -22,13 +24,17 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <NotificationProvider>
-          <div className="flex min-h-screen relative overflow-x-hidden">
-            <Sidebar />
-            <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8 bg-gray-50/50 relative z-0">
-              {children}
-            </main>
-            <BottomNav />
-          </div>
+          <AuthProvider>
+            <MaintenanceGuard>
+              <div className="flex min-h-screen relative overflow-x-hidden">
+                <Sidebar />
+                <main className="flex-1 p-3 lg:p-8 pb-24 lg:pb-8 bg-gray-50/50 relative z-0">
+                  {children}
+                </main>
+                <BottomNav />
+              </div>
+            </MaintenanceGuard>
+          </AuthProvider>
         </NotificationProvider>
       </body>
     </html>

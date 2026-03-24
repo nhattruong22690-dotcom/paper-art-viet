@@ -5,14 +5,14 @@ import { supabaseAdmin as supabase } from '@/lib/supabase';
  */
 export async function startWorkSession(data: {
   productionOrderId: string;
-  userId: string;
+  employeeId: string;
   staffName?: string;
 }) {
   const { data: newLog, error } = await supabase
     .from('WorkLog')
     .insert({
       production_order_id: data.productionOrderId,
-      user_id: data.userId,
+      employee_id: data.employeeId,
       staff_name: data.staffName,
       status: 'processing',
       start_time: new Date().toISOString(),
@@ -24,7 +24,7 @@ export async function startWorkSession(data: {
   return {
     ...newLog,
     productionOrderId: newLog.production_order_id,
-    userId: newLog.user_id,
+    employeeId: newLog.employee_id,
     staffName: newLog.staff_name,
     startTime: newLog.start_time
   };
@@ -160,7 +160,7 @@ export async function submitWorkSession(data: {
 /**
  * Lấy lịch sử 10 phiên làm việc gần nhất của một nhân viên.
  */
-export async function getPersonalWorkHistory(userId: string) {
+export async function getPersonalWorkHistory(employeeId: string) {
   const { data, error } = await supabase
     .from('WorkLog')
     .select(`
@@ -170,7 +170,7 @@ export async function getPersonalWorkHistory(userId: string) {
         product:Product(*)
       )
     `)
-    .eq('user_id', userId)
+    .eq('employee_id', employeeId)
     .limit(10)
     .order('start_time', { ascending: false });
 
@@ -180,7 +180,7 @@ export async function getPersonalWorkHistory(userId: string) {
     ...log,
     id: log.id,
     productionOrderId: log.production_order_id,
-    userId: log.user_id,
+    employeeId: log.employee_id,
     staffName: log.staff_name,
     startTime: log.start_time,
     endTime: log.end_time,
@@ -205,7 +205,7 @@ export async function getPersonalWorkHistory(userId: string) {
 export async function createBatchWorkLogs(
   logs: {
     productionOrderId: string;
-    userId: string;
+    employeeId: string;
     staffName?: string;
     quantityProduced: number;
     technicalErrorCount: number;
@@ -229,7 +229,7 @@ export async function createBatchWorkLogs(
       .from('WorkLog')
       .insert({
         production_order_id: log.productionOrderId,
-        user_id: log.userId,
+        employee_id: log.employeeId,
         staff_name: log.staffName,
         quantity_produced: log.quantityProduced,
         technical_error_count: log.technicalErrorCount,

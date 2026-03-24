@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   TrendingUp, 
   BarChart3, 
@@ -28,12 +28,38 @@ interface EmployeePerformance {
 
 export default function PerformancePage() {
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeePerformance | null>(null);
+  const [employees, setEmployees] = useState<EmployeePerformance[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
-    { label: 'Hiệu suất TB', value: '88.4%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Sản lượng tháng', value: '124,500', icon: BarChart3, color: 'text-primary-600', bg: 'bg-primary-50' },
-    { label: 'Tổng nhân sự', value: '158', icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
-  ];
+  useEffect(() => {
+    fetch('/api/production/performance')
+      .then(res => res.json())
+      .then(data => {
+        setEmployees(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load performance data:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  const stats = useMemo(() => {
+    if (employees.length === 0) return [
+      { label: 'Hiệu suất TB', value: '0%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Sản lượng tổng', value: '0', icon: BarChart3, color: 'text-primary-600', bg: 'bg-primary-50' },
+      { label: 'Tổng nhân sự', value: '0', icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
+    ];
+
+    const avgKPI = employees.reduce((acc, emp) => acc + emp.kpi, 0) / employees.length;
+    const totalQty = employees.reduce((acc, emp) => acc + emp.totalQty, 0);
+
+    return [
+      { label: 'Hiệu suất TB', value: `${avgKPI.toFixed(1)}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Sản lượng tổng', value: totalQty.toLocaleString(), icon: BarChart3, color: 'text-primary-600', bg: 'bg-primary-50' },
+      { label: 'Tổng nhân sự', value: employees.length.toString(), icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
+    ];
+  }, [employees]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-12 pb-20 px-4 animate-in fade-in duration-1000">
@@ -47,7 +73,7 @@ export default function PerformancePage() {
              <Filter size={18} /> Lọc theo tổ/đội
            </button>
            <button className="px-8 py-4 bg-primary-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-primary-200 hover:bg-primary-500 transition-all flex items-center gap-3">
-             Tháng 03/2026 <ArrowRight size={18} />
+             Tháng {new Date().getMonth() + 1}/{new Date().getFullYear()} <ArrowRight size={18} />
            </button>
         </div>
       </header>
@@ -73,9 +99,9 @@ export default function PerformancePage() {
             <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-3">
                Bảng xếp hạng năng suất
             </h2>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider italic">Dữ liệu cập nhật: 15 phút trước</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider italic">Dữ liệu cập nhật: Thời gian thực</p>
          </div>
-         <PerformanceTable onSelect={setSelectedEmployee} />
+         <PerformanceTable initialData={employees} loading={loading} onSelect={setSelectedEmployee} />
       </div>
 
       {/* DETAIL MODAL WITH CHART */}
@@ -102,7 +128,10 @@ export default function PerformancePage() {
                  <button className="flex-1 py-4 bg-primary-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-primary-200 hover:bg-primary-500 transition-all">
                    Xem nhật ký chi tiết
                  </button>
-                 <button className="px-10 py-4 bg-gray-50 text-gray-400 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:text-gray-900 transition-all">
+                 <button 
+                  onClick={() => setSelectedEmployee(null)}
+                  className="px-10 py-4 bg-gray-50 text-gray-400 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:text-gray-900 transition-all"
+                 >
                    Đóng
                  </button>
               </div>
@@ -112,3 +141,4 @@ export default function PerformancePage() {
     </div>
   );
 }
+

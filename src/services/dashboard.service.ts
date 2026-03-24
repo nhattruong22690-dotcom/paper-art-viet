@@ -61,7 +61,7 @@ export async function getRecentProductionProgress() {
   return (recentPOs || []).map(po => ({
     sku: po.product?.sku || 'N/A',
     title: po.product?.name || 'Sản phẩm mới',
-    progress: po.current_status === 'completed' ? 100 : po.current_status === 'in_progress' ? 50 : 0,
+    progress: po.quantity_target > 0 ? Math.round(((po.quantity_completed || 0) / po.quantity_target) * 100) : 0,
     status: po.current_status || 'pending'
   }));
 }

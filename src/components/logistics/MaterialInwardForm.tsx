@@ -22,7 +22,8 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { createMaterialBatchInward, getMaterials } from '@/services/material.service';
-import { getSuppliers, getPurchaseOrders, getPOWithItems } from '@/services/purchase.service';
+import { getPurchaseOrders, getPOWithItems } from '@/services/purchase.service';
+import { getSuppliers } from '@/services/supplier.service';
 import { QRCodeSVG } from 'qrcode.react';
 
 function cn(...inputs: ClassValue[]) {

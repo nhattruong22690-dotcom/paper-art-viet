@@ -68,10 +68,10 @@ export default function ProductionLogs() {
       const res = await fetch(`/api/production/logs?date=${date}&skip=${isNewDate ? 0 : page * 20}&take=20`);
       const newLogsData = await res.json();
       
-      const mappedLogs: WorkLog[] = newLogsData.map((l: any) => ({
+      const mappedLogs: WorkLog[] = (Array.isArray(newLogsData) ? newLogsData : []).map((l: any) => ({
         id: l.id,
-        userId: l.userId.slice(-6).toUpperCase(),
-        staffName: l.staffName || l.user?.name || 'Vô danh',
+        userId: l.employee?.employee_code || l.userId?.slice(-6).toUpperCase() || 'N/A',
+        staffName: l.staffName || l.employee?.full_name || 'Vô danh',
         quantityProduced: l.quantityProduced,
         technicalErrorCount: l.technicalErrorCount,
         materialErrorCount: l.materialErrorCount,

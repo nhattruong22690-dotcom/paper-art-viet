@@ -13,7 +13,7 @@ export async function getPurchaseOrders(params: {
     .from('PurchaseOrder')
     .select(`
       *,
-      supplier:Partner(*),
+      supplier:Supplier(*),
       purchaseOrderItems:PurchaseOrderItem(count)
     `)
     .order('created_at', { ascending: false });
@@ -55,7 +55,7 @@ export async function getPOWithItems(id: string) {
     .from('PurchaseOrder')
     .select(`
       *,
-      supplier:Partner(*),
+      supplier:Supplier(*),
       purchaseOrderItems:PurchaseOrderItem(
         *,
         material:Material(*)
@@ -180,13 +180,13 @@ export async function updatePOStatus(id: string, status: string) {
 }
 
 /**
- * Lấy danh sách Nhà cung cấp.
+ * Lấy danh sách Nhà cung cấp (từ bảng Supplier mới).
  */
-export async function getSuppliers() {
+export async function getSuppliersForDropdown() {
   const { data, error } = await supabase
-    .from('Partner')
-    .select('*')
-    .eq('is_supplier', true)
+    .from('Supplier')
+    .select('id, name')
+    .eq('active', true)
     .order('name', { ascending: true });
 
   if (error) throw error;

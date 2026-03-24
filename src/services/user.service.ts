@@ -21,3 +21,23 @@ export async function getWorkers() {
     active: user.active
   }));
 }
+/**
+ * Lấy tất cả người dùng (Nhân sự).
+ */
+export async function getUsers() {
+  const { data, error } = await supabase
+    .from('User')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+  
+  return (data || []).map(user => ({
+    ...user,
+    id: user.id || '',
+    name: user.name || 'N/A',
+    role: user.role || 'Unassigned',
+    active: user.active ?? true,
+    group: 'Phòng ban chung'
+  }));
+}

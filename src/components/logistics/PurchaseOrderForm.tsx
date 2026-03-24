@@ -13,7 +13,8 @@ import {
   DollarSign,
   Briefcase
 } from 'lucide-react';
-import { getSuppliers, createPurchaseOrder } from '@/services/purchase.service';
+import { createPurchaseOrder, getSuppliersForDropdown } from '@/services/purchase.service';
+import SupplierManagementModal from './SupplierManagementModal';
 import { getMaterials } from '@/services/material.service';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -32,7 +33,6 @@ interface Material {
 interface Supplier {
   id: string;
   name: string;
-  partnerCategory: string | null;
 }
 
 interface POItem {
@@ -54,12 +54,13 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
     { id: '1', materialId: '', quantityOrdered: 0, expectedPrice: 0 }
   ]);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const [supps, mats] = await Promise.all([
-          getSuppliers(),
+          getSuppliersForDropdown(),
           getMaterials({})
         ]);
         setSuppliers(supps as any);
@@ -69,7 +70,7 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
       }
     };
     loadData();
-  }, []);
+  }, [showSupplierModal]);
 
   const addItem = () => {
     setItems([...items, { id: Math.random().toString(36).substr(2, 9), materialId: '', quantityOrdered: 0, expectedPrice: 0 }]);
@@ -178,15 +179,23 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
                 </label>
                 <div className="relative group/select">
                   <select 
-                    className="w-full px-6 py-5 bg-gray-50/50 border border-gray-100 rounded-[24px] text-sm font-bold focus:outline-none focus:border-indigo-500 appearance-none transition-all"
+                    className="w-full px-6 py-5 bg-gray-50/50 border border-gray-100 rounded-[24px] text-sm font-bold focus:outline-none focus:border-indigo-500 appearance-none transition-all pr-12"
                     value={selectedSupplier}
                     onChange={(e) => setSelectedSupplier(e.target.value)}
                   >
                     <option value="">Chọn nhà cung cấp...</option>
                     {suppliers.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} ({s.partnerCategory || 'Vật tư'})</option>
+                      <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
+                  <button 
+                    type="button"
+                    onClick={() => setShowSupplierModal(true)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-100 rounded-lg flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:border-indigo-100 shadow-sm transition-all"
+                    title="Thêm nhanh nhà cung cấp"
+                  >
+                    <Plus size={16} />
+                  </button>
                 </div>
               </div>
 
@@ -317,6 +326,9 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
           </div>
         </div>
       </div>
+      {showSupplierModal && (
+        <SupplierManagementModal onClose={() => setShowSupplierModal(false)} />
+      )}
     </div>
   );
 }

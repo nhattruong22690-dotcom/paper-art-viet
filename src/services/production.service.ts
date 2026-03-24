@@ -57,7 +57,7 @@ export async function getWorkLogs(params: { date?: string; skip?: number; take?:
         *,
         product:Product(*)
       ),
-      user:User(*)
+      employee:Employees(*)
     `)
     .range(skip, skip + take - 1)
     .order('created_at', { ascending: false });
@@ -100,13 +100,13 @@ export async function getWorkLogs(params: { date?: string; skip?: number; take?:
         sku: log.productionOrder.product.sku
       } : null
     } : null,
-    user: log.user
+    employee: log.employee
   }));
 }
 
 export async function getWorkerPerformance() {
-  const { data: users, error } = await supabase
-    .from('User')
+  const { data: employees, error } = await supabase
+    .from('Employees')
     .select(`
       *,
       workLogs:WorkLog(
@@ -114,29 +114,48 @@ export async function getWorkerPerformance() {
         productionOrder:ProductionOrder(*)
       )
     `)
-    .eq('role', 'worker')
-    .eq('active', true);
+    .eq('status', 'active');
 
   if (error) throw error;
 
-  return (users || []).map(user => {
-    const totalQty = (user.workLogs || []).reduce((sum: number, log: any) => sum + (log.quantity_produced || 0), 0);
-    const techErrors = (user.workLogs || []).reduce((sum: number, log: any) => sum + (log.technical_error_count || 0), 0);
-    const matErrors = (user.workLogs || []).reduce((sum: number, log: any) => sum + (log.material_error_count || 0), 0);
+  return (employees || []).map(emp => {
+    const logs = emp.workLogs || [];
+    const totalQty = logs.reduce((sum: number, log: any) => sum + (log.quantity_produced || 0), 0);
+    const techErrors = logs.reduce((sum: number, log: any) => sum + (log.technical_error_count || 0), 0);
+    const matErrors = logs.reduce((sum: number, log: any) => sum + (log.material_error_count || 0), 0);
     
     const kpi = totalQty > 0 ? Math.round(((totalQty - techErrors) / totalQty) * 100) : 0;
 
+    // Tính trend 7 ngày gần nhất
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0, 0, 0, 0);
+      return d;
+    });
+
+    const trend = last7Days.map(day => {
+      const dayLogs = logs.filter((l: any) => {
+        const logDate = new Date(l.created_at);
+        return logDate.toDateString() === day.toDateString();
+      });
+      const dayQty = dayLogs.reduce((sum: number, log: any) => sum + (log.quantity_produced || 0), 0);
+      const dayTech = dayLogs.reduce((sum: number, log: any) => sum + (log.technical_error_count || 0), 0);
+      return dayQty > 0 ? Math.round(((dayQty - dayTech) / dayQty) * 100) : 0;
+    });
+
     return {
-      id: user.id.slice(-6).toUpperCase(),
-      name: user.name,
-      group: 'Tổ Sản Xuất',
+      id: emp.employee_code,
+      name: emp.full_name,
+      group: emp.department || 'Tổ Sản Xuất',
       totalQty,
       kpi,
       techErrors,
       matErrors,
-      trend: [80, 85, 82, 88, 90, 87, 89]
+      trend
     };
   });
+
 }
 
 export async function updateProductionOrder(id: string, data: any) {
