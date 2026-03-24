@@ -1,0 +1,299 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id              String                   @id @default(uuid()) @db.Uuid
+  name            String
+  phone           String?
+  email           String?
+  address         String?
+  customerCode    String                   @unique @map("customer_code")
+  notes           String?
+  customerGroup   String?
+  defaultProducts CustomerDefaultProduct[]
+  orders          Order[]
+
+  @@map("customers")
+}
+
+model Product {
+  id                 String                   @id @default(uuid()) @db.Uuid
+  sku                String?                  @unique
+  name               String?
+  basePrice          Decimal?                 @default(0) @db.Decimal
+  productionTimeStd  Int?
+  cogsConfig         Json?
+  costPrice          Decimal?                 @default(0) @map("cost_price") @db.Decimal
+  exportPrice        Decimal?                 @default(0) @map("export_price") @db.Decimal
+  wholesalePrice     Decimal?                 @default(0) @map("wholesale_price") @db.Decimal
+  bomItems           BOMItem[]
+  customerDefaults   CustomerDefaultProduct[]
+  orderItems         OrderItem[]
+  packingListDetails PackingListDetail[]
+  productionOrders   ProductionOrder[]
+
+  @@map("products")
+}
+
+model CustomerDefaultProduct {
+  id              String   @id @default(uuid()) @db.Uuid
+  customerId      String   @db.Uuid
+  productId       String   @db.Uuid
+  defaultQuantity Int?     @default(1)
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id])
+
+  @@map("customer_default_products")
+}
+
+model Order {
+  id               String            @id @default(uuid()) @db.Uuid
+  customerId       String?           @db.Uuid
+  contractCode     String?           @unique @map("contract_code")
+  orderDate        DateTime?         @default(now())
+  deadlineDelivery DateTime?
+  status           String?           @default("draft")
+  orderItems       OrderItem[]
+  customer         Customer?         @relation(fields: [customerId], references: [id])
+  packages         Package[]
+  productionOrders ProductionOrder[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String   @id @default(uuid()) @db.Uuid
+  orderId       String   @db.Uuid
+  productId     String?  @db.Uuid
+  quantity      Int?
+  price         Decimal? @db.Decimal
+  cogsAtOrder   Decimal? @db.Decimal
+  bomSnapshot   Json?
+  note          String?  // New field for item-specific instructions
+  isCustomAdded Boolean? @default(false)
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product? @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Partner {
+  id                   String                @id @default(uuid()) @db.Uuid
+  name                 String?
+  type                 String?
+  isSupplier           Boolean               @default(false) @map("is_supplier")
+  partnerCategory      String?               @map("partner_category")
+  inventoryLocations   InventoryLocation[]
+  materialTransactions MaterialTransaction[]
+  purchaseOrders       PurchaseOrder[]
+
+  @@map("partners")
+}
+
+model Material {
+  id                 String                @id @default(uuid()) @db.Uuid
+  sku                String                @unique
+  name               String
+  type               String
+  unit               String
+  minStock           Decimal               @default(0) @db.Decimal
+  stockQuantity      Decimal               @default(0) @db.Decimal
+  referencePrice     Decimal               @default(0) @db.Decimal
+  purchasePrice      Decimal?              @db.Decimal
+  purchaseQuantity   Decimal?              @db.Decimal
+  unitPrice          Decimal?              @map("unit_price") @db.Decimal
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  bomItems           BOMItem[]
+  batches            MaterialBatch[]
+  transactions       MaterialTransaction[]
+  purchaseOrderItems PurchaseOrderItem[]
+
+  @@map("materials")
+}
+
+model MaterialBatch {
+  id              String                @id @default(uuid()) @db.Uuid
+  batchCode       String                @unique
+  materialId      String                @db.Uuid
+  purchasePrice   Decimal               @db.Decimal
+  initialQuantity Decimal               @db.Decimal
+  remainQuantity  Decimal               @db.Decimal
+  location        String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  sourcePoItemId  String?               @map("source_po_item_id") @db.Uuid
+  material        Material              @relation(fields: [materialId], references: [id])
+  sourcePoItem    PurchaseOrderItem?    @relation(fields: [sourcePoItemId], references: [id])
+  transactions    MaterialTransaction[]
+
+  @@map("material_batches")
+}
+
+model BOMItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  productId  String   @db.Uuid
+  materialId String   @db.Uuid
+  quantity   Decimal  @db.Decimal
+  material   Material @relation(fields: [materialId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, materialId])
+  @@map("bom_items")
+}
+
+model MaterialTransaction {
+  id         String         @id @default(uuid()) @db.Uuid
+  materialId String         @db.Uuid
+  partnerId  String?        @db.Uuid
+  type       String
+  quantity   Decimal        @db.Decimal
+  price      Decimal?       @db.Decimal
+  note       String?
+  createdAt  DateTime       @default(now())
+  batchId    String?        @db.Uuid
+  workLogId  String?        @db.Uuid
+  batch      MaterialBatch? @relation(fields: [batchId], references: [id])
+  material   Material       @relation(fields: [materialId], references: [id])
+  partner    Partner?       @relation(fields: [partnerId], references: [id])
+  workLog    WorkLog?       @relation(fields: [workLogId], references: [id])
+
+  @@map("material_transactions")
+}
+
+model InventoryLocation {
+  id                 String    @id @default(uuid()) @db.Uuid
+  itemName           String?
+  quantity           Decimal?  @db.Decimal
+  currentLocationId  String?   @db.Uuid
+  isReadyForAssembly Boolean?  @default(false)
+  lastUpdated        DateTime? @default(now())
+  partner            Partner?  @relation(fields: [currentLocationId], references: [id])
+
+  @@map("inventory_locations")
+}
+
+model ProductionOrder {
+  id                 String                       @id @default(uuid()) @db.Uuid
+  orderId            String                       @db.Uuid
+  productId          String?                      @db.Uuid
+  quantityTarget     Int?
+  quantityCompleted  Int?                         @default(0)
+  deadlineProduction DateTime?
+  currentStatus      String?
+  allocationType     String?                       // internal | outsourced
+  assignedTo         String?                       // Workshop or Individual responsible
+  outsourcedName     String?                       // Deprecated: used for backward compatibility, will move to assignedTo
+  contractPrice      Decimal?                     @map("contract_price") @db.Decimal
+  materialEstimates  ProductionMaterialEstimate[]
+  order              Order                        @relation(fields: [orderId], references: [id])
+  product            Product?                     @relation(fields: [productId], references: [id])
+  workLogs           WorkLog[]
+
+  @@map("production_orders")
+}
+
+model WorkLog {
+  id                   String                @id @default(uuid()) @db.Uuid
+  productionOrderId    String                @db.Uuid
+  userId               String                @db.Uuid
+  staffName            String?
+  startTime            DateTime              @default(now())
+  endTime              DateTime?
+  quantityProduced     Int                   @default(0)
+  technicalErrorCount  Int                   @default(0) @map("technical_error_count")
+  materialErrorCount   Int                   @default(0) @map("material_error_count")
+  errorNote            String?               @map("error_note")
+  status               String                @default("processing")
+  evidenceImageUrl     String?               @map("evidence_image_url")
+  note                 String?
+  createdAt            DateTime              @default(now()) @map("created_at")
+  materialTransactions MaterialTransaction[]
+  productionOrder      ProductionOrder       @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  user                 User                  @relation(fields: [userId], references: [id])
+
+  @@map("work_logs")
+}
+
+model User {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  role      String    @default("worker")
+  active    Boolean   @default(true)
+  workLogs  WorkLog[]
+
+  @@map("users")
+}
+
+model ProductionMaterialEstimate {
+  id                String          @id @default(uuid()) @db.Uuid
+  productionOrderId String          @db.Uuid
+  materialName      String
+  requiredQuantity  Decimal         @db.Decimal
+  isShortage        Boolean         @default(false)
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+
+  @@map("production_material_estimates")
+}
+
+model Package {
+  id                 String              @id @default(uuid()) @db.Uuid
+  orderId            String?             @db.Uuid
+  packageCode        String?             @unique
+  weight             Decimal?            @db.Decimal
+  dimensions         String?
+  status             String?             @default("packing")
+  order              Order?              @relation(fields: [orderId], references: [id])
+  packingListDetails PackingListDetail[]
+
+  @@map("packages")
+}
+
+model PackingListDetail {
+  id        String   @id @default(uuid()) @db.Uuid
+  packageId String?  @db.Uuid
+  productId String?  @db.Uuid
+  quantity  Int?
+  package   Package? @relation(fields: [packageId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
+
+  @@map("packing_list_details")
+}
+
+model PurchaseOrder {
+  id                   String              @id @default(uuid()) @db.Uuid
+  poNumber             String              @unique @map("po_number")
+  supplierId           String              @db.Uuid
+  orderDate            DateTime            @default(now()) @map("order_date")
+  expectedDeliveryDate DateTime?           @map("expected_delivery_date")
+  status               String              @default("draft")
+  totalAmount          Decimal             @default(0) @map("total_amount") @db.Decimal
+  notes                String?
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  items                PurchaseOrderItem[]
+  supplier             Partner             @relation(fields: [supplierId], references: [id])
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id               String          @id @default(uuid()) @db.Uuid
+  purchaseOrderId  String          @db.Uuid
+  materialId       String          @db.Uuid
+  quantityOrdered  Decimal         @map("quantity_ordered") @db.Decimal
+  quantityReceived Decimal         @default(0) @map("quantity_received") @db.Decimal
+  expectedPrice    Decimal         @map("expected_price") @db.Decimal
+  totalExpected    Decimal         @map("total_expected") @db.Decimal
+  batches          MaterialBatch[]
+  material         Material        @relation(fields: [materialId], references: [id])
+  purchaseOrder    PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@map("purchase_order_items")
+}
