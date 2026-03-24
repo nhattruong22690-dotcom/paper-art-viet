@@ -99,15 +99,22 @@ export async function setMaintenanceMode(enabled: boolean, message: string = 'Há
  * Realtime subscription to config changes.
  */
 export function subscribeToMaintenance(callback: (config: any) => void) {
+  console.log('Realtime: Subscribing to SystemConfig changes...');
+  
   return supabase
-    .channel('system_maintenance')
+    .channel('system_maintenance_all')
     .on('postgres_changes', {
-      event: '*',
+      event: 'UPDATE',
       schema: 'public',
-      table: 'SystemConfig',
-      filter: 'key=eq.maintenance_mode'
+      table: 'SystemConfig'
     }, (payload) => {
-      callback((payload.new as any)?.value || {});
+      console.log('Realtime Config Change:', payload);
+      const newData = payload.new as any;
+      if (newData && newData.key === 'maintenance_mode') {
+        callback(newData.value || {});
+      }
     })
-    .subscribe();
+    .subscribe((status) => {
+      console.log('Realtime Subscription Status:', status);
+    });
 }

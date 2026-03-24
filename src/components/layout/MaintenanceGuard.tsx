@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ShieldAlert, AlertTriangle, Loader2, X } from 'lucide-react';
 import { isMaintenanceMode, subscribeToMaintenance } from '@/services/systemConfig.service';
+import { useAuth } from '@/context/AuthContext';
 
 interface MaintenanceGuardProps {
   children: React.ReactNode;
@@ -12,22 +13,17 @@ interface MaintenanceGuardProps {
 export default function MaintenanceGuard({ children }: MaintenanceGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { profile, isAdmin, loading: authLoading } = useAuth();
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showBanner, setShowBanner] = useState(false);
 
-  // Mock: Get current user role from localStorage/context
-  const getUserRole = () => {
-    if (typeof window === 'undefined') return 'User';
-    return localStorage.getItem('user_role') || 'User'; 
-  };
-
   const handleMaintenanceChange = useCallback((config: any) => {
     const isM = !!config.is_maintenance;
-    const role = getUserRole();
     
     // Immediate Redirect for Non-Admins if maintenance is ON
-    if (isM && role !== 'Admin' && pathname !== '/maintenance') {
+    // We allow /login so Admins can still authenticate
+    if (isM && !isAdmin && pathname !== '/maintenance' && pathname !== '/login') {
        router.push('/maintenance');
        return;
     }
@@ -39,18 +35,19 @@ export default function MaintenanceGuard({ children }: MaintenanceGuardProps) {
     }
 
     setIsMaintenance(isM);
-    setShowBanner(isM && role === 'Admin');
-  }, [pathname, router]);
+    setShowBanner(isM && isAdmin);
+  }, [pathname, router, isAdmin]);
 
   useEffect(() => {
+    if (authLoading) return; // Wait for auth to settle
+
     // Initial Load
     isMaintenanceMode().then(isM => {
-      const role = getUserRole();
-      if (isM && role !== 'Admin' && pathname !== '/maintenance') {
+      if (isM && !isAdmin && pathname !== '/maintenance' && pathname !== '/login') {
          router.push('/maintenance');
       } else {
          setIsMaintenance(isM);
-         setShowBanner(isM && role === 'Admin');
+         setShowBanner(isM && isAdmin);
       }
       setLoading(false);
     }).catch(err => {
@@ -63,10 +60,20 @@ export default function MaintenanceGuard({ children }: MaintenanceGuardProps) {
        handleMaintenanceChange(config);
     });
 
+    // Fallback Polling (Every 10s to ensure catch up)
+    const interval = setInterval(() => {
+       isMaintenanceMode().then(isM => {
+          if (isM !== isMaintenance) {
+             handleMaintenanceChange({ is_maintenance: isM });
+          }
+       });
+    }, 10000);
+
     return () => {
        subscription.unsubscribe();
+       clearInterval(interval);
     };
-  }, [handleMaintenanceChange, pathname, router]);
+  }, [handleMaintenanceChange, pathname, router, isAdmin, authLoading, isMaintenance]);
 
   if (loading && pathname !== '/maintenance') {
     return (
