@@ -42,3 +42,4 @@ check_*.sql
 tmp_*.js
 check_*.js
 /tmp/
+.env
