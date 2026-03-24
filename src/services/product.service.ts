@@ -123,7 +123,7 @@ export async function recalculateProductCostPrice(productId: string) {
   if (!product) return null;
 
   let totalCost = 0;
-  product.bomItems.forEach(item => {
+  product.bomItems.forEach((item: any) => {
     const price = Number(item.material?.unitPrice || item.material?.referencePrice || 0);
     totalCost += price * Number(item.quantity);
   });
