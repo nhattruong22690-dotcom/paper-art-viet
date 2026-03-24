@@ -43,3 +43,4 @@ tmp_*.js
 check_*.js
 /tmp/
 .env
+.env
