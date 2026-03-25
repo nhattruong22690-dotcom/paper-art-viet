@@ -57,30 +57,35 @@ export const GUIDE_DATA: GuideSection[] = [
     id: 'warehouse-guide',
     title: 'Kho: Nhập kho & Mã QR',
     role: 'Kho',
-    description: 'Hướng dẫn nhập vật tư, quản lý lô và in nhãn QR định danh.',
-    lastUpdated: '2026-03-23',
+    description: 'Quy trình ghi nhận vật tư mới, quản lý lô hàng và in nhãn QR Batch Tracking.',
+    lastUpdated: '2026-03-25',
     routeHints: ['/logistics/inventory', '/logistics/materials', '/logistics/inward'],
     steps: [
       {
-        title: 'B1: Tiếp nhận & Kiểm đếm vật tư',
-        description: 'Kiểm tra khớp số lượng với vận đơn và thông tin nhà cung cấp.',
-        image: '/guide/warehouse/check.png'
+        title: 'B1: Truy cập Menu Nhập kho',
+        description: 'Vào Menu Tổng -> Kho vận -> Nhập kho. Đây là trang chuyên dụng để ghi nhận vật tư mới về xưởng.',
+        image: '/guide/warehouse/menu.png'
       },
       {
-        title: 'B2: Nhập kho & Khai báo Lô hàng (Lot)',
-        description: 'Mỗi lần nhập phải điền số Lô để phục vụ truy xuất nguồn gốc (Traceability).',
-        proTip: 'Sử dụng ngày nhập theo định dạng YYYYMMDD-NCC để đặt tên Lô dễ nhớ.'
+        title: 'B2: Nhập theo PO (Đơn mua hàng)',
+        description: 'Chọn mã PO tương ứng để hệ thống tự động đổ danh sách vật tư và số lượng đặt hàng. Tránh gõ tay thủ công gây sai sót.',
+        proTip: 'Nếu giá thực tế cao hơn PO, hệ thống sẽ hiện cảnh báo màu xanh dương để bạn so sánh.'
       },
       {
-        title: 'B3: In mã QR vật tư',
-        description: 'Sau khi nhập kho, nhấn "In mã QR" để dán vào kiện hàng. Mã này chứa thông tin Loại vật tư, Lô và Ngày nhập.',
-        image: '/guide/warehouse/qr-print.png'
+        title: 'B3: Kiểm đếm & Quy cách Đóng gói',
+        description: 'Nhập số thùng (Packing Qty) và số cái/thùng (Items/Packing). Hệ thống tự tính tổng lượng khớp với vận đơn.',
+        image: '/guide/warehouse/packing.png'
+      },
+      {
+        title: 'B4: Khai báo Vị trí & In mã QR',
+        description: 'Nhập vị trí kệ (VD: A1-2) và nhấn "In mã QR" để dán nhãn Batch lên kiện hàng phục vụ quét mã xuất kho sau này.',
+        proTip: 'Luôn in mã QR ngay khi nhập để đảm bảo 100% vật tư trong kho đều có định danh.'
       }
     ],
     faqs: [
       {
-        question: 'Tại sao phải chọn Lô khi Báo cáo sản xuất?',
-        answer: 'Việc chọn Lô giúp hệ thống biết chính xác vật tư nào đã được dùng, phục vụ việc kiểm kê kho chính xác và xử lý khiếu nại chất lượng.'
+        question: 'Tại sao phải chọn Lô/Batch khi nhập kho?',
+        answer: 'Việc này giúp theo dõi hạn sử dụng, nhà cung cấp và vị trí chính xác của từng thùng hàng, phục vụ việc truy xuất nguồn gốc (Traceability).'
       }
     ]
   },
@@ -145,24 +150,24 @@ export const GUIDE_DATA: GuideSection[] = [
 
 export const NEWS_UPDATES = [
   {
-    date: '2026-03-23',
-    title: 'Hoàn thiện hệ thống Wiki & Hướng dẫn sử dụng',
-    description: 'Tài liệu hướng dẫn đã được cập nhật đầy đủ cho tất cả các bộ phận: Kinh doanh, Kho, Sản xuất, Nhân sự và Admin.',
-    link: '/guide',
+    date: '2026-03-25',
+    title: 'Đại tu hệ thống Điều hướng Mobile (Hub & Spoke)',
+    description: 'Giao diện Mobile được thiết kế lại hoàn toàn với Menu 2 cấp, loại bỏ Sidebar và Tabs bar để tối ưu tốc độ thao tác cho thợ xưởng.',
+    link: '/mobile-menu',
     category: 'MỚI'
   },
   {
-    date: '2026-03-23',
-    title: 'Tính năng Trợ giúp tại chỗ (Help Drawer)',
-    description: 'Nhấn vào icon dấu hỏi (?) tại các trang tính năng để xem hướng dẫn nhanh mà không cần rời trang.',
+    date: '2026-03-25',
+    title: 'Tối ưu hóa Database & Singleton Client',
+    description: 'Nâng cấp hệ thống kết nối Supabase, sửa lỗi kết nối trùng lập giúp ứng dụng chạy mượt mà và Realtime ổn định hơn.',
     link: '/guide',
     category: 'CẬP NHẬT'
   },
   {
     date: '2026-03-23',
-    title: 'Máy quét QR & Sao chép Đơn hàng',
-    description: 'Tích hợp máy quét QR cho Tổ đội sản xuất và tính năng Duplicate đơn hàng cho Kinh doanh.',
-    link: '/guide?id=orders-guide#duplicate',
-    category: 'NEW'
+    title: 'Hoàn thiện hệ thống Wiki & Hướng dẫn sử dụng',
+    description: 'Tài liệu hướng dẫn đã được cập nhật đầy đủ cho tất cả các bộ phận: Kinh doanh, Kho, Sản xuất, Nhân sự và Admin.',
+    link: '/guide',
+    category: 'CẬP NHẬT'
   }
 ];

@@ -35,6 +35,7 @@ interface BOMItem {
   materialId: string;
   material: {
     name: string;
+    sku?: string | null;
     unit: string;
     unitPrice: any;
     referencePrice: any;
@@ -278,42 +279,48 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 animate-in fade-in duration-500 overflow-hidden font-typewriter">
+      <div className="absolute inset-0 bg-retro-sepia/40 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative bg-white w-full max-w-7xl h-[92vh] max-h-[900px] rounded-[48px] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col">
+      <div className="relative w-full max-w-7xl h-[94vh] max-h-[1000px] retro-card !p-0 shadow-[0_30px_60px_-15px_rgba(62,39,35,0.5)] flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden border-2">
+        <div className="washi-tape-top" />
+        <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+           <Package size={600} strokeWidth={0.5} className="text-retro-sepia" />
+        </div>
 
         {/* HEADER */}
-        <div className="px-10 py-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 bg-white rounded-3xl shadow-sm border border-gray-100 flex items-center justify-center text-indigo-600">
-              <Package size={32} />
+        <div className="px-12 py-10 border-b-2 border-retro-sepia/10 flex justify-between items-end bg-retro-paper/20 relative shrink-0">
+          <div className="flex items-center gap-8 relative z-10">
+            <div className="w-20 h-20 bg-retro-paper border-2 border-retro-sepia/10 flex items-center justify-center text-retro-sepia shadow-sm rotate-3">
+              <Package size={40} strokeWidth={1.5} />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight italic">
-                Chi tiết <span className="text-indigo-600 underline decoration-2 underline-offset-4">Sản phẩm</span>
+            <div className="space-y-3">
+              <h2 className="text-3xl font-black text-retro-sepia uppercase tracking-tighter italic">
+                Hồ sơ <span className="text-retro-brick underline decoration-double decoration-retro-brick/30 underline-offset-4">Vật phẩm</span>
               </h2>
-              <div className="flex items-center gap-4 mt-1">
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{product.sku || 'NO-SKU'}</span>
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-200" />
-                <span className="text-xs font-black text-gray-700 uppercase tracking-tight">{product.name || 'Sản phẩm mới'}</span>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] opacity-60 italic">{product.sku || 'CHƯA-GÁN-MÃ'}</span>
+                <div className="w-1.5 h-1.5 bg-retro-mustard rotate-45" />
+                <span className="text-sm font-black text-retro-sepia uppercase tracking-tight italic underline decoration-retro-mustard/30 underline-offset-4">
+                   {product.name || 'Bản ghi nguyên mẫu'}
+                </span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6 relative z-10">
             {activeTab === 'general' && (
               <button
                 onClick={handleSaveGeneral}
                 disabled={isSavingGeneral}
                 className={cn(
-                  "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-indigo-500/20",
+                  "px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center gap-3 shadow-[4px_4px_0px_#3E272333] active:scale-95",
                   isSavingGeneral
-                    ? "bg-gray-100 text-gray-400"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 hover:-translate-y-0.5"
+                    ? "bg-retro-paper text-retro-earth/40 cursor-not-allowed border-2 border-retro-sepia/5"
+                    : "bg-retro-brick text-white hover:bg-retro-sepia"
                 )}
               >
-                {isSavingGeneral ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                Lưu thông tin
+                {isSavingGeneral ? <Loader2 size={18} strokeWidth={1.5} className="animate-spin" /> : <Save size={18} strokeWidth={1.5} />}
+                Ghi nhận Hồ sơ
               </button>
             )}
             {activeTab === 'bom' && (
@@ -321,14 +328,14 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                 onClick={handleSaveBOM}
                 disabled={isSavingBOM}
                 className={cn(
-                  "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-indigo-500/20",
+                  "px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center gap-3 shadow-[4px_4px_0px_#3E272333] active:scale-95",
                   isSavingBOM
-                    ? "bg-gray-100 text-gray-400"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 hover:-translate-y-0.5"
+                    ? "bg-retro-paper text-retro-earth/40 cursor-not-allowed border-2 border-retro-sepia/5"
+                    : "bg-retro-brick text-white hover:bg-retro-sepia"
                 )}
               >
-                {isSavingBOM ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                Lưu BOM
+                {isSavingBOM ? <Loader2 size={18} strokeWidth={1.5} className="animate-spin" /> : <Save size={18} strokeWidth={1.5} />}
+                Cập nhật Định mức
               </button>
             )}
             {activeTab === 'cogs' && (
@@ -336,38 +343,42 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                 onClick={handleSaveCOGS}
                 disabled={isSavingCOGS}
                 className={cn(
-                  "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-indigo-500/20",
+                  "px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center gap-3 shadow-[4px_4px_0px_#3E272333] active:scale-95",
                   isSavingCOGS
-                    ? "bg-gray-100 text-gray-400"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 hover:-translate-y-0.5"
+                    ? "bg-retro-paper text-retro-earth/40 cursor-not-allowed border-2 border-retro-sepia/5"
+                    : "bg-retro-brick text-white hover:bg-retro-sepia"
                 )}
               >
-                {isSavingCOGS ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                Lưu COGS
+                {isSavingCOGS ? <Loader2 size={18} strokeWidth={1.5} className="animate-spin" /> : <Save size={18} strokeWidth={1.5} />}
+                Niêm yết Biểu giá
               </button>
             )}
-            <button onClick={onClose} className="p-3.5 hover:bg-white rounded-2xl text-gray-400 hover:text-gray-900 transition-all shadow-sm border border-transparent hover:border-gray-100">
-              <X size={20} />
+            <button 
+              onClick={onClose} 
+              className="p-4 bg-retro-paper border-2 border-retro-sepia/10 hover:bg-retro-brick/10 hover:text-retro-brick transition-all rotate-2 hover:rotate-0 shadow-sm"
+            >
+              <X size={24} strokeWidth={1.5} />
             </button>
           </div>
         </div>
 
+
         {/* TABS */}
-        <div className="px-10 py-4 bg-gray-50/30 border-b border-gray-100 flex gap-8 flex-shrink-0">
+        <div className="px-12 py-6 bg-retro-paper/40 border-b-2 border-retro-sepia/10 flex gap-10 shrink-0 relative z-10">
           <button
             onClick={() => setActiveTab('general')}
             className={cn(
-              "text-[10px] font-black uppercase tracking-widest pb-2 transition-all border-b-2",
-              activeTab === 'general' ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-400 hover:text-gray-600"
+              "text-[10px] font-black uppercase tracking-[0.2em] pb-3 transition-all border-b-2 italic",
+              activeTab === 'general' ? "border-retro-brick text-retro-brick" : "border-transparent text-retro-earth/40 hover:text-retro-sepia"
             )}
           >
-            Thông tin chung
+            Thông số kỹ nghệ
           </button>
           <button
             onClick={() => setActiveTab('bom')}
             className={cn(
-              "text-[10px] font-black uppercase tracking-widest pb-2 transition-all border-b-2",
-              activeTab === 'bom' ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-400 hover:text-gray-600"
+              "text-[10px] font-black uppercase tracking-[0.2em] pb-3 transition-all border-b-2 italic",
+              activeTab === 'bom' ? "border-retro-brick text-retro-brick" : "border-transparent text-retro-earth/40 hover:text-retro-sepia"
             )}
           >
             Định mức Vật tư (BOM)
@@ -375,55 +386,58 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
           <button
             onClick={() => setActiveTab('cogs')}
             className={cn(
-              "text-[10px] font-black uppercase tracking-widest pb-2 transition-all border-b-2",
-              activeTab === 'cogs' ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-400 hover:text-gray-600"
+              "text-[10px] font-black uppercase tracking-[0.2em] pb-3 transition-all border-b-2 italic",
+              activeTab === 'cogs' ? "border-retro-brick text-retro-brick" : "border-transparent text-retro-earth/40 hover:text-retro-sepia"
             )}
           >
-            Bảng Giá Thành (COGS)
+            Sổ cái Giá thành (COGS)
           </button>
         </div>
 
+
         {/* CONTENT */}
-        <div className="flex-1 overflow-y-auto p-10">
+        <div className="flex-1 overflow-y-auto p-0">
           {activeTab === 'general' ? (
-            <div className="flex flex-col h-full animate-in slide-in-from-left-4 duration-500 bg-gray-50/30 -m-10 p-10 rounded-b-[48px]">
-              <div className="flex flex-col gap-10 flex-1 pb-10">
+            <div className="flex flex-col h-full animate-in slide-in-from-left-4 duration-500 bg-retro-paper/10 p-12">
+              <div className="flex flex-col gap-12 flex-1 pb-10 relative z-10">
 
                 {/* PHẦN TRÊN: 2 CỘT (CONFIG & ẢNH) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
                   {/* CỘT TRÁI: DỮ LIÊU & CẤU HÌNH */}
-                  <div className="space-y-6">
-                    <h3 className="text-[13px] font-black text-gray-800 uppercase tracking-widest flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
-                        <Tag size={16} />
+                  <div className="space-y-8">
+                    <h3 className="text-[13px] font-black text-retro-sepia uppercase tracking-[0.3em] flex items-center gap-4 italic opacity-80">
+                      <div className="w-10 h-10 bg-retro-paper border-2 border-retro-sepia/10 flex items-center justify-center text-retro-sepia">
+                        <Tag size={18} strokeWidth={1.5} />
                       </div>
-                      Thông tin cơ bản
+                      Đặc tính Kỹ nghệ cơ bản
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
                       {/* Card 1: Thời gian */}
-                      <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group h-full flex flex-col justify-center">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 px-2">Thời gian tiêu chuẩn</p>
-                        <div className="flex items-center gap-4 px-2">
-                          <div className="w-12 h-12 rounded-[20px] bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">
-                            <Clock size={22} />
+                      <div className="p-8 bg-white border-2 border-retro-sepia/10 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col justify-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-retro-mustard/20" />
+                        <p className="text-[10px] font-black text-retro-earth/60 uppercase tracking-[0.2em] mb-6 px-2 italic">Thanh toán thời lượng</p>
+                        <div className="flex items-center gap-6 px-2">
+                          <div className="w-14 h-14 bg-retro-sepia text-retro-paper flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform rotate-3 group-hover:rotate-0">
+                            <Clock size={24} strokeWidth={1.5} />
                           </div>
-                          <div className="flex-1 flex items-baseline gap-2 overflow-hidden">
+                          <div className="flex-1 flex items-baseline gap-3 overflow-hidden">
                             <input
                               type="number"
                               value={productionTimeStd === 0 ? '' : productionTimeStd}
                               onChange={(e) => setProductionTimeStd(Number(e.target.value))}
                               placeholder="0"
-                              className="w-full text-3xl font-black text-gray-900 bg-transparent outline-none tabular-nums placeholder:text-gray-300 min-w-0"
+                              className="w-full text-4xl font-black text-retro-sepia bg-transparent outline-none tabular-nums placeholder:text-retro-sepia/10 min-w-0"
                             />
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex-shrink-0">Phút</span>
+                            <span className="text-[9px] text-retro-earth/40 font-black uppercase tracking-widest flex-shrink-0">PHÚT</span>
                           </div>
                         </div>
                       </div>
                       {/* Card 2: Giá vốn (DB costPrice) */}
-                      <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group h-full flex flex-col justify-center">
-                        <div className="flex justify-between items-center mb-4 px-2">
-                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Giá vốn (Database)</p>
+                      <div className="p-8 bg-white border-2 border-retro-sepia/10 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col justify-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-retro-brick/20" />
+                        <div className="flex justify-between items-center mb-6 px-2">
+                          <p className="text-[10px] font-black text-retro-brick uppercase tracking-[0.2em] italic">Nguyên giá Sổ cái</p>
                           <button 
                             type="button"
                             onClick={async () => {
@@ -435,83 +449,85 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                                 loadProductDetail();
                               }
                             }}
-                            className="p-1.5 hover:bg-indigo-50 text-indigo-400 hover:text-indigo-600 rounded-lg transition-all"
-                            title="Cập nhật theo BOM"
+                            className="p-2 bg-retro-paper border border-retro-brick/20 text-retro-brick hover:bg-retro-brick hover:text-white transition-all shadow-sm"
+                            title="Tính toán lại theo BOM"
                           >
-                            <Calculator size={14} />
+                            <Calculator size={16} strokeWidth={1.5} />
                           </button>
                         </div>
-                        <div className="flex items-center gap-4 px-2">
-                          <div className="w-12 h-12 rounded-[20px] bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">
-                            <Layers size={22} />
+                        <div className="flex items-center gap-6 px-2">
+                          <div className="w-14 h-14 bg-retro-brick text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform -rotate-3 group-hover:rotate-0">
+                            <Layers size={24} strokeWidth={1.5} />
                           </div>
-                          <div className="flex-1 flex items-baseline justify-between gap-2 overflow-hidden">
-                            <p className="text-2xl font-black text-indigo-900 tabular-nums leading-none">
+                          <div className="flex-1 flex items-baseline justify-between gap-3 overflow-hidden">
+                            <p className="text-3xl font-black text-retro-brick tabular-nums leading-none">
                               {Math.round(Number((product as any).costPrice || 0)).toLocaleString()}
                             </p>
-                            <span className="text-[9px] text-indigo-400 font-black uppercase tracking-tighter flex-shrink-0">VNĐ/SP</span>
+                            <span className="text-[9px] text-retro-brick/40 font-black uppercase tracking-widest flex-shrink-0">VNĐ/ĐV</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Card 3: Giá Sỉ */}
                       <div className={cn(
-                        "p-6 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group h-full flex flex-col justify-center",
-                        wholesalePrice > 0 && wholesalePrice < totalCOGS && "bg-red-50 border-red-200"
+                        "p-8 bg-white border-2 border-retro-sepia/10 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col justify-center relative overflow-hidden",
+                        wholesalePrice > 0 && wholesalePrice < totalCOGS && "bg-retro-brick/5 border-retro-brick/20"
                       )}>
+                        <div className="absolute top-0 left-0 w-full h-1 bg-retro-mustard" />
                         <p className={cn(
-                          "text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 flex justify-between px-2",
-                          wholesalePrice > 0 && wholesalePrice < totalCOGS && "text-red-500"
+                          "text-[10px] font-black text-retro-mustard uppercase tracking-[0.2em] mb-6 flex justify-between px-2 italic",
+                          wholesalePrice > 0 && wholesalePrice < totalCOGS && "text-retro-brick"
                         )}>
-                          Giá Sỉ (x1.3)
-                          {wholesalePrice > 0 && wholesalePrice < totalCOGS && <span className="animate-pulse">Bán lỗ!</span>}
+                          Niêm giá Sỉ (x1.3)
+                          {wholesalePrice > 0 && wholesalePrice < totalCOGS && <span className="animate-pulse flex items-center gap-2 italic font-black text-retro-brick">CẢNH BÁO LỖ</span>}
                         </p>
-                        <div className="flex items-center gap-4 px-2">
+                        <div className="flex items-center gap-6 px-2">
                           <div className={cn(
-                            "w-12 h-12 rounded-[20px] bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-100 group-hover:scale-110 transition-transform",
-                            wholesalePrice > 0 && wholesalePrice < totalCOGS && "bg-red-500"
+                            "w-14 h-14 bg-retro-mustard text-retro-sepia flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform rotate-6 group-hover:rotate-0",
+                            wholesalePrice > 0 && wholesalePrice < totalCOGS && "bg-retro-brick text-white"
                           )}>
-                            <Store size={22} />
+                            <Store size={24} strokeWidth={1.5} />
                           </div>
-                          <div className="flex-1 flex items-baseline justify-between gap-1.5 overflow-hidden">
+                          <div className="flex-1 flex items-baseline justify-between gap-3 overflow-hidden">
                             <input
                               type="text"
                               value={(wholesalePrice === 0 ? Math.round(totalCOGS * 1.3) : wholesalePrice).toLocaleString()}
                               onChange={(e) => setWholesalePrice(Number(e.target.value.replace(/\./g, '').replace(/,/g, '')))}
-                              className="w-full text-2xl font-black text-amber-900 bg-transparent outline-none tabular-nums placeholder:text-amber-200 min-w-0"
+                              className="w-full text-3xl font-black text-retro-sepia bg-transparent outline-none tabular-nums placeholder:text-retro-sepia/10 min-w-0"
                             />
-                            <span className="text-[9px] text-amber-500 font-black uppercase tracking-tighter flex-shrink-0">VNĐ/SP</span>
+                            <span className="text-[9px] text-retro-mustard/60 font-black uppercase tracking-widest flex-shrink-0">VNĐ/ĐV</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Card 4: Giá Xuất Khẩu */}
                       <div className={cn(
-                        "p-6 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group h-full flex flex-col justify-center",
-                        exportPrice > 0 && exportPrice < totalCOGS && "bg-red-50 border-red-200"
+                        "p-8 bg-white border-2 border-retro-sepia/10 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col justify-center relative overflow-hidden",
+                        exportPrice > 0 && exportPrice < totalCOGS && "bg-retro-brick/5 border-retro-brick/20"
                       )}>
+                        <div className="absolute top-0 left-0 w-full h-1 bg-retro-moss" />
                         <p className={cn(
-                          "text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-4 flex justify-between px-2",
-                          exportPrice > 0 && exportPrice < totalCOGS && "text-red-500"
+                          "text-[10px] font-black text-retro-moss uppercase tracking-[0.2em] mb-6 flex justify-between px-2 italic",
+                          exportPrice > 0 && exportPrice < totalCOGS && "text-retro-brick"
                         )}>
-                          Giá Xuất khẩu (x1.8)
-                          {exportPrice > 0 && exportPrice < totalCOGS && <span className="animate-pulse">Bán lỗ!</span>}
+                          Niêm giá Ngoại thương (x1.8)
+                          {exportPrice > 0 && exportPrice < totalCOGS && <span className="animate-pulse flex items-center gap-2 italic font-black text-retro-brick">CẢNH BÁO LỖ</span>}
                         </p>
-                        <div className="flex items-center gap-4 px-2">
+                        <div className="flex items-center gap-6 px-2">
                           <div className={cn(
-                            "w-12 h-12 rounded-[20px] bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-100 group-hover:scale-110 transition-transform",
-                            exportPrice > 0 && exportPrice < totalCOGS && "bg-red-500"
+                            "w-14 h-14 bg-retro-moss text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform -rotate-6 group-hover:rotate-0",
+                            exportPrice > 0 && exportPrice < totalCOGS && "bg-retro-brick text-white"
                           )}>
-                            <Globe size={22} />
+                            <Globe size={24} strokeWidth={1.5} />
                           </div>
-                          <div className="flex-1 flex items-baseline justify-between gap-1.5 overflow-hidden">
+                          <div className="flex-1 flex items-baseline justify-between gap-3 overflow-hidden">
                             <input
                               type="text"
                               value={(exportPrice === 0 ? Math.round(totalCOGS * 1.8) : exportPrice).toLocaleString()}
                               onChange={(e) => setExportPrice(Number(e.target.value.replace(/\./g, '').replace(/,/g, '')))}
-                              className="w-full text-2xl font-black text-emerald-900 bg-transparent outline-none tabular-nums placeholder:text-emerald-200 min-w-0"
+                              className="w-full text-3xl font-black text-retro-sepia bg-transparent outline-none tabular-nums placeholder:text-retro-sepia/10 min-w-0"
                             />
-                            <span className="text-[9px] text-emerald-500 font-black uppercase tracking-tighter flex-shrink-0">VNĐ/SP</span>
+                            <span className="text-[9px] text-retro-moss/60 font-black uppercase tracking-widest flex-shrink-0">VNĐ/ĐV</span>
                           </div>
                         </div>
                       </div>
@@ -520,78 +536,79 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                   </div>
 
                   {/* CỘT PHẢI: ẢNH MINH HỌA (SHRUNK) */}
-                  <div className="space-y-6 flex flex-col">
-                    <h3 className="text-[13px] font-black text-gray-800 uppercase tracking-widest flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500">
-                        <Package size={16} />
+                  <div className="space-y-8 flex flex-col">
+                    <h3 className="text-[13px] font-black text-retro-sepia uppercase tracking-[0.3em] flex items-center gap-4 italic opacity-80">
+                      <div className="w-10 h-10 bg-retro-paper border-2 border-retro-sepia/10 flex items-center justify-center text-retro-earth/40">
+                        <Package size={18} strokeWidth={1.5} />
                       </div>
-                      Ảnh sản phẩm
+                      Đồ hình Minh họa (Bản thảo)
                     </h3>
-                    <div className="w-full h-[200px] bg-white rounded-[40px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 group hover:bg-gray-50 hover:border-indigo-300 hover:shadow-xl transition-all duration-500 cursor-pointer overflow-hidden relative">
-                      <div className="absolute inset-4 rounded-[32px] border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      <Layers size={64} className="mb-4 group-hover:text-indigo-400 group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-700 ease-out opacity-20" />
+                    <div className="w-full h-[320px] bg-white border-4 border-dashed border-retro-sepia/10 flex flex-col items-center justify-center text-retro-earth/20 group hover:bg-white hover:border-retro-sepia/20 hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden relative shadow-inner">
+                      <div className="absolute inset-8 border-2 border-retro-sepia/5 group-hover:border-retro-sepia/10 transition-colors" />
+                      <Layers size={100} strokeWidth={0.5} className="mb-6 group-hover:text-retro-brick group-hover:scale-110 group-hover:-translate-y-4 transition-all duration-700 ease-out opacity-10" />
                       <div className="text-center relative z-10">
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 group-hover:text-indigo-600 transition-colors">Chưa có ảnh</p>
-                        <p className="text-[10px] mt-2 opacity-60 font-bold bg-gray-100 px-4 py-1.5 rounded-full text-gray-500 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">Tải lên</p>
+                        <p className="text-[11px] font-black uppercase tracking-[0.4em] text-retro-earth opacity-40 group-hover:text-retro-brick group-hover:opacity-100 transition-all italic">Lưu trữ đồ hình trống</p>
+                        <p className="text-[9px] mt-8 font-black bg-retro-paper border border-retro-sepia/10 px-8 py-3 text-retro-sepia uppercase tracking-widest group-hover:bg-retro-brick group-hover:text-white transition-all shadow-sm rotate-1 group-hover:rotate-0">Khai báo Hình ảnh</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-10">
                   {/* CHÚ Ý (Notes CRUD) */}
-                  <div className="p-8 bg-white/60 rounded-[32px] border border-gray-200 border-dashed flex flex-col md:flex-row items-center gap-8 group/note-box hover:border-rose-200 transition-colors duration-500">
-                    <div className="flex-shrink-0">
-                      <h3 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1 leading-none">Cần</h3>
-                      <p className="text-sm font-black text-gray-800 uppercase tracking-widest leading-none">Chú ý</p>
+                  <div className="p-12 bg-white border-2 border-retro-brick/10 border-dashed flex flex-col md:flex-row items-start gap-12 group/note-box hover:border-retro-brick transition-all duration-500 shadow-inner relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-2 h-full bg-retro-brick/10" />
+                    <div className="flex-shrink-0 pt-2">
+                      <h3 className="text-[10px] font-black text-retro-brick uppercase tracking-[0.4em] mb-4 leading-none italic opacity-60">Thư lục</h3>
+                      <p className="text-xl font-black text-retro-sepia uppercase tracking-widest leading-none">Cương mục Sản xuất</p>
                     </div>
-                    <div className="w-px h-12 bg-gray-200 hidden md:block" />
+                    <div className="w-px h-24 bg-retro-sepia/10 hidden md:block" />
 
-                    <div className="flex-1 w-full space-y-3">
+                    <div className="flex-1 w-full space-y-4">
                       {productionNotes.length > 0 ? (
-                        <div className="space-y-2">
+                        <div className="space-y-3 font-handwriting">
                           {productionNotes.map((note, idx) => (
-                            <div key={idx} className="group flex items-center gap-3">
-                              <div className="w-3 h-3 rounded-full bg-rose-500 shadow-sm shadow-rose-200 flex-shrink-0 flex items-center justify-center">
-                                <div className="w-1 h-1 rounded-full bg-white" />
+                            <div key={idx} className="group flex items-start gap-4 p-3 hover:bg-retro-paper transition-all border border-transparent hover:border-retro-sepia/10">
+                              <div className="w-5 h-5 mt-1 bg-retro-brick text-white shadow-sm flex-shrink-0 flex items-center justify-center rotate-45 group-hover:rotate-0 transition-transform">
+                                <Plus size={12} strokeWidth={3} className="rotate-45" />
                               </div>
                               <input
                                 value={note}
                                 onChange={(e) => updateNote(idx, e.target.value)}
-                                className="flex-1 bg-transparent text-sm text-rose-600 font-black italic border-b border-transparent hover:border-rose-100 focus:border-rose-300 outline-none py-0.5 transition-all min-w-0"
+                                className="flex-1 bg-transparent text-lg text-retro-sepia border-b border-transparent focus:border-retro-brick outline-none py-1 transition-all min-w-0"
                               />
                               <button
                                 onClick={() => removeNote(idx)}
-                                className="p-1 px-2.5 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                                title="Xóa chú ý"
+                                className="p-2 opacity-0 group-hover:opacity-100 text-retro-earth/20 hover:text-retro-brick hover:bg-white transition-all shadow-sm"
+                                title="Xóa ghi chú"
                               >
-                                <Trash2 size={14} />
+                                <Trash2 size={16} strokeWidth={1.5} />
                               </button>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-400 font-medium italic px-2">Chưa có chú ý nào cho sản phẩm này.</p>
+                        <p className="text-sm text-retro-earth/40 font-black italic px-4 py-6 uppercase tracking-widest opacity-60">Chưa có chỉ dẫn kỹ nghệ nào được ghi nhận.</p>
                       )}
 
-                      <div className="flex items-center gap-3 pt-2">
-                        <div className="w-3 h-3 rounded-full bg-gray-100 flex-shrink-0" />
+                      <div className="flex items-center gap-6 pt-10 border-t border-retro-sepia/10">
+                        <div className="w-5 h-5 border-2 border-retro-sepia/10 flex-shrink-0 rotate-45" />
                         <input
                           value={noteInput}
                           onChange={(e) => setNoteInput(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && addNote()}
-                          placeholder="Thêm chú ý mới tại đây..."
-                          className="flex-1 bg-transparent text-sm text-gray-400 font-medium italic border-b border-gray-50 hover:border-indigo-100 focus:border-indigo-400 focus:text-indigo-600 outline-none py-0.5 transition-all min-w-0"
+                          placeholder="Thêm chỉ dẫn mới tại đây..."
+                          className="flex-1 bg-transparent text-sm text-retro-earth/40 font-black italic border-b-2 border-retro-sepia/10 hover:border-retro-brick/30 focus:border-retro-brick focus:text-retro-sepia outline-none py-3 transition-all min-w-0 uppercase tracking-tight"
                         />
                         <button
                           onClick={addNote}
                           disabled={!noteInput.trim()}
                           className={cn(
-                            "p-1.5 rounded-lg transition-all",
-                            noteInput.trim() ? "text-indigo-600 hover:bg-indigo-50" : "text-gray-200 pointer-events-none"
+                            "p-4 transition-all rotate-3 hover:rotate-0 flex items-center justify-center",
+                            noteInput.trim() ? "bg-retro-brick text-white shadow-lg shadow-retro-brick/20" : "bg-retro-paper text-retro-earth/20 pointer-events-none grayscale"
                           )}
                         >
-                          <Plus size={18} />
+                          <Plus size={24} strokeWidth={2.5} />
                         </button>
                       </div>
                     </div>
@@ -602,89 +619,93 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
               {/* FOOTER NÚT BẤM REMOVED FOR FLOATING */}
             </div>
           ) : activeTab === 'bom' ? (
-            <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 h-full flex flex-col">
+            <div className="space-y-10 animate-in slide-in-from-right-4 duration-500 h-full flex flex-col bg-retro-paper/10 p-12 -m-10">
               {/* BOM ACTIONS & SEARCH */}
-              <div className="flex gap-4 flex-shrink-0">
+              <div className="flex gap-6 flex-shrink-0 relative z-10">
                 <div className="flex-1 relative">
-                  <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Search size={22} strokeWidth={1.5} className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/30" />
                   <select
                     onChange={(e) => {
                       const mat = materials.find(m => m.id === e.target.value);
                       if (mat) handleAddMaterial(mat);
                       e.target.value = "";
                     }}
-                    className="w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-[28px] text-xs font-bold text-gray-700 outline-none focus:border-indigo-300 shadow-sm transition-all appearance-none cursor-pointer"
+                    className="w-full pl-16 pr-8 py-5 bg-white border-2 border-retro-sepia/10 text-xs font-black text-retro-sepia outline-none focus:border-retro-sepia shadow-inner transition-all appearance-none cursor-pointer placeholder:italic uppercase tracking-widest italic"
                   >
-                    <option value="">+ Thêm vật tư vào BOM (Chọn từ danh mục)...</option>
+                    <option value="" className="italic text-retro-earth/40">Khai báo Vật tư vào BOM (Truy vấn danh mục)...</option>
                     {materials.map(m => (
-                      <option key={m.id} value={m.id} disabled={bomItems.some(bi => bi.materialId === m.id)}>
-                        {m.name} ({m.sku})
+                      <option key={m.id} value={m.id} disabled={bomItems.some(bi => bi.materialId === m.id)} className="font-typewriter text-retro-sepia">
+                        {m.name} [{m.sku || 'No-SKU'}]
                       </option>
                     ))}
                   </select>
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-retro-sepia/20">
+                    <Plus size={20} strokeWidth={2.5} />
+                  </div>
                 </div>
               </div>
 
               {/* BOM TABLE */}
-              <div className="flex-1 overflow-hidden flex flex-col bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-50/50 min-h-[360px]">
-                <div className="flex-1 overflow-y-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-md">
-                      <tr className="border-b border-gray-100">
-                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Vật tư</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Số lượng (Q'ty)</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Đơn vị</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Đơn giá</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Thành tiền</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Xóa</th>
+              <div className="flex-1 overflow-hidden flex flex-col bg-white border-2 border-retro-sepia/10 shadow-[0_15px_40px_-10px_rgba(62,39,35,0.1)] relative">
+                <div className="flex-1 overflow-y-auto scrollbar-hide">
+                  <table className="w-full text-left border-collapse font-typewriter">
+                    <thead className="sticky top-0 z-10 bg-retro-paper border-b-2 border-retro-sepia/10">
+                      <tr>
+                        <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60">Chi tiết Vật tư</th>
+                        <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60 text-center w-40">Phần lượng (Q'ty)</th>
+                        <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60 text-center w-24">Đơn vị</th>
+                        <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60 text-right">Đơn giá quy chiếu</th>
+                        <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60 text-right">Tổng định mức</th>
+                        <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60 text-center w-20">Trục xuất</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y-2 divide-retro-sepia/5 relative z-0">
                       {isLoadingBOM ? (
                         <tr>
-                          <td colSpan={6} className="py-20 text-center">
-                            <Loader2 size={32} className="text-indigo-600 animate-spin mx-auto mb-4" />
-                            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest italic">Đang tải định mức...</p>
+                          <td colSpan={6} className="py-32 text-center">
+                            <Loader2 size={40} strokeWidth={1.5} className="text-retro-brick animate-spin mx-auto mb-6" />
+                            <p className="text-[10px] font-black uppercase text-retro-earth/40 tracking-[0.3em] italic">Đang truy vấn Định mức...</p>
                           </td>
                         </tr>
                       ) : bomItems.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-20 text-center">
-                            <Layers size={32} className="text-gray-200 mx-auto mb-4" />
-                            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest italic">Chưa có linh kiện được gán</p>
+                          <td colSpan={6} className="py-40 text-center">
+                            <Layers size={80} strokeWidth={0.5} className="text-retro-earth opacity-10 mx-auto mb-6" />
+                            <p className="text-[10px] font-black uppercase text-retro-earth/30 tracking-[0.4em] italic">Chưa có thành phần nào được gán cho Bản thiết kế này</p>
                           </td>
                         </tr>
                       ) : bomItems.map((item) => {
                         const unitPrice = item.material.unitPrice || item.material.referencePrice || 0;
                         const total = unitPrice * item.quantity;
                         return (
-                          <tr key={item.materialId} className="hover:bg-indigo-50/10 group transition-colors">
-                            <td className="px-8 py-5">
-                              <p className="text-xs font-black text-gray-900 uppercase tracking-tight">{item.material.name}</p>
+                          <tr key={item.materialId} className="hover:bg-retro-paper/50 group transition-all">
+                            <td className="px-10 py-6">
+                              <p className="text-xs font-black text-retro-sepia uppercase tracking-tight">{item.material.name}</p>
+                              <p className="text-[10px] text-retro-earth/40 mt-1 italic font-black">Mã hiệu: {item.material.sku || 'N/A'}</p>
                             </td>
-                            <td className="px-8 py-5 text-center">
+                            <td className="px-10 py-6 text-center">
                               <input
                                 type="number"
                                 value={item.quantity}
                                 onChange={(e) => handleUpdateQuantity(item.materialId, Number(e.target.value))}
-                                className="w-20 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-black text-center text-indigo-600 outline-none focus:bg-white focus:border-indigo-200"
+                                className="w-24 px-4 py-3 bg-retro-paper border-2 border-retro-sepia/10 text-xs font-black text-center text-retro-brick outline-none focus:border-retro-brick shadow-inner"
                               />
                             </td>
-                            <td className="px-8 py-5 text-center">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase">{item.material.unit}</span>
+                            <td className="px-10 py-6 text-center">
+                              <span className="text-[10px] font-black text-retro-earth uppercase tracking-widest">{item.material.unit}</span>
                             </td>
-                            <td className="px-8 py-5 text-right font-black text-xs text-gray-600 tabular-nums">
-                              {unitPrice.toLocaleString()} VNĐ
+                            <td className="px-10 py-6 text-right font-black text-xs text-retro-sepia/60 tabular-nums">
+                              {unitPrice.toLocaleString()} <span className="text-[9px] opacity-40">VNĐ</span>
                             </td>
-                            <td className="px-8 py-5 text-right font-black text-xs text-indigo-600 tabular-nums">
-                              {total.toLocaleString()} VNĐ
+                            <td className="px-10 py-6 text-right font-black text-xs text-retro-sepia tabular-nums">
+                              {total.toLocaleString()} <span className="text-[9px] opacity-40">VNĐ</span>
                             </td>
-                            <td className="px-8 py-5 text-center">
+                            <td className="px-10 py-6 text-center">
                               <button
                                 onClick={() => handleRemoveMaterial(item.materialId)}
-                                className="p-2 hover:bg-rose-50 text-gray-300 hover:text-rose-600 rounded-xl transition-all"
+                                className="p-3 text-retro-earth/20 hover:text-retro-brick hover:bg-white transition-all shadow-sm border border-transparent hover:border-retro-brick/20"
                               >
-                                <Trash2 size={16} />
+                                <Trash2 size={18} strokeWidth={1.5} />
                               </button>
                             </td>
                           </tr>
@@ -697,114 +718,118 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
 
             </div>
           ) : (
-            <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 h-full flex flex-col">
+            <div className="space-y-10 animate-in slide-in-from-right-4 duration-500 h-full flex flex-col bg-retro-paper/10 -m-10 p-12">
               {/* COGS CALCULATION TABLE & FOOTER */}
-              <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-50/50 p-8 flex-1 overflow-y-auto flex flex-col">
-                <div className="flex-1">
-                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <DollarSign size={16} className="text-indigo-600" />
-                    Bảng Tính Giá Thành Sản Phẩm (COGS)
+              <div className="bg-white border-2 border-retro-sepia/10 shadow-[0_20px_50px_-12px_rgba(62,39,35,0.15)] flex-1 overflow-y-auto flex flex-col relative">
+                <div className="flex-1 p-10">
+                  <h3 className="text-[13px] font-black text-retro-sepia uppercase tracking-[0.3em] mb-10 flex items-center gap-4 italic opacity-80">
+                    <div className="w-10 h-10 bg-retro-paper border-2 border-retro-sepia/10 flex items-center justify-center text-retro-brick">
+                      <DollarSign size={20} strokeWidth={1.5} />
+                    </div>
+                    Cương mục Tính toán Giá thành (COGS)
                   </h3>
 
-                  <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden mb-6">
-                    <table className="w-full text-left">
-                      <thead className="bg-gray-50/50 border-b border-gray-100">
+                  <div className="bg-white border border-retro-sepia/10 shadow-inner overflow-hidden mb-10 font-typewriter">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-retro-paper border-b-2 border-retro-sepia/10">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Hạng mục</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Chi tiết</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Giá</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Thành tiền</th>
-                          <th className="px-4 py-4 w-10"></th>
+                          <th className="px-8 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60">Thành phần chi phí</th>
+                          <th className="px-8 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60">Diễn giải Chi tiết</th>
+                          <th className="px-8 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60 text-right">Đơn giá quy chiếu</th>
+                          <th className="px-8 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60 text-right">Thành tiền (Quy đổi)</th>
+                          <th className="px-6 py-6 w-12"></th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-50">
+                      <tbody className="divide-y-2 divide-retro-sepia/5">
                         {/* Nguyên liệu */}
-                        <tr>
-                          <td className="px-6 py-4 text-xs font-bold text-gray-700">Nguyên liệu</td>
-                          <td className="px-6 py-4 text-xs text-gray-500 line-clamp-2">{materialDetailsNames || 'Chưa có nguyên liệu'}</td>
-                          <td className="px-6 py-4 text-xs font-black text-gray-400 text-right tabular-nums">-</td>
-                          <td className="px-6 py-4 text-xs font-black text-gray-900 text-right tabular-nums">{totalMaterialCost.toLocaleString()} VNĐ</td>
-                          <td className="px-4 py-4 w-10"></td>
+                        <tr className="bg-retro-paper/5">
+                          <td className="px-8 py-6 text-xs font-black text-retro-sepia uppercase tracking-widest">Nguyên liệu trực tiếp</td>
+                          <td className="px-8 py-6 text-[11px] text-retro-earth/60 italic leading-relaxed max-w-[300px] truncate">{materialDetailsNames || 'Chưa định nghĩa thành phần'}</td>
+                          <td className="px-8 py-6 text-xs font-black text-retro-earth/40 text-right tabular-nums italic">--</td>
+                          <td className="px-8 py-6 text-xs font-black text-retro-brick text-right tabular-nums">{totalMaterialCost.toLocaleString()} <span className="text-[9px] opacity-40">VNĐ</span></td>
+                          <td className="px-6 py-6 w-12"></td>
                         </tr>
                         {/* Hao hụt */}
-                        <tr>
-                          <td className="px-6 py-4 text-xs font-bold text-gray-700">Hao hụt</td>
-                          <td className="px-6 py-4 text-xs text-gray-500">
-                            <div className="flex items-center gap-2">
+                        <tr className="bg-retro-paper/10">
+                          <td className="px-8 py-6 text-xs font-black text-retro-sepia uppercase tracking-widest">Dự phòng Hao hụt</td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-4">
                               <input
                                 type="number"
                                 value={Math.round(wasteRatio * 100)}
                                 onChange={(e) => setWasteRatio(Number(e.target.value) / 100)}
-                                className="w-16 px-2 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold text-indigo-600 outline-none focus:bg-white focus:border-indigo-300"
-                              /> <span className="text-[10px] font-bold text-gray-400 uppercase">% (Dự phòng hao hụt)</span>
+                                className="w-20 px-3 py-2 bg-white border-2 border-retro-sepia/10 text-xs font-black text-center text-retro-brick outline-none focus:border-retro-brick shadow-inner"
+                              /> <span className="text-[9px] font-black text-retro-earth/40 uppercase tracking-widest italic">% (Định mức rủi ro)</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-xs font-black text-gray-400 text-right tabular-nums">-</td>
-                          <td className="px-6 py-4 text-xs font-black text-gray-900 text-right tabular-nums">{Math.round(wasteCost).toLocaleString()} VNĐ</td>
-                          <td className="px-4 py-4 w-10"></td>
+                          <td className="px-8 py-6 text-xs font-black text-retro-earth/40 text-right tabular-nums italic">--</td>
+                          <td className="px-8 py-6 text-xs font-black text-retro-brick text-right tabular-nums">{Math.round(wasteCost).toLocaleString()} <span className="text-[9px] opacity-40">VNĐ</span></td>
+                          <td className="px-6 py-6 w-12"></td>
                         </tr>
                         {/* Custom Costs */}
                         {customCosts.map(cost => (
-                          <tr key={cost.id} className="group hover:bg-gray-50/50 transition-colors">
-                            <td className="px-6 py-3">
+                          <tr key={cost.id} className="group hover:bg-retro-paper/5 transition-all">
+                            <td className="px-8 py-4">
                               <input
                                 value={cost.name}
                                 onChange={(e) => updateCustomCost(cost.id, 'name', e.target.value)}
-                                className="w-full px-2 py-1.5 bg-transparent hover:bg-white border border-transparent hover:border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-300 transition-all cursor-text min-w-[80px]"
-                                placeholder="Tên chi phí..."
+                                className="w-full px-3 py-2 bg-transparent border-2 border-transparent hover:border-retro-sepia/10 focus:border-retro-sepia/20 text-xs font-black text-retro-sepia outline-none transition-all uppercase tracking-tight italic"
+                                placeholder="Tên tiểu mục..."
                               />
                             </td>
-                            <td className="px-6 py-3">
+                            <td className="px-8 py-4">
                               <input
                                 value={cost.details}
                                 onChange={(e) => updateCustomCost(cost.id, 'details', e.target.value)}
-                                className="w-full px-2 py-1.5 bg-transparent hover:bg-white border border-transparent hover:border-gray-200 rounded-lg text-xs text-gray-500 outline-none focus:bg-white focus:border-indigo-300 transition-all cursor-text"
-                                placeholder="Chi tiết diễn giải..."
+                                className="w-full px-3 py-2 bg-transparent border-2 border-transparent hover:border-retro-sepia/10 focus:border-retro-sepia/20 text-[11px] text-retro-earth outline-none transition-all italic opacity-60"
+                                placeholder="Diễn giải nghiệp vụ..."
                               />
                             </td>
-                            <td className="px-6 py-3">
-                              <div className="flex items-center justify-end gap-2">
+                            <td className="px-8 py-4">
+                              <div className="flex items-center justify-end gap-3">
                                 <input
                                   type="number"
                                   value={cost.amount === 0 ? '' : cost.amount}
                                   onChange={(e) => updateCustomCost(cost.id, 'amount', Number(e.target.value))}
-                                  className="w-24 px-2 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs font-black text-indigo-600 text-right tabular-nums outline-none focus:bg-white focus:border-indigo-300 transition-all cursor-text"
+                                  className="w-24 px-3 py-2 bg-retro-paper/50 border-2 border-retro-sepia/10 text-xs font-black text-retro-brick text-right tabular-nums outline-none focus:border-retro-brick shadow-inner placeholder:italic italic"
                                   placeholder="0"
                                 />
-                                <span className="text-[10px] font-black text-gray-400 uppercase">VNĐ</span>
+                                <span className="text-[9px] font-black text-retro-earth/40 uppercase tracking-widest italic">VNĐ</span>
                               </div>
                             </td>
-                            <td className="px-6 py-3 text-right">
-                               <p className="text-xs font-black text-gray-900 tabular-nums">
-                                 {Number(cost.amount || 0).toLocaleString()} VNĐ
+                            <td className="px-8 py-4 text-right">
+                               <p className="text-xs font-black text-retro-sepia tabular-nums">
+                                 {Number(cost.amount || 0).toLocaleString()} <span className="text-[9px] opacity-40">VNĐ</span>
                                </p>
                             </td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-6 py-4 text-center">
                               <button
                                 onClick={() => removeCustomCost(cost.id)}
-                                className="p-1.5 hover:bg-rose-50 text-gray-300 hover:text-rose-600 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                className="p-2 opacity-0 group-hover:opacity-100 text-retro-earth/20 hover:text-retro-brick hover:bg-white transition-all shadow-sm border border-transparent hover:border-retro-brick/20"
                               >
-                                <Trash2 size={14} />
+                                <Trash2 size={16} strokeWidth={1.5} />
                               </button>
                             </td>
                           </tr>
                         ))}
                       </tbody>
-                      <tfoot className="bg-indigo-50/50 border-t border-indigo-100">
+                      <tfoot className="bg-retro-paper border-t-2 border-retro-sepia/20">
                         <tr>
-                          <td colSpan={5} className="px-6 py-3 bg-gray-50/80">
+                          <td colSpan={5} className="px-8 py-5">
                             <button
                               onClick={addCustomCost}
-                              className="text-[10px] font-black text-indigo-600 flex items-center gap-1.5 hover:text-indigo-800 transition-colors uppercase tracking-widest px-2 py-1 rounded hover:bg-indigo-50"
+                              className="text-[10px] font-black text-retro-brick flex items-center gap-3 hover:opacity-70 transition-all uppercase tracking-[0.2em] px-6 py-3 border-2 border-dashed border-retro-brick/20 italic"
                             >
-                              <Plus size={14} /> Thêm dòng chi phí khác
+                              <Plus size={16} strokeWidth={2.5} /> Khai báo Phí tổn phát sinh khác
                             </button>
                           </td>
                         </tr>
-                        <tr>
-                          <td className="px-6 py-5 text-xs font-black text-indigo-900 uppercase tracking-widest" colSpan={3}>TỔNG GIÁ THÀNH (COGS)</td>
-                          <td className="px-6 py-5 text-sm font-black text-indigo-600 text-right tabular-nums">{Math.round(totalCOGS).toLocaleString()} VNĐ</td>
-                          <td className="px-4 py-5 w-10"></td>
+                        <tr className="bg-retro-brick text-white">
+                          <td className="px-8 py-8 text-sm font-black uppercase tracking-[0.3em] italic" colSpan={3}>Tổng định mức Giá thành (COGS)</td>
+                          <td className="px-8 py-8 text-2xl font-black text-right tabular-nums tracking-tighter">
+                            {Math.round(totalCOGS).toLocaleString()} <span className="text-xs opacity-60">VNĐ</span>
+                          </td>
+                          <td className="px-6 py-8 w-12"></td>
                         </tr>
                       </tfoot>
                     </table>

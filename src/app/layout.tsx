@@ -1,14 +1,29 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Xanh_Mono, Patrick_Hand, Libre_Baskerville } from 'next/font/google'
 import './globals.css'
-import Sidebar from '@/components/layout/Sidebar'
-import BottomNav from '@/components/layout/BottomNav'
+import DashboardShell from '@/components/layout/DashboardShell'
 
-const inter = Inter({ subsets: ['latin'] })
+const typewriter = Xanh_Mono({ 
+  weight: '400',
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-typewriter'
+})
+
+const handwriting = Patrick_Hand({
+  weight: '400',
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-handwriting'
+})
+
+const serif = Libre_Baskerville({
+  weight: ['400', '700'],
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-serif'
+})
 
 export const metadata: Metadata = {
-  title: 'Paper Art Việt - ERP System',
-  description: 'Production Management System for Paper Art Việt',
+  title: 'Paper Art Việt | Retro ERP',
+  description: 'Handcrafted ERP Experience for Paper Art Việt',
 }
 
 import { NotificationProvider } from '@/context/NotificationContext'
@@ -22,17 +37,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${serif.className} ${typewriter.variable} ${handwriting.variable} ${serif.variable} bg-retro-paper antialiased`} suppressHydrationWarning>
         <NotificationProvider>
           <AuthProvider>
             <MaintenanceGuard>
-              <div className="flex min-h-screen relative overflow-x-hidden">
-                <Sidebar />
-                <main className="flex-1 p-3 lg:p-8 pb-24 lg:pb-8 bg-gray-50/50 relative z-0">
-                  {children}
-                </main>
-                <BottomNav />
-              </div>
+              <DashboardShell>
+                {children}
+              </DashboardShell>
             </MaintenanceGuard>
           </AuthProvider>
         </NotificationProvider>

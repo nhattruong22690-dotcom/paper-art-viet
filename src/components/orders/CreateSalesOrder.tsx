@@ -540,63 +540,61 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
     )}>
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-gray-900/60 backdrop-blur-md"
+        className="absolute inset-0 bg-retro-sepia/40 backdrop-blur-sm"
         onClick={handleClose}
       />
       
       {/* Container */}
-      <div className="relative bg-[#fafafa] w-full h-full sm:h-[95vh] sm:max-w-7xl sm:rounded-[48px] shadow-2xl overflow-hidden flex flex-col border border-white/20 animate-in zoom-in-95 duration-500">
+      <div className="relative bg-retro-paper w-full h-full sm:h-[95vh] sm:max-w-7xl sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col border border-retro-sepia/20 animate-in zoom-in-95 duration-500">
          {/* HEADER */}
-         <div className="p-8 sm:p-10 border-b border-gray-100 bg-white flex justify-between items-center relative active:z-50 shrink-0">
-           {/* ... existing header ... */}
-           {/* Replace with existing header if needed, but I'll update the Save button */}
-           {/* I'll just replace the whole footer/header if needed, but let's be strategic */}
-           <div className="flex flex-col">
-             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight italic">Tạo Đơn hàng <span className="text-primary-600 underline">Mới</span></h2>
-             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">Hệ thống Paper Art Viet ERP</p>
-           </div>
-           <div className="flex items-center gap-4">
-              <button 
-                onClick={handleSubmit}
-                disabled={!canSubmit}
-                className={cn(
-                  "flex items-center gap-3 px-10 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 group",
-                  canSubmit 
-                    ? "bg-primary-600 text-white shadow-primary-200 hover:bg-primary-500" 
-                    : "bg-gray-200 text-gray-400 shadow-none cursor-not-allowed opacity-60"
-                )}
-              >
-                {isSubmitting ? (
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    {!canSubmit && <Lock size={14} className="opacity-50" />}
-                    Lưu Hợp đồng <Check size={16} />
-                  </>
-                )}
-              </button>
-              <button onClick={handleClose} className="p-4 bg-gray-50 hover:bg-rose-50 rounded-2xl text-gray-400 hover:text-rose-500 transition-all">
-                <X size={24} />
-              </button>
-           </div>
-         </div>
+         <div className="p-8 sm:p-10 border-b border-retro-sepia/10 bg-retro-paper flex justify-between items-center relative active:z-50 shrink-0 shadow-sm">
+            <div className="flex flex-col">
+              <h2 className="text-2xl font-black text-retro-sepia font-typewriter uppercase tracking-tighter">Hợp đồng <span className="text-retro-brick underline decoration-double underline-offset-4 decoration-retro-brick/30">Kinh doanh</span></h2>
+              <p className="text-[10px] text-retro-earth font-handwriting uppercase tracking-widest mt-1 italic">Trạm đăng ký Paper Art Việt - ERP Portal</p>
+            </div>
+            <div className="flex items-center gap-4">
+               <button 
+                 onClick={handleSubmit}
+                 disabled={!canSubmit}
+                 className={cn(
+                   "retro-btn flex items-center gap-3 px-10 py-4 transition-all shadow-xl active:scale-95 group",
+                   canSubmit 
+                     ? "bg-retro-sepia text-retro-mustard shadow-retro-sepia/10" 
+                     : "bg-retro-earth/20 text-retro-earth/40 shadow-none cursor-not-allowed opacity-60"
+                 )}
+               >
+                 {isSubmitting ? (
+                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                 ) : (
+                   <>
+                     {!canSubmit && <Lock size={14} className="opacity-50" />}
+                     Ghi sổ Hợp đồng <Check size={16} />
+                   </>
+                 )}
+               </button>
+               <button onClick={handleClose} className="p-4 bg-retro-paper hover:bg-retro-brick/10 rounded-2xl text-retro-sepia/40 hover:text-retro-brick transition-all border border-retro-sepia/10">
+                 <X size={24} />
+               </button>
+            </div>
+          </div>
 
         {/* MODAL BODY */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-retro-paper">
           <div className="max-w-7xl mx-auto">
             <div className="space-y-8 pb-24 md:pb-12">
-<section className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm">
-             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center gap-2">
-               <Users size={14} className="text-primary-600" /> Thông tin hợp đồng
+<section className="bg-white/40 p-8 rounded-3xl border border-retro-sepia/10 shadow-sm relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-retro-brick via-retro-mustard to-retro-moss opacity-20" />
+             <h3 className="text-xs font-black text-retro-sepia font-typewriter uppercase tracking-widest mb-8 flex items-center gap-2">
+               <Users size={14} className="text-retro-brick" /> Thông tin đăng ký Hợp đồng
              </h3>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* CUSTOMER SEARCHABLE COMBOBOX */}
                 <div className="space-y-2 relative" ref={comboboxRef}>
-                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tìm Khách hàng</label>
+                   <label className="text-[10px] font-black text-retro-sepia font-typewriter uppercase tracking-widest ml-1">Bên A: Tìm Khách hàng</label>
                    <div className="relative group">
                      <Search className={cn(
                        "absolute left-4 top-1/2 -translate-y-1/2 transition-colors",
-                       isComboboxOpen ? "text-primary-600" : "text-gray-400"
+                       isComboboxOpen ? "text-retro-brick" : "text-retro-sepia/40"
                      )} size={18} />
                      <input 
                       type="text"
@@ -612,42 +610,42 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                         if (selectedCustomerId) setSelectedCustomerId('');
                         setIsComboboxOpen(true);
                       }}
-                      className="w-full pl-12 pr-12 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:bg-white transition-all text-sm font-bold uppercase tracking-tight placeholder:text-gray-300"
+                      className="w-full pl-12 pr-12 py-4 bg-white/50 border border-retro-sepia/10 rounded-xl focus:outline-none focus:ring-4 focus:ring-retro-mustard/10 focus:bg-white transition-all text-sm font-typewriter uppercase tracking-tighter placeholder:text-retro-earth/30 shadow-inner"
                      />
                      {customerSearch && (
                        <button 
                         onClick={() => { setSelectedCustomerId(''); setCustomerSearch(''); }}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-rose-500 transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-retro-sepia/30 hover:text-retro-brick transition-colors"
                        >
-                         <X size={16} />
+                         <X size={16} strokeWidth={1.5} />
                        </button>
                      )}
                    </div>
 
                    {/* Dropdown Suggestions */}
                    {isComboboxOpen && !isMobileSearchOpen && (
-                     <div className="absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                     <div className="absolute top-full left-0 w-full mt-2 bg-white border-2 border-retro-sepia/10 shadow-2xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                         {filteredCustomers.length > 0 ? (
-                          <div className="max-h-60 overflow-y-auto">
+                          <div className="max-h-60 overflow-y-auto font-typewriter italic underline-offset-4 decoration-retro-mustard/30">
                             {filteredCustomers.map(c => (
                               <button
                                 key={c.id}
                                 onClick={() => handleSelectCustomer(c)}
-                                className="w-full text-left px-6 py-4 hover:bg-primary-50 transition-colors border-b border-gray-50 last:border-0"
+                                className="w-full text-left px-6 py-4 hover:bg-retro-paper/50 transition-colors border-b-2 border-retro-sepia/5 last:border-0"
                               >
                                 <div className="flex items-center justify-between">
                                    <div className="flex flex-col">
-                                      <span className="text-xs font-black text-primary-600 uppercase tracking-widest">{c.customerCode || 'UNSET'}</span>
-                                      <span className="text-sm font-bold text-gray-900">{c.name}</span>
+                                      <span className="text-[10px] font-black text-retro-brick uppercase tracking-widest">{c.customerCode || 'Mã: LẠ'}</span>
+                                      <span className="text-sm font-black text-retro-sepia uppercase">{c.name}</span>
                                    </div>
-                                   <ChevronRight size={14} className="text-gray-300" />
+                                   <ChevronRight size={16} strokeWidth={1.5} className="text-retro-sepia/30" />
                                 </div>
                               </button>
                             ))}
                           </div>
                         ) : (
-                          <div className="p-8 text-center">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Không tìm thấy khách hàng</p>
+                          <div className="p-10 text-center font-typewriter italic">
+                            <p className="text-[10px] font-black text-retro-earth/40 uppercase tracking-widest">Hồ sơ khách hàng không khả dụng</p>
                           </div>
                         )}
                      </div>
@@ -670,14 +668,14 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
 
                 {/* CONTRACT CODE (AUTO) */}
                 <div className="space-y-2">
-                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mã Hợp đồng (Tự động)</label>
+                   <label className="text-[10px] font-black text-retro-sepia font-typewriter uppercase tracking-widest ml-1">Số hiệu Hợp đồng (Tự động)</label>
                    <div className="relative group">
-                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-retro-earth/30" size={18} />
                      <input 
                       type="text" 
                       readOnly
                       value={contractCode}
-                      className="w-full pl-12 pr-6 py-4 bg-gray-50/30 border border-gray-100 rounded-2xl text-sm font-black text-primary-600 uppercase italic cursor-not-allowed"
+                      className="w-full pl-12 pr-6 py-4 bg-retro-mustard/5 border border-retro-sepia/10 rounded-xl text-sm font-black text-retro-brick font-typewriter uppercase italic cursor-not-allowed shadow-inner"
                       placeholder="Hệ thống tự ghép mã..."
                      />
                    </div>
@@ -685,42 +683,43 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
 
                 {/* DEADLINE */}
                 <div className="space-y-2">
-                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Hạn giao hàng dự kiến</label>
+                   <label className="text-[10px] font-black text-retro-sepia font-typewriter uppercase tracking-widest ml-1">Kỳ hạn Giao hàng dự kiến</label>
                    <div className="relative group">
-                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-600 transition-colors" size={18} />
+                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-retro-earth/40 group-focus-within:text-retro-brick transition-colors" size={18} />
                      <input 
                       type="date" 
                       value={deadline}
                       onChange={(e) => setDeadline(e.target.value)}
-                      className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:bg-white transition-all text-sm font-bold"
+                      className="w-full pl-12 pr-6 py-4 bg-white/50 border border-retro-sepia/10 rounded-xl focus:outline-none focus:ring-4 focus:ring-retro-mustard/10 focus:bg-white transition-all text-sm font-typewriter tracking-tighter shadow-inner"
                      />
                    </div>
                 </div>
 
                 {/* NOTES (FULL WIDTH IN GRID) */}
                 <div className="md:col-span-2 space-y-2">
-                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ghi chú Hợp đồng (Đóng gói, Vận chuyển...)</label>
+                   <label className="text-[10px] font-black text-retro-sepia font-typewriter uppercase tracking-widest ml-1">Ghi chú Điều khoản (Đóng gói, Vận chuyển...)</label>
                    <textarea 
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Nhập ghi chú hoặc yêu cầu riêng của khách..."
-                    className="w-full px-6 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:bg-white transition-all text-sm font-medium h-24 resize-none"
+                    placeholder="Nhập ghi chú yêu cầu kỹ thuật hoặc vận đơn..."
+                    className="w-full px-6 py-4 bg-white/50 border border-retro-sepia/10 rounded-xl focus:outline-none focus:ring-4 focus:ring-retro-mustard/10 focus:bg-white transition-all text-sm font-handwriting h-24 resize-none shadow-inner"
                    />
                 </div>
              </div>
           </section>
 
           {/* ORDER ITEMS */}
-          <section className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm relative z-20">
+          <section className="bg-white/40 p-8 rounded-3xl border border-retro-sepia/10 shadow-sm relative z-20 overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-retro-brick via-retro-mustard to-retro-moss opacity-20" />
              <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                   <ShoppingCart size={14} className="text-primary-600" /> Danh sách sản phẩm
+                <h3 className="text-xs font-black text-retro-sepia font-typewriter uppercase tracking-widest flex items-center gap-2">
+                   <ShoppingCart size={14} className="text-retro-brick" /> Danh mục Sản phẩm & Định giá
                 </h3>
                 <button 
                   onClick={addItem}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 hover:text-white transition-all active:scale-95"
+                  className="retro-btn flex items-center gap-2 px-5 py-2.5 bg-retro-sepia text-retro-mustard transition-all active:scale-95"
                 >
-                  <Plus size={14} /> Thêm dòng
+                  <Plus size={14} /> Thêm dòng mới
                 </button>
              </div>
 
@@ -728,16 +727,16 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
              <div className="hidden md:block relative">
                 <table className="w-full border-collapse">
                    <thead>
-                      <tr className="border-b border-gray-100">
-                         <th className="px-3 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Sản phẩm</th>
-                         <th className="px-3 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-28">Số lượng</th>
-                         <th className="px-3 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Giá vốn</th>
-                         <th className="px-3 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest w-40">Giá Deal</th>
-                         <th className="px-3 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest w-40">Thành tiền</th>
+                      <tr className="border-b-2 border-retro-sepia/20">
+                         <th className="px-3 py-4 text-left text-[10px] font-black text-retro-sepia font-typewriter uppercase tracking-widest">Sản phẩm đăng ký</th>
+                         <th className="px-3 py-4 text-center text-[10px] font-black text-retro-sepia font-typewriter uppercase tracking-widest w-28">Số lượng</th>
+                         <th className="px-3 py-4 text-right text-[10px] font-black text-retro-sepia font-typewriter uppercase tracking-widest whitespace-nowrap">Giá vốn (BOM)</th>
+                         <th className="px-3 py-4 text-right text-[10px] font-black text-retro-sepia font-typewriter uppercase tracking-widest w-40">Giá Đề xuất/Deal</th>
+                         <th className="px-3 py-4 text-right text-[10px] font-black text-retro-sepia font-typewriter uppercase tracking-widest w-40">Thành tiền</th>
                          <th className="px-3 py-4 w-10"></th>
                       </tr>
                    </thead>
-                   <tbody className="divide-y divide-gray-50">
+                   <tbody className="divide-y divide-retro-sepia/10">
                       {items.map((item) => {
                         const isLoss = item.dealPrice > 0 && item.dealPrice < item.cogs;
                         return (
@@ -1021,24 +1020,24 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
 {/* MODAL FOOTER SUMMARY */}
         <div className={cn(
           "flex-shrink-0 z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] transition-colors duration-500 border-t",
-          isNegativeMargin ? "bg-rose-600 border-rose-700" : "bg-white border-gray-100"
+          isNegativeMargin ? "bg-retro-brick border-retro-brick" : "bg-retro-paper border-retro-sepia/10"
         )}>
            <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
              {/* Summary Stats */}
              <div className="flex flex-1 items-center gap-6 overflow-x-auto w-full hide-scrollbar">
                 <div className="flex flex-col flex-shrink-0">
-                  <span className={cn("text-[10px] font-black uppercase tracking-widest", isNegativeMargin ? "text-rose-200" : "text-gray-400")}>Tổng doanh thu</span>
-                  <span className={cn("text-lg font-black", isNegativeMargin ? "text-white" : "text-gray-900")}>{formatNumber(totalRevenue)}đ</span>
+                  <span className={cn("text-[10px] font-black font-typewriter uppercase tracking-widest", isNegativeMargin ? "text-retro-paper/60" : "text-retro-earth")}>Doanh thu tạm tính</span>
+                  <span className={cn("text-lg font-black font-typewriter", isNegativeMargin ? "text-white" : "text-retro-sepia")}>{formatNumber(totalRevenue)}đ</span>
                 </div>
-                <div className={cn("hidden sm:block w-px h-8", isNegativeMargin ? "bg-rose-500" : "bg-gray-200")} />
+                <div className={cn("hidden sm:block w-px h-8", isNegativeMargin ? "bg-white/20" : "bg-retro-sepia/10")} />
                 <div className="flex flex-col flex-shrink-0">
-                  <span className={cn("text-[10px] font-black uppercase tracking-widest", isNegativeMargin ? "text-rose-200" : "text-gray-400")}>Tổng Giá Vốn (COGS)</span>
-                  <span className={cn("text-lg font-black", isNegativeMargin ? "text-rose-200" : "text-rose-500")}>-{formatNumber(totalCOGS)}đ</span>
+                  <span className={cn("text-[10px] font-black font-typewriter uppercase tracking-widest", isNegativeMargin ? "text-retro-paper/60" : "text-retro-earth")}>Giá Vốn Tổng (BOM)</span>
+                  <span className={cn("text-lg font-black font-typewriter", isNegativeMargin ? "text-retro-paper" : "text-retro-brick")}>-{formatNumber(totalCOGS)}đ</span>
                 </div>
-                <div className={cn("hidden sm:block w-px h-8", isNegativeMargin ? "bg-rose-500" : "bg-gray-200")} />
+                <div className={cn("hidden sm:block w-px h-8", isNegativeMargin ? "bg-white/20" : "bg-retro-sepia/10")} />
                 <div className="flex flex-col flex-shrink-0">
-                  <span className={cn("text-[10px] font-black uppercase tracking-widest", isNegativeMargin ? "text-white" : "text-primary-600")}>Lợi nhuận gộp</span>
-                  <span className={cn("text-xl font-black", isNegativeMargin ? "text-white" : (totalProfit > 0 ? "text-emerald-500" : "text-rose-500"))}>{formatNumber(totalRevenue - totalCOGS)}đ</span>
+                  <span className={cn("text-[10px] font-black font-typewriter uppercase tracking-widest", isNegativeMargin ? "text-white" : "text-retro-moss")}>Thặng dư Dự kiến</span>
+                  <span className={cn("text-xl font-black font-typewriter", isNegativeMargin ? "text-white" : (totalProfit > 0 ? "text-retro-moss" : "text-retro-brick"))}>{formatNumber(totalRevenue - totalCOGS)}đ</span>
                 </div>
              </div>
              
@@ -1048,11 +1047,11 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                  onClick={handleSubmit}
                  disabled={isSubmitting}
                  className={cn(
-                   "w-full md:w-auto px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 flex-shrink-0",
-                   isNegativeMargin ? "bg-white text-rose-600 hover:bg-rose-50 shadow-rose-900/20" : "bg-gray-900 text-white hover:bg-black shadow-gray-900/20"
+                   "retro-btn w-full md:w-auto px-8 py-4 transition-all active:scale-95 flex items-center justify-center gap-2 flex-shrink-0 shadow-xl",
+                   isNegativeMargin ? "bg-white text-retro-brick hover:bg-retro-paper" : "bg-retro-sepia text-white hover:bg-black"
                  )}
                 >
-                  {isSubmitting ? "Syste Processing..." : "Khởi tạo & Chốt giá BOM"}
+                  {isSubmitting ? "Đang Ghi sổ..." : "Phê duyệt & Chốt định mức BOM"}
                   {!isSubmitting && <ChevronRight size={16} />}
                 </button>
              </div>

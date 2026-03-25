@@ -1,45 +1,123 @@
 @import "tailwindcss";
 
 :root {
-  --foreground-rgb: 31, 41, 55;
-  --background-start-rgb: 249, 250, 251;
-  --background-end-rgb: 255, 255, 255;
+  --foreground-rgb: 62, 39, 35; /* Dark Sepia text */
+  --background-paper: 242, 235, 217; /* #F2EBD9 */
+  --retro-brown: 62, 39, 35;
+  --retro-earth: 141, 110, 99;
+  --retro-moss: 85, 107, 47;
+  --retro-brick: 178, 34, 34;
+  --retro-mustard: 218, 165, 32;
 }
 
 @theme {
-  --color-primary-50: #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-primary-800: #075985;
-  --color-primary-900: #0c4a6e;
+  --color-retro-paper: #F2EBD9;
+  --color-retro-sepia: #3E2723;
+  --color-retro-earth: #8D6E63;
+  --color-retro-moss: #556B2F;
+  --color-retro-brick: #B22222;
+  --color-retro-mustard: #DAA520;
+  --color-retro-beige: #D7CCC8;
+
+  --font-typewriter: "Special Elite", "Courier Prime", Courier, monospace;
+  --font-handwriting: "Architects Daughter", cursive;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  color: #3E2723;
+  background-color: #F2EBD9;
+  background-image: url("https://www.transparenttextures.com/patterns/parched-paper.png");
+  min-height: 100vh;
 }
 
-@layer components {
-  .card-refined {
-    @apply bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300;
+@layer utilities {
+  .torn-paper-bottom {
+    position: relative;
+    padding-bottom: 20px;
+  }
+  
+  .torn-paper-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 15px;
+    background: linear-gradient(135deg, transparent 75%, #F2EBD9 75%),
+                linear-gradient(225deg, transparent 75%, #F2EBD9 75%);
+    background-size: 15px 30px;
+    background-repeat: repeat-x;
+  }
+
+  .torn-paper-top {
+     position: relative;
+  }
+
+  .torn-paper-top::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 15px;
+    background: linear-gradient(-135deg, transparent 75%, #F2EBD9 75%),
+                linear-gradient(-225deg, transparent 75%, #F2EBD9 75%);
+    background-size: 15px 30px;
+    background-size: 15px 15px;
+    background-repeat: repeat-x;
+    transform: rotate(180deg);
+  }
+
+  .polaroid-shimmer {
+    background: linear-gradient(to bottom, #ffffff 0%, #f5f5f5 100%);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .paper-clip {
+    position: relative;
+  }
+
+  .paper-clip::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    right: 20px;
+    width: 25px;
+    height: 40px;
+    background: rgba(200, 200, 200, 0.5);
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    z-index: 20;
+    transform: rotate(15deg);
+  }
+
+  .washi-tape-top {
+    position: relative;
+  }
+
+  .washi-tape-top::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-2deg);
+    width: 80px;
+    height: 24px;
+    background-color: rgba(218, 165, 32, 0.4);
+    opacity: 0.7;
+    z-index: 10;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
   }
 }
 
-/* Custom color utility for Sidebar requirement */
-.bg-sky-light {
-  background-color: #E3F2FD;
-}
-
-.text-yellow-cadmium {
-  color: #FBC02D;
+@layer components {
+  .retro-card {
+    @apply bg-white border border-retro-earth/20 p-6 shadow-lg transition-all transform hover:-translate-y-1 hover:rotate-1;
+    position: relative;
+  }
+  
+  .retro-btn {
+    @apply inline-flex items-center justify-center px-6 py-3 uppercase tracking-widest text-xs border-2 border-retro-sepia bg-transparent hover:bg-retro-sepia hover:text-white transition-all active:scale-95;
+    font-family: var(--font-typewriter);
+  }
 }

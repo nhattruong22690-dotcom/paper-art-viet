@@ -55,77 +55,84 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-50 flex items-center justify-center p-6 z-[99999] animate-in fade-in duration-700">
+    <div className="fixed inset-0 bg-retro-paper flex items-center justify-center p-6 z-[99999] animate-in fade-in duration-700 overflow-y-auto">
       {/* Background Decor */}
-      <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
-         <ShieldCheck size={400} />
+      <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+         <ShieldCheck size={400} strokeWidth={1} className="text-retro-sepia" />
       </div>
 
-      <div className="max-w-md w-full bg-white rounded-[48px] p-10 md:p-14 shadow-2xl shadow-gray-200 border border-gray-100 relative overflow-hidden animate-in zoom-in-95 duration-500">
-        <header className="text-center mb-10 space-y-4">
-           <div className="w-20 h-20 bg-primary-600 rounded-[28px] flex items-center justify-center text-white mx-auto shadow-xl shadow-primary-200 mb-6 group">
-              <Box size={40} className="group-hover:scale-110 transition-transform duration-500" />
-           </div>
-           <span className="text-[10px] font-black text-primary-600 uppercase tracking-[0.3em] italic">Paper Art Việt - ERP Hub</span>
-           <h1 className="text-3xl font-black text-gray-900 tracking-tight italic uppercase leading-none">Authentication</h1>
-           <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Vui lòng đăng nhập để tiếp tục</p>
-        </header>
+      <div className="max-w-md w-full retro-card animate-in zoom-in-95 duration-500 !p-0 overflow-hidden">
+        <div className="washi-tape-top" />
+        
+        <div className="p-10 md:p-14 space-y-10">
+          <header className="text-center space-y-4">
+             <div className="w-20 h-20 bg-retro-sepia flex items-center justify-center text-retro-paper mx-auto shadow-xl rotate-3 hover:rotate-0 transition-transform mb-6 group cursor-default">
+                <Box size={40} strokeWidth={1.5} className="group-hover:scale-110 transition-transform duration-500" />
+             </div>
+             <span className="text-[10px] font-black text-retro-earth uppercase tracking-[0.3em] italic font-handwriting">Paper Art Việt - ERP Portal</span>
+             <h1 className="text-3xl font-black text-retro-sepia tracking-tighter italic uppercase leading-none font-typewriter underline decoration-double decoration-retro-mustard/30 underline-offset-4">Xác thực <span className="text-retro-brick">Quyền hạn</span></h1>
+             <p className="text-xs font-bold text-retro-earth uppercase tracking-widest leading-relaxed font-typewriter italic opacity-60">Niêm phong hệ thống - Vui lòng nhập mật mã</p>
+          </header>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-           <div className="space-y-2 group">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 italic opacity-60">Tài khoản (Email/Username)</label>
-              <div className="relative">
-                 <Mail size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary-500 transition-colors" />
-                 <input 
-                   type="text"
-                   value={email}
-                   onChange={(e) => setEmail(e.target.value)}
-                   placeholder="admin hoặc admin@paperart.com"
-                   required
-                   className="w-full bg-gray-50 border border-gray-100 rounded-3xl py-5 pl-14 pr-8 text-sm font-bold focus:bg-white focus:ring-4 focus:ring-primary-50 transition-all outline-none"
-                 />
-              </div>
-           </div>
+          <form onSubmit={handleLogin} className="space-y-8">
+             <div className="space-y-3 group">
+                <label className="text-[10px] font-black text-retro-sepia uppercase tracking-widest ml-1 italic font-typewriter opacity-60">Tài khoản (Công danh / Email)</label>
+                <div className="relative">
+                   <Mail size={18} strokeWidth={1.5} className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/30 group-focus-within:text-retro-mustard transition-colors" />
+                   <input 
+                     type="text"
+                     value={email}
+                     onChange={(e) => setEmail(e.target.value)}
+                     placeholder="vd: admin hoặc kien@paperart.com"
+                     required
+                     className="w-full bg-white/50 border-2 border-retro-sepia/10 px-14 py-5 text-sm font-bold text-retro-sepia focus:bg-white focus:border-retro-sepia transition-all outline-none font-typewriter uppercase tracking-tighter shadow-inner"
+                   />
+                </div>
+             </div>
 
-           <div className="space-y-2 group">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 italic opacity-60">Mật mã bảo mật</label>
-              <div className="relative">
-                 <Lock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-rose-500 transition-colors" />
-                 <input 
-                   type={showPassword ? 'text' : 'password'}
-                   value={password}
-                   onChange={(e) => setPassword(e.target.value)}
-                   placeholder="••••••••"
-                   required
-                   className="w-full bg-gray-50 border border-gray-100 rounded-3xl py-5 pl-14 pr-14 text-sm font-bold focus:bg-white focus:ring-4 focus:ring-rose-50 transition-all outline-none"
-                 />
-                 <button 
-                   type="button"
-                   onClick={() => setShowPassword(!showPassword)}
-                   className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-900 transition-all"
-                 >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                 </button>
-              </div>
-           </div>
+             <div className="space-y-3 group">
+                <label className="text-[10px] font-black text-retro-sepia uppercase tracking-widest ml-1 italic font-typewriter opacity-60">Mật mã bảo mật</label>
+                <div className="relative">
+                   <Lock size={18} strokeWidth={1.5} className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/30 group-focus-within:text-retro-brick transition-colors" />
+                   <input 
+                     type={showPassword ? 'text' : 'password'}
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
+                     placeholder="••••••••"
+                     required
+                     className="w-full bg-white/50 border-2 border-retro-sepia/10 px-14 py-5 text-sm font-bold text-retro-sepia focus:bg-white focus:border-retro-sepia transition-all outline-none font-typewriter tracking-tight shadow-inner"
+                   />
+                   <button 
+                     type="button"
+                     onClick={() => setShowPassword(!showPassword)}
+                     className="absolute right-6 top-1/2 -translate-y-1/2 text-retro-sepia/30 hover:text-retro-sepia transition-all"
+                   >
+                      {showPassword ? <EyeOff size={18} strokeWidth={1.5} /> : <Eye size={18} strokeWidth={1.5} />}
+                   </button>
+                </div>
+             </div>
 
-           <div className="pt-4">
-              <button 
-                type="submit"
-                disabled={loading}
-                className="w-full py-5 bg-gray-900 text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-primary-600 transition-all active:scale-95 shadow-xl shadow-gray-200 disabled:opacity-50"
-              >
-                 {loading ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                 Xác thực danh tính
-              </button>
-           </div>
-        </form>
+             <div className="pt-4">
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-full retro-btn bg-retro-brick text-white hover:bg-retro-sepia py-5 shadow-[4px_4px_0px_#3E272333] flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                   {loading ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} strokeWidth={1.5} />}
+                   Ký tên & Truy cập
+                </button>
+             </div>
+          </form>
 
-        <footer className="mt-10 pt-8 border-t border-gray-50 flex items-center justify-center gap-4 text-gray-300 opacity-60 italic">
-           <AlertCircle size={14} />
-           <p className="text-[9px] font-black uppercase tracking-widest">Secured by Supabase Gateway 2026</p>
-        </footer>
+          <footer className="mt-10 pt-8 border-t-2 border-dashed border-retro-sepia/10 flex items-center justify-center gap-4 text-retro-earth opacity-60 italic font-handwriting">
+             <AlertCircle size={14} strokeWidth={1.5} />
+             <p className="text-[9px] font-black uppercase tracking-widest">Secured by Supabase Gateway — MCMLXXXIV (2026)</p>
+          </footer>
+        </div>
+        
+        <div className="torn-paper-bottom" />
       </div>
     </div>
   );
 }
+

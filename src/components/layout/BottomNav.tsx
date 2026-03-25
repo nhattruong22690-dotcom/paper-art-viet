@@ -1,72 +1,48 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  ClipboardCheck, 
-  Archive, 
-  Package,
-  UserCircle,
-  Users
-} from 'lucide-react';
+import { LayoutGrid, Pin } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import SubMenuOverlay, { SubMenuType } from './SubMenuOverlay';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const navItems = [
-  { name: 'Kinh doanh', id: 'sales' as SubMenuType, icon: Users },
-  { name: 'Sản xuất', id: 'production' as SubMenuType, icon: ClipboardCheck },
-  { name: 'Kho vận', id: 'logistics' as SubMenuType, icon: Archive },
-  { name: 'Cá nhân', id: 'hr' as SubMenuType, icon: UserCircle },
-];
-
 export default function BottomNav() {
   const pathname = usePathname();
-  const [activeMenu, setActiveMenu] = useState<SubMenuType>(null);
+  const isActive = pathname === '/mobile-menu';
 
   return (
-    <>
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] z-[50] pb-safe">
-        <div className="flex justify-around items-center h-20 px-2">
-          {navItems.map((item) => {
-            const isActive = activeMenu === item.id;
-            
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveMenu(item.id)}
-                className={cn(
-                  "flex flex-col items-center justify-center gap-1.5 flex-1 py-1 transition-all active:scale-90 outline-none",
-                  isActive ? "text-primary-600" : "text-gray-400"
-                )}
-              >
-                <div className={cn(
-                  "p-2.5 rounded-2xl transition-all duration-300",
-                  isActive ? "bg-primary-50 scale-110 shadow-sm" : "bg-transparent"
-                )}>
-                  <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                </div>
-                <span className={cn(
-                  "text-[9px] font-black uppercase tracking-widest",
-                  isActive ? "text-primary-600" : "text-gray-400"
-                )}>
-                  {item.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-retro-sepia h-20 shadow-[-20px_0_30px_rgba(0,0,0,0.4)] torn-paper-top">
+      <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center group pointer-events-auto">
+        <Link
+          href="/mobile-menu"
+          className={cn(
+            "w-20 h-24 bg-white p-2 pb-6 polaroid-shimmer border-2 border-white shadow-2xl transition-all duration-500 active:scale-90 flex flex-col items-center justify-between",
+            isActive ? "rotate-0 scale-110 -translate-y-2" : "rotate-3 hover:rotate-0"
+          )}
+        >
+          {/* Wooden Clip decoration */}
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-8 bg-retro-earth border border-retro-sepia/20 z-20 shadow-sm" />
+          
+          <div className={cn(
+            "w-full h-full flex items-center justify-center text-white",
+            isActive ? "bg-retro-brick" : "bg-retro-sepia"
+          )}>
+            <LayoutGrid size={32} strokeWidth={1.5} />
+          </div>
+          
+          <span className="font-handwriting text-[8px] text-retro-sepia font-bold">MENU</span>
+        </Link>
+      </div>
 
-      <SubMenuOverlay 
-        type={activeMenu} 
-        onClose={() => setActiveMenu(null)} 
-      />
-    </>
+      <div className="flex justify-around items-center h-full px-12 pt-4">
+         <span className="font-typewriter text-[9px] text-white/40 uppercase tracking-widest italic">Paper Art Việt</span>
+         <span className="font-typewriter text-[9px] text-white/40 uppercase tracking-widest italic">EST. 2012</span>
+      </div>
+    </nav>
   );
 }

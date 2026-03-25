@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Users, Plus, Filter, Search, Phone, MapPin,
-  Building2, Trash2, Edit3, Mail, FileText,
+  Building2, Trash2, Mail, FileText,
   AlertCircle, X, ChevronRight, UserPlus,
-  ChevronDown, ChevronUp, ExternalLink, Hash
+  ChevronDown, ChevronUp, ExternalLink, Hash,
+  Library, Edit3
 } from 'lucide-react';
 
 interface Customer {
@@ -24,14 +25,13 @@ interface Customer {
 import { useNotification } from '@/context/NotificationContext';
 
 export default function CustomersPage() {
-  const { showToast, showModal, confirm: customConfirm } = useNotification();
+  const { showToast, showModal, confirm } = useNotification();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [visibleCount, setVisibleCount] = useState(15);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -98,7 +98,7 @@ export default function CustomersPage() {
       setEditingCustomer(customer);
       const code = customer.customerCode || (customer as any).customer_code || '';
       setFormData({
-        name: customer.name,
+        name: customer.name || '',
         customerCode: code,
         phone: customer.phone || '',
         email: customer.email || '',
@@ -107,20 +107,41 @@ export default function CustomersPage() {
       });
     } else {
       setEditingCustomer(null);
-      setFormData({ name: '', customerCode: '', phone: '', email: '', address: '', notes: '' });
+      setFormData({
+        name: '',
+        customerCode: '',
+        phone: '',
+        email: '',
+        address: '',
+        notes: ''
+      });
     }
     setIsModalOpen(true);
   };
 
-  const handleSave = async () => {
-    setError(null);
-    if (!formData.name.trim() || !formData.customerCode.trim()) {
-      setError("Vui lòng nhập đầy đủ Tên và Mã khách hàng!");
-      return;
-    }
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const ok = await confirm('Bạn có chắc chắn muốn xóa khách hàng này? Thao tác này không thể hoàn tác.');
+    if (!ok) return;
 
-    const method = editingCustomer ? 'PUT' : 'POST';
+    try {
+      const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast('success', 'Đã xóa hồ sơ khách hàng');
+        fetchCustomers();
+      }
+    } catch (e) {
+      showModal('error', 'Không thể xóa khách hàng.', 'Lỗi hệ thống');
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
     const url = editingCustomer ? `/api/customers/${editingCustomer.id}` : '/api/customers';
+    const method = editingCustomer ? 'PUT' : 'POST';
 
     try {
       const res = await fetch(url, {
@@ -128,37 +149,19 @@ export default function CustomersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-
+      
+      const data = await res.json();
       if (res.ok) {
         setIsModalOpen(false);
+        showToast('success', editingCustomer ? 'Cập nhật thành công' : 'Đã đăng ký khách hàng mới');
         fetchCustomers();
       } else {
-        const err = await res.json();
-        if (res.status === 409 || err.error?.includes('unique') || err.error?.includes('tồn tại')) {
-          setError("Mã khách hàng này đã tồn tại, vui lòng kiểm tra lại");
-        } else {
-          setError(`Lỗi: ${err.error || 'Vui lòng thử lại sau'}`);
-        }
+        setError(data.error || 'Có lỗi xảy ra trong quá trình lưu hồ sơ.');
       }
     } catch (e) {
-      setError("Lỗi kết nối hệ thống!");
-    }
-  };
-
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (await customConfirm("Bạn có chắc chắn muốn xóa khách hàng này?")) {
-      try {
-        const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-          showToast('success', "Đã xóa khách hàng thành công");
-          fetchCustomers();
-        } else {
-          showModal('error', "Không thể xóa khách hàng", "Có thể khách đã có đơn hàng hoặc lỗi hệ thống.");
-        }
-      } catch (e) {
-        showModal('error', "Lỗi kết nối", String(e));
-      }
+      setError('Lỗi kết nối máy chủ. Vui lòng kiểm tra lại đường truyền.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -202,62 +205,74 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-retro-paper/20">
       {/* HEADER SECTION - Brand and Summary */}
-      <div className="bg-white border-b border-blue-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="bg-retro-paper border-b-2 border-retro-sepia/10 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+           <Building2 size={300} strokeWidth={0.5} className="text-retro-sepia" />
+        </div>
+        <div className="washi-tape-top" />
+        
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-10 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-10">
             <div>
-              <nav className="flex items-center gap-2 text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3">
-                <Building2 size={12} />
-                <span>ERP SYSTEM</span>
-                <ChevronRight size={10} />
-                <span className="text-blue-600">Master Data</span>
+              <nav className="flex items-center gap-3 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] mb-4 font-typewriter opacity-60">
+                <Building2 size={14} strokeWidth={1.5} />
+                <span>Hệ thống ERP</span>
+                <ChevronRight size={12} strokeWidth={1.5} />
+                <span className="text-retro-sepia">Hồ sơ Đối tác</span>
               </nav>
-              <h1 className="text-3xl font-extrabold text-blue-900 tracking-tight flex items-center gap-4">
-                Quản lý <span className="text-blue-600">Khách hàng</span>
+              <h1 className="text-3xl md:text-4xl font-black text-retro-sepia uppercase tracking-tighter italic font-typewriter underline decoration-double decoration-retro-mustard/30 underline-offset-4">
+                Sổ cái <span className="text-retro-brick">Khách hàng</span>
               </h1>
+              <div className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] italic mt-2 opacity-60 font-typewriter flex items-center gap-2">
+                <div className="w-2 h-2 bg-retro-brick rotate-45" />
+                Danh mục đối tác chiến lược & Khách hàng vãng lai — MCMLXXXIV
+              </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="bg-blue-50 px-5 py-3 rounded-2xl border border-blue-100 flex flex-col items-end">
-                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest leading-none">Cơ sở dữ liệu</span>
-                <span className="text-xl font-black text-blue-900 mt-1">{customers.length} <span className="text-[10px] text-gray-400 uppercase ml-1">đơn vị</span></span>
+            <div className="flex items-center gap-6 w-full md:w-auto">
+              <div className="bg-white px-6 py-4 border-2 border-retro-sepia/10 flex flex-col items-end shadow-inner min-w-[140px] rotate-1 font-typewriter">
+                <span className="text-[9px] font-black text-retro-earth uppercase tracking-widest leading-none opacity-60">Tổng nhân hiệu</span>
+                <span className="text-2xl font-black text-retro-sepia mt-1 italic tracking-tighter">
+                  {customers.length} <span className="text-[10px] uppercase font-bold not-italic">Đơn vị</span>
+                </span>
               </div>
               <button
                 onClick={() => handleOpenModal()}
-                className="px-6 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2 text-[10px] uppercase tracking-widest active:scale-95"
+                className="flex-1 md:flex-none px-8 py-5 bg-retro-brick text-white font-black shadow-[4px_4px_0px_#3E272333] hover:bg-retro-sepia transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em] active:scale-95 font-typewriter italic"
               >
-                <Plus size={18} strokeWidth={3} /> Thêm khách mới
+                <Plus size={20} strokeWidth={2.5} /> Thêm đối tác mới
               </button>
             </div>
           </div>
         </div>
       </div>
 
+
       {/* STICKY SEARCH & NAV BAR */}
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-4">
-               <div className="flex-1 relative group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={18} />
+      <div className="sticky top-0 z-40 bg-retro-paper/90 backdrop-blur-md border-b-2 border-retro-sepia/5 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-6">
+               <div className="flex-1 relative group font-typewriter">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-retro-sepia/20 group-focus-within:text-retro-brick transition-colors" size={18} strokeWidth={1.5} />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo tên hoặc mã khách hàng..."
+                  placeholder="Tra cứu tên hoặc mã định danh đối tác..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-gray-100/50 border-transparent rounded-xl py-3 pl-14 pr-6 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all font-semibold"
+                  className="w-full bg-white border-2 border-retro-sepia/10 px-14 py-4 text-xs font-black uppercase text-retro-sepia outline-none focus:bg-white focus:border-retro-sepia transition-all shadow-inner placeholder:italic placeholder:font-normal placeholder:lowercase tracking-tight"
                 />
               </div>
-              <button className="hidden md:flex p-3 bg-white border border-gray-100 rounded-xl text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm">
-                <Filter size={18} />
+              <button className="hidden md:flex p-4 bg-white border-2 border-retro-sepia/10 text-retro-sepia hover:text-retro-brick hover:bg-white transition-all shadow-sm rotate-1 hover:rotate-0">
+                <Filter size={20} strokeWidth={1.5} />
               </button>
             </div>
 
             {/* Jump-to-Letter Bar */}
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1">
-              <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest mr-2 flex-shrink-0">Jump To:</span>
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1 font-typewriter">
+              <span className="text-[9px] font-black text-retro-earth/40 uppercase tracking-widest mr-3 flex-shrink-0 italic opacity-60">Truy cập nhanh:</span>
               {alphabet.map(letter => {
                 const hasData = groupedCustomers[letter];
                 return (
@@ -265,10 +280,10 @@ export default function CustomersPage() {
                     key={letter}
                     disabled={!hasData}
                     onClick={() => scrollToLetter(letter)}
-                    className={`min-w-[28px] h-7 rounded-lg text-[10px] font-black transition-all flex items-center justify-center
+                    className={`min-w-[32px] h-8 text-[11px] font-black transition-all flex items-center justify-center border-2
                       ${hasData 
-                        ? 'text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white cursor-pointer shadow-sm' 
-                        : 'text-gray-200 cursor-not-allowed'}`}
+                        ? 'text-retro-sepia border-retro-sepia/10 bg-white hover:bg-retro-sepia hover:text-retro-paper hover:border-retro-sepia cursor-pointer shadow-sm active:scale-95 italic' 
+                        : 'text-retro-earth/20 border-transparent cursor-not-allowed opacity-30'}`}
                   >
                     {letter}
                   </button>
@@ -279,117 +294,122 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-6">
+
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 space-y-6">
         {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center">
-            <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4" />
-            <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] animate-pulse">Syncing Central Data...</p>
+          <div className="py-32 flex flex-col items-center justify-center font-typewriter">
+            <div className="w-14 h-14 border-4 border-retro-sepia/10 border-t-retro-brick animate-spin mb-6" />
+            <p className="text-[10px] font-black text-retro-earth uppercase tracking-[0.3em] animate-pulse italic">Đang đồng bộ Sổ cái...</p>
           </div>
         ) : availableLetters.length === 0 ? (
-          <div className="bg-white rounded-[40px] p-20 flex flex-col items-center justify-center text-center">
-            <Users size={48} className="text-gray-100 mb-6" />
-            <p className="text-sm font-black text-gray-400 uppercase tracking-widest italic leading-relaxed">Không tìm thấy dữ liệu khách hàng<br/>trong bộ lọc hiện tại</p>
+          <div className="retro-card !bg-white/40 p-24 flex flex-col items-center justify-center text-center border-4 border-dashed border-retro-sepia/10">
+            <Users size={64} strokeWidth={1} className="text-retro-earth/20 mb-8" />
+            <p className="text-xs font-black text-retro-earth/40 uppercase tracking-[0.3em] italic leading-relaxed font-typewriter">Dữ liệu đối tác trống<br/>với bộ lọc hiện hành</p>
           </div>
         ) : (
+
           <div className="space-y-12">
             {availableLetters.map(letter => (
-              <div key={letter} id={`group-${letter}`} className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-900 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-100">
+              <div key={letter} id={`group-${letter}`} className="space-y-6 scroll-mt-40">
+                <div className="flex items-center gap-6">
+                  <div className="w-12 h-12 bg-retro-sepia flex items-center justify-center text-retro-paper font-black text-xl shadow-xl rotate-3 font-typewriter">
                     {letter}
                   </div>
-                  <div className="h-[1px] flex-1 bg-gradient-to-r from-gray-200 to-transparent" />
+                  <div className="h-[2px] flex-1 bg-gradient-to-r from-retro-sepia/10 to-transparent" />
                 </div>
 
-                <div className="grid grid-cols-1 gap-1">
+                <div className="grid grid-cols-1 gap-4">
                   {groupedCustomers[letter].map((c) => {
                     const isExpanded = expandedIds.has(c.id);
                     return (
                       <div 
                         key={c.id} 
                         onClick={() => toggleExpand(c.id)}
-                        className={`group relative overflow-hidden transition-all duration-300 cursor-pointer border border-transparent hover:border-blue-100 hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-0.5
-                          ${isExpanded ? 'bg-white rounded-[32px] p-6 shadow-xl ring-1 ring-blue-50' : 'bg-white/60 even:bg-gray-50/50 rounded-2xl h-16 flex items-center px-6'}`}
+                        className={`group relative overflow-hidden transition-all duration-300 cursor-pointer border-2
+                          ${isExpanded ? 'retro-card !bg-white !p-8 shadow-2xl !border-retro-sepia/20' : 'bg-white border-retro-sepia/5 hover:border-retro-sepia/20 h-20 flex items-center px-8 shadow-sm hover:shadow-lg'}`}
                       >
+
                         {isExpanded ? (
-                          <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
+                          <div className="space-y-8 animate-in slide-in-from-top-4 duration-300">
                             {/* Expanded Card Top */}
-                            <div className="flex justify-between items-start">
-                              <div className="flex gap-4 items-center">
-                                <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-200">
+                            <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+                              <div className="flex gap-6 items-center">
+                                <div className="w-16 h-16 bg-retro-paper border-2 border-retro-sepia text-retro-sepia flex items-center justify-center font-black text-xs shadow-xl rotate-3 font-typewriter">
                                   {c.customerCode || (c as any).customer_code || '??'}
                                 </div>
-                                <div>
-                                  <h4 className="text-xl font-black text-blue-950 uppercase italic tracking-tight">{c.name}</h4>
-                                  <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mt-1 flex items-center gap-1">
-                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> Verified Partner
+                                <div className="font-typewriter">
+                                  <h4 className="text-2xl font-black text-retro-sepia uppercase italic tracking-tighter underline decoration-retro-mustard/30 underline-offset-4">{c.name}</h4>
+                                  <div className="text-[10px] font-black text-retro-moss uppercase tracking-[0.2em] mt-2 flex items-center gap-2 italic opacity-80">
+                                    <div className="w-2 h-2 bg-retro-moss shadow-sm animate-pulse" /> Đã Ký Hiệp Định Đối Tác
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-3 w-full md:w-auto">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleOpenModal(c); }}
-                                  className="p-3 bg-gray-50 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all shadow-sm"
+                                  className="flex-1 md:flex-none p-4 bg-retro-paper border-2 border-retro-sepia/10 text-retro-sepia hover:text-retro-brick hover:bg-white transition-all shadow-sm rotate-1"
                                 >
-                                  <Edit3 size={18} />
+                                  <Edit3 size={18} strokeWidth={1.5} />
                                 </button>
                                 <button
                                   onClick={(e) => handleDelete(e, c.id)}
-                                  className="p-3 bg-gray-50 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shadow-sm"
+                                  className="flex-1 md:flex-none p-4 bg-retro-paper border-2 border-retro-brick/10 text-retro-brick hover:bg-retro-brick hover:text-white transition-all shadow-sm -rotate-1"
                                 >
-                                  <Trash2 size={18} />
+                                  <Trash2 size={18} strokeWidth={1.5} />
                                 </button>
-                                <button className="p-3 bg-blue-50 text-blue-600 rounded-xl shadow-sm"><ChevronUp size={18} /></button>
+                                <button className="p-4 bg-retro-sepia text-retro-paper shadow-sm"><ChevronUp size={20} strokeWidth={1.5} /></button>
                               </div>
                             </div>
 
+
                             {/* Details Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-gray-50">
-                               <div className="space-y-2">
-                                  <label className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Liên hệ</label>
-                                  <div className="flex items-center gap-3 text-blue-900">
-                                    <Phone size={14} className="text-blue-400" />
-                                    <span className="text-sm font-bold">{c.phone || 'N/A'}</span>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pt-8 border-t-2 border-retro-sepia/5 font-typewriter">
+                               <div className="space-y-4">
+                                  <label className="text-[9px] font-black text-retro-earth/40 uppercase tracking-[0.2em] italic">Thông tri liên lạc</label>
+                                  <div className="flex items-center gap-4 text-retro-sepia">
+                                    <Phone size={16} strokeWidth={1.5} className="text-retro-mustard" />
+                                    <span className="text-sm font-black italic tracking-tight">{c.phone || 'N/A'}</span>
                                   </div>
-                                  <div className="flex items-center gap-3 text-blue-900">
-                                    <Mail size={14} className="text-blue-400" />
-                                    <span className="text-sm font-bold truncate max-w-[200px]">{c.email || 'N/A'}</span>
+                                  <div className="flex items-center gap-4 text-retro-sepia">
+                                    <Mail size={16} strokeWidth={1.5} className="text-retro-mustard" />
+                                    <span className="text-sm font-black italic truncate tracking-tight">{c.email || 'N/A'}</span>
                                   </div>
                                </div>
-                               <div className="md:col-span-2 space-y-2">
-                                  <label className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Địa chỉ & Ghi chú</label>
-                                  <div className="flex items-start gap-3">
-                                    <MapPin size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                                    <span className="text-xs font-semibold text-gray-500 leading-relaxed">{c.address || 'Chưa cập nhật địa chỉ giao hàng.'}</span>
+                               <div className="md:col-span-2 space-y-4">
+                                  <label className="text-[9px] font-black text-retro-earth/40 uppercase tracking-[0.2em] italic">Địa chỉ & Lưu bút ghi nhận</label>
+                                  <div className="flex items-start gap-4">
+                                    <MapPin size={16} strokeWidth={1.5} className="text-retro-brick mt-0.5 flex-shrink-0" />
+                                    <span className="text-[13px] font-bold text-retro-earth leading-relaxed font-serif italic">{c.address || 'Chưa thiết lập tuyến Logistics giao nhận.'}</span>
                                   </div>
                                   {c.notes && (
-                                    <div className="flex items-start gap-3 mt-2">
-                                      <FileText size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                                      <span className="text-xs font-medium italic text-gray-400 leading-relaxed">{c.notes}</span>
+                                    <div className="flex items-start gap-4 mt-4 bg-retro-paper/40 p-4 border-l-4 border-retro-mustard italic">
+                                      <FileText size={16} strokeWidth={1.5} className="text-retro-earth/40 mt-0.5 flex-shrink-0" />
+                                      <span className="text-[12px] font-bold text-retro-earth/60 leading-relaxed font-handwriting">{c.notes}</span>
                                     </div>
                                   )}
                                </div>
                             </div>
                           </div>
+
                         ) : (
                           /* Condensed Card Row */
-                          <div className="w-full flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 flex-1">
-                              <span className="w-10 text-[10px] font-black text-blue-600 bg-blue-50 py-1 rounded-md text-center flex-shrink-0 tracking-tighter uppercase whitespace-nowrap">
+                          <div className="w-full flex items-center justify-between gap-6 font-typewriter">
+                            <div className="flex items-center gap-6 flex-1">
+                              <span className="w-12 text-[10px] font-black text-retro-paper bg-retro-sepia py-1 text-center flex-shrink-0 tracking-widest uppercase rotate-2">
                                 {c.customerCode || (c as any).customer_code || '??'}
                               </span>
-                              <h4 className="text-sm font-bold text-blue-950 uppercase italic truncate max-w-[150px] md:max-w-xs">{c.name}</h4>
-                              <div className="hidden sm:flex items-center gap-2 text-[11px] font-semibold text-gray-400">
-                                <Phone size={12} className="text-blue-200" /> {c.phone || 'N/A'}
+                              <h4 className="text-sm font-black text-retro-sepia uppercase italic tracking-tighter truncate max-w-[150px] md:max-w-md underline decoration-retro-mustard/20 underline-offset-4">{c.name}</h4>
+                              <div className="hidden sm:flex items-center gap-3 text-[11px] font-black text-retro-earth/40 italic">
+                                <Phone size={14} strokeWidth={1.5} className="text-retro-mustard/40" /> {c.phone || '---'}
                               </div>
                             </div>
                             
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-8">
                                <div className="hidden lg:flex flex-col items-end mr-6">
-                                  <span className="text-[11px] font-black text-blue-900 leading-none">{c._count?.orders || 0}</span>
-                                  <span className="text-[7px] font-black text-blue-200 uppercase tracking-widest">Hợp đồng</span>
-                               </div>
-                               <ChevronDown size={16} className="text-gray-300 group-hover:text-blue-400 group-hover:translate-y-0.5 transition-all" />
+                                  <span className="text-sm font-black text-retro-sepia leading-none italic tracking-tighter">{c._count?.orders || 0}</span>
+                                  <span className="text-[8px] font-black text-retro-earth/40 uppercase tracking-[0.2em] mt-1">Đã thụ ký</span>
+                                </div>
+                               <ChevronDown size={20} className="text-retro-sepia/20 group-hover:text-retro-brick group-hover:translate-y-1 transition-all" strokeWidth={1.5} />
                             </div>
                           </div>
                         )}
@@ -400,154 +420,174 @@ export default function CustomersPage() {
               </div>
             ))}
 
-            {/* Pagination / Load More Simulation (Visible batching already handles clutter, showing all groups is standard but limit is asked) */}
-            <div className="flex flex-col items-center py-10 opacity-50">
-               <div className="h-[1px] w-20 bg-gray-200 mb-6" />
-               <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest italic">End of Central Records</p>
+            <div className="flex flex-col items-center py-16 opacity-30 font-typewriter">
+               <div className="h-[2px] w-24 bg-retro-sepia/20 mb-8" />
+               <p className="text-[10px] font-black text-retro-earth uppercase tracking-[0.4em] italic">Hết danh bản hồ sơ đối tác</p>
             </div>
+
           </div>
         )}
       </div>
 
-      {/* FLOATING ACTION BUTTON - For Mobile */}
       <button
         onClick={() => handleOpenModal()}
-        className="md:hidden fixed bottom-8 right-8 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl shadow-blue-400/50 flex items-center justify-center z-50 active:scale-90 transition-all"
+        className="md:hidden fixed bottom-8 right-8 w-16 h-16 bg-retro-brick text-white rounded-none shadow-2xl flex items-center justify-center z-50 active:scale-95 transition-all rotate-3 shadow-[4px_4px_0px_#3E272333]"
       >
-        <Plus size={28} strokeWidth={3} />
+        <Plus size={32} strokeWidth={2.5} />
       </button>
+
 
       {/* CUSTOMER MODAL - SMART ERP FORM */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-blue-900/40 backdrop-blur-md" onClick={() => setIsModalOpen(false)} />
-          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 md:p-12 rounded-[48px] shadow-2xl animate-in zoom-in-95 duration-500 scrollbar-hide">
-            <div className="flex justify-between items-start mb-10">
-              <div>
-                <h3 className="text-3xl font-black text-blue-950 tracking-tight italic">
-                  {editingCustomer ? 'Cập nhật' : 'Thiết lập'} <span className="text-blue-600 underline underline-offset-8 decoration-4">Đối tác</span>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-500 overflow-hidden">
+          <div className="absolute inset-0 bg-retro-sepia/40 backdrop-blur-md" onClick={() => setIsModalOpen(false)} />
+          <div className="relative w-full max-w-2xl max-h-[90vh] retro-card !p-0 shadow-[0_30px_60px_-15px_rgba(62,39,35,0.5)] flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden border-2">
+            <div className="washi-tape-top" />
+            <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+               <Building2 size={400} strokeWidth={0.5} className="text-retro-sepia" />
+            </div>
+
+            <div className="p-8 md:p-12 border-b-2 border-retro-sepia/10 flex justify-between items-center bg-retro-paper/40 relative shrink-0">
+              <div className="relative z-10">
+                <h3 className="text-3xl font-black text-retro-sepia tracking-tighter italic font-typewriter uppercase">
+                  {editingCustomer ? 'Kiểm duyệt' : 'Đăng ký'} <span className="text-retro-brick underline decoration-double decoration-retro-brick/30">Đối tác</span>
                 </h3>
-                <p className="text-[11px] text-gray-400 font-black uppercase tracking-widest mt-4 italic flex items-center gap-2">
-                  <FileText size={14} className="text-blue-300" /> Thông tin hồ sơ khách hàng ERP
+                <p className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] mt-4 italic flex items-center gap-3 font-typewriter opacity-60">
+                  <FileText size={16} strokeWidth={1.5} className="text-retro-mustard" /> Danh lục hồ sơ đối tác Paper Art Việt
                 </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-3 bg-gray-50 text-gray-400 hover:text-rose-500 rounded-full transition-all"
+                className="p-4 bg-retro-paper border-2 border-retro-sepia/10 hover:bg-retro-brick/10 hover:text-retro-brick transition-all rotate-2 hover:rotate-0 shadow-sm"
               >
-                <X size={24} />
+                <X size={24} strokeWidth={2} />
               </button>
             </div>
 
-            {error && (
-              <div className="mb-8 p-5 bg-rose-50 border border-rose-100 rounded-3xl flex items-center gap-4 text-rose-600 animate-in slide-in-from-top-4">
-                <AlertCircle size={20} className="flex-shrink-0" />
-                <p className="text-xs font-bold uppercase tracking-tight">{error}</p>
-              </div>
-            )}
-
-            <div className="space-y-8">
-              {/* Main Identity */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1">Tên khách hàng / Công ty</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={handleNameChange}
-                    className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-200 transition-all text-sm font-bold placeholder:text-gray-200"
-                    placeholder="NHẬP TÊN CÔNG TY HOẶC CÁ NHÂN..."
-                  />
+            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 md:p-12 scrollbar-hide bg-retro-paper/40 pb-20">
+              {error && (
+                <div className="mb-10 p-6 bg-retro-brick/5 border-2 border-retro-brick/20 flex items-center gap-5 text-retro-brick animate-in slide-in-from-top-4 font-typewriter italic">
+                  <AlertCircle size={24} strokeWidth={2} className="flex-shrink-0" />
+                  <p className="text-[11px] font-black uppercase tracking-tight leading-relaxed">{error}</p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1">Mã định danh</label>
-                  <input
-                    type="text"
-                    value={formData.customerCode}
-                    onChange={(e) => setFormData({ ...formData, customerCode: e.target.value.toUpperCase() })}
-                    maxLength={10}
-                    className="w-full px-8 py-5 bg-blue-50/50 border border-blue-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-300 transition-all text-sm font-black text-blue-700 uppercase tracking-widest text-center"
-                    placeholder="MÃ KH"
-                  />
-                  {!editingCustomer && formData.name && (
-                    <p className="text-[9px] text-blue-400 font-black uppercase text-center mt-1 italic opacity-60">Gợi ý từ tên khách</p>
-                  )}
-                </div>
-              </div>
+              )}
 
-              {/* Contact Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1">SĐT liên hệ</label>
-                  <div className="relative">
-                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-blue-300" size={16} />
+              <div className="space-y-10">
+                {/* Main Identity */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="md:col-span-2 space-y-3 font-typewriter">
+                    <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">Đơn vị / Danh xưng đối tác</label>
                     <input
+                      required
                       type="text"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-8 pl-14 py-5 bg-gray-50 border border-gray-100 rounded-3xl focus:outline-none focus:bg-white focus:border-blue-200 transition-all text-sm font-bold"
-                      placeholder="09xx.xxx.xxx"
+                      value={formData.name}
+                      onChange={handleNameChange}
+                      className="w-full px-8 py-5 bg-white border-2 border-retro-sepia/10 focus:border-retro-sepia transition-all text-sm font-black uppercase text-retro-sepia shadow-inner outline-none placeholder:italic placeholder:font-normal placeholder:lowercase tracking-tight"
+                      placeholder="Nhập tên chính thức trong hồ sơ..."
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-blue-300" size={16} />
+                  <div className="space-y-3 font-typewriter">
+                    <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">Số hiệu định danh</label>
                     <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-8 pl-14 py-5 bg-gray-50 border border-gray-100 rounded-3xl focus:outline-none focus:bg-white focus:border-blue-200 transition-all text-sm font-bold"
-                      placeholder="example@contract.com"
+                      required
+                      type="text"
+                      value={formData.customerCode}
+                      onChange={(e) => setFormData({ ...formData, customerCode: e.target.value.toUpperCase() })}
+                      maxLength={10}
+                      className="w-full px-8 py-5 bg-retro-paper border-2 border-retro-sepia/10 focus:border-retro-sepia transition-all text-sm font-black text-retro-brick uppercase tracking-widest text-center shadow-inner outline-none"
+                      placeholder="MÃ SỐ"
                     />
+                    {!editingCustomer && formData.name && (
+                      <p className="text-[8px] text-retro-mustard font-black uppercase text-center mt-2 italic opacity-80">Đề xuất tự động từ hệ thống</p>
+                    )}
                   </div>
                 </div>
-              </div>
 
-              {/* Address & Notes */}
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1">Địa chỉ giao hàng</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-6 top-6 text-blue-300" size={16} />
+                {/* Contact Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3 font-typewriter">
+                    <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">Số hiệu Viễn thông (Phone)</label>
+                    <div className="relative">
+                      <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/20" size={18} strokeWidth={1.5} />
+                      <input
+                        type="text"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-8 pl-16 py-5 bg-white border-2 border-retro-sepia/10 focus:border-retro-sepia transition-all text-sm font-black text-retro-sepia shadow-inner outline-none tracking-tight"
+                        placeholder="09xx.xxx.xxx"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-3 font-typewriter">
+                    <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">Thư tín Điện tử (Email)</label>
+                    <div className="relative">
+                      <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/20" size={18} strokeWidth={1.5} />
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-8 pl-16 py-5 bg-white border-2 border-retro-sepia/10 focus:border-retro-sepia transition-all text-sm font-black text-retro-sepia shadow-inner outline-none lowercase italic tracking-tight"
+                        placeholder="contract@paperartviet.com"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address & Notes */}
+                <div className="space-y-8">
+                  <div className="space-y-3 font-typewriter">
+                    <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">Tọa độ giao nhận (Logistics Address)</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-6 top-6 text-retro-brick/40" size={20} strokeWidth={1.5} />
+                      <textarea
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        className="w-full px-8 pl-18 py-6 bg-white border-2 border-retro-sepia/10 focus:border-retro-sepia transition-all text-[13px] font-bold text-retro-earth h-28 resize-none leading-relaxed font-serif italic outline-none shadow-inner"
+                        placeholder="Vui lòng tả thực địa chỉ giao nhận hàng hóa..."
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-3 font-typewriter">
+                    <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">Ký lục đặc thù / Di bút nhân viên</label>
                     <textarea
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full px-8 pl-14 py-5 bg-gray-50 border border-gray-100 rounded-3xl focus:outline-none focus:bg-white focus:border-blue-200 transition-all text-sm font-bold h-24 resize-none leading-relaxed"
-                      placeholder="Nhập địa chỉ đầy đủ để phục vụ logistics..."
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="w-full px-8 py-5 bg-retro-paper/50 border-2 border-dashed border-retro-sepia/10 focus:border-retro-mustard transition-all text-sm font-bold h-24 resize-none italic text-retro-earth/60 font-handwriting outline-none"
+                      placeholder="Lưu lại thói quen, sở thích hoặc tiền lệ giao dịch của đối tác..."
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1">Ghi chú đặc biệt</label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl focus:outline-none focus:bg-white focus:border-blue-200 transition-all text-sm font-medium h-20 resize-none italic text-gray-400"
-                    placeholder="Lưu ý về sở thích khách hàng, quy trình thanh toán..."
-                  />
-                </div>
               </div>
-            </div>
 
-            <div className="flex flex-col md:flex-row gap-4 mt-12 pb-4">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-5 bg-gray-50 text-gray-500 text-[11px] font-black uppercase rounded-[28px] hover:bg-gray-100 transition-all tracking-[0.2em] order-2 md:order-1"
-              >
-                Quay lại
-              </button>
-              <button
-                onClick={handleSave}
-                className="flex-[1.5] py-5 bg-blue-600 text-white text-[11px] font-black uppercase rounded-[28px] hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 tracking-[0.2em] order-1 md:order-2 flex items-center justify-center gap-3 active:scale-95"
-              >
-                <UserPlus size={18} /> {editingCustomer ? 'Xác nhận cập nhật' : 'Khởi tạo khách hàng'}
-              </button>
-            </div>
+              <div className="flex flex-col md:flex-row gap-6 mt-16 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 py-5 bg-retro-paper border-2 border-retro-sepia/10 text-[11px] font-black uppercase tracking-[0.2em] text-retro-earth/60 hover:text-retro-sepia hover:border-retro-sepia transition-all font-typewriter order-2 md:order-1 active:scale-95 italic"
+                >
+                  Quay lại Sổ cái
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-[1.5] py-5 bg-retro-brick text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-[4px_4px_0px_#3E272333] hover:bg-retro-sepia transition-all order-1 md:order-2 flex items-center justify-center gap-4 active:scale-95 font-typewriter italic"
+                >
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/20 border-t-white animate-spin" />
+                  ) : (
+                    <>
+                      <UserPlus size={22} strokeWidth={2} /> 
+                      {editingCustomer ? 'Xác nhận Hồ sơ' : 'Khởi tạo Đối tác'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+            <div className="torn-paper-bottom" />
           </div>
         </div>
       )}
+
     </div>
   );
 }

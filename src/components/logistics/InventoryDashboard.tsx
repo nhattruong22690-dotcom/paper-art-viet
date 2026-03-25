@@ -115,74 +115,74 @@ export default function InventoryDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+    <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700 font-typewriter">
       {/* TOP STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
         {/* Total Types */}
-        <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-xl shadow-gray-100/50 flex items-center justify-between group hover:border-indigo-200 transition-all cursor-default">
-           <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Loại vật tư</p>
-              <h3 className="text-4xl font-black text-gray-900 tracking-tighter italic">{stats.totalTypes}</h3>
+        <div className="bg-retro-sepia p-10 shadow-2xl border-t-4 border-retro-mustard relative overflow-hidden group">
+           <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 transition-transform">
+              <Box size={140} strokeWidth={1} className="text-white" />
            </div>
-           <div className="w-16 h-16 bg-gray-50 rounded-[22px] flex items-center justify-center text-gray-300 group-hover:bg-indigo-600 group-hover:text-white group-hover:rotate-12 transition-all duration-500">
-              <Box size={32} />
+           <div className="relative z-10 space-y-6">
+              <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] italic">Chủng loại Vật tư</span>
+              <h3 className="text-5xl font-black text-white italic tracking-tighter">
+                {stats.totalTypes} 
+                <span className="text-xs font-bold text-white/40 not-italic uppercase ml-4 tracking-[0.2em]">Mục</span>
+              </h3>
            </div>
         </div>
 
         {/* Low Stock Cảnh báo */}
-        <div className="bg-white p-8 rounded-[40px] border border-rose-100 shadow-xl shadow-rose-100/20 flex items-center justify-between group hover:bg-rose-50 transition-all cursor-default relative overflow-hidden">
-           <div className="relative z-10">
-              <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Cần nhập hàng</p>
-              <h3 className="text-4xl font-black text-rose-600 tracking-tighter italic">{stats.lowStock}</h3>
+        <div className="bg-white p-10 border-2 border-retro-brick shadow-xl relative overflow-hidden group rotate-1 hover:rotate-0 transition-transform">
+           <div className="washi-tape-top opacity-20" />
+           <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+              <AlertTriangle size={300} strokeWidth={0.5} className="text-retro-brick" />
            </div>
-           <div className="w-16 h-16 bg-rose-50 rounded-[22px] flex items-center justify-center text-rose-300 group-hover:scale-110 transition-all duration-500 z-10">
-              <AlertTriangle size={32} />
-           </div>
-           <div className="absolute -right-4 -bottom-4 opacity-5 text-rose-600 group-hover:scale-150 transition-all duration-1000">
-              <AlertTriangle size={120} />
+           <div className="relative z-10 space-y-6">
+              <span className="text-[10px] font-black text-retro-brick uppercase tracking-[0.2em] italic flex items-center gap-3">
+                <AlertTriangle size={16} className="animate-pulse" /> Nguy báo Cạn kiệt
+              </span>
+              <h3 className="text-5xl font-black text-retro-brick italic tracking-tighter">{stats.lowStock}</h3>
            </div>
         </div>
 
         {/* Total Value */}
-        <div className="bg-white p-8 rounded-[40px] border border-emerald-100 shadow-xl shadow-emerald-100/20 flex items-center justify-between group hover:bg-emerald-50 transition-all cursor-default">
-           <div>
-              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Giá trị tồn kho</p>
-              <h3 className="text-3xl font-black text-gray-900 tracking-tighter italic uppercase">
+        <div className="bg-white p-10 border-2 border-retro-sepia/10 shadow-sm relative group hover:border-retro-sepia/20 transition-all -rotate-1 hover:rotate-0">
+           <div className="relative z-10 space-y-6">
+              <span className="text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic">Tổng giá trị Trữ kho</span>
+              <h3 className="text-3xl font-black text-retro-sepia italic tracking-tighter uppercase underline decoration-double decoration-retro-mustard/20 underline-offset-8">
                 {stats.totalValue.toLocaleString()}đ
               </h3>
-           </div>
-           <div className="w-16 h-16 bg-emerald-50 rounded-[22px] flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500">
-              <DollarSign size={32} />
            </div>
         </div>
       </div>
 
-      {/* INVENTORY LIST */}
-      <div className="bg-white rounded-[48px] border border-gray-100 shadow-2xl shadow-gray-100/50 overflow-hidden">
-        <div className="p-10 border-b border-gray-50 flex justify-between items-center">
+      {/* INVENTORY LIST - THE LEDGER */}
+      <div className="bg-white border-2 border-retro-sepia/10 shadow-[0_20px_50px_-12px_rgba(62,39,35,0.15)] overflow-hidden">
+        <div className="p-10 border-b-2 border-retro-sepia/5 flex flex-col md:flex-row justify-between items-center gap-8 bg-retro-paper/20">
            <div>
-              <h2 className="text-xl font-black text-gray-900 uppercase italic tracking-tight">Tồn kho <span className="text-indigo-600">Thực tế</span></h2>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">Dữ liệu cập nhật thời gian thực</p>
+              <h2 className="text-2xl font-black text-retro-sepia uppercase italic tracking-tight underline decoration-retro-mustard/30 underline-offset-4">Sổ cái <span className="text-retro-brick">Vật tư</span></h2>
+              <p className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] mt-3 italic opacity-60">Kiểm kê thực tế & Điều phối Tiếp vận — MCMLXXXIV</p>
            </div>
-           <button className="flex items-center gap-2 px-6 py-3 bg-gray-50 text-gray-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 hover:text-indigo-600 transition-all shadow-sm">
-              <History size={16} />
-              Lịch sử chung
+           <button className="flex items-center gap-4 px-8 py-4 bg-white border-2 border-retro-sepia text-retro-sepia text-[10px] font-black uppercase tracking-[0.2em] hover:bg-retro-sepia hover:text-retro-paper transition-all active:scale-95 italic shadow-sm">
+              <History size={18} strokeWidth={2} />
+              Truy lục Biến động
            </button>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <tr className="bg-retro-paper text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] border-b-2 border-retro-sepia/20 italic opacity-60">
                 <th className="px-10 py-6">Mã Vật Tư</th>
                 <th className="px-10 py-6">Tên Vật Tư</th>
                 <th className="px-10 py-6 text-center">Tồn Hiện Tại</th>
                 <th className="px-10 py-6 text-center">Định Mức Min</th>
                 <th className="px-10 py-6 text-center">Trạng Thái</th>
-                <th className="px-10 py-6 text-center">Thao Tác</th>
+                <th className="px-10 py-6 text-center">Chi tiết</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y-2 divide-retro-sepia/5 relative z-0">
               {materials.map((m) => {
                 const isUnderStock = m.stockQuantity < m.minStock;
                 const isNearStock = m.stockQuantity < m.minStock * 1.1 && !isUnderStock;
@@ -191,123 +191,127 @@ export default function InventoryDashboard() {
                 return (
                   <React.Fragment key={m.id}>
                     <tr className={cn(
-                      "hover:bg-indigo-50/20 transition-all group cursor-pointer",
-                      isExpanded && "bg-indigo-50/30 shadow-inner"
+                      "hover:bg-retro-paper/40 transition-all group cursor-pointer",
+                      isExpanded && "bg-retro-paper/60 shadow-inner"
                     )} onClick={() => toggleExpand(m.id)}>
                       <td className="px-10 py-6">
-                         <span className="text-[11px] font-black text-gray-400 uppercase tracking-tighter group-hover:text-indigo-600 transition-colors">
+                         <span className="px-3 py-1 bg-retro-sepia text-retro-paper text-[10px] font-black uppercase tracking-widest italic group-hover:bg-retro-brick transition-colors">
                             {m.sku}
                          </span>
                       </td>
                       <td className="px-10 py-6">
-                         <p className="text-sm font-black text-gray-800 uppercase italic">{m.name}</p>
+                         <p className="text-sm font-black text-retro-sepia uppercase italic underline decoration-retro-mustard/10 underline-offset-4 group-hover:decoration-retro-mustard/30 transition-all font-typewriter">{m.name}</p>
                       </td>
                       <td className="px-10 py-6 text-center">
                          <span className={cn(
-                            "text-base font-black italic",
-                            isUnderStock ? "text-rose-600" : isNearStock ? "text-amber-500" : "text-emerald-600"
+                            "text-base font-black italic tabular-nums",
+                            isUnderStock ? "text-retro-brick" : isNearStock ? "text-retro-mustard" : "text-retro-moss"
                          )}>
                             {m.stockQuantity.toLocaleString()} {m.unit}
                          </span>
                       </td>
-                      <td className="px-10 py-6 text-center text-xs font-bold text-gray-400 italic">
+                      <td className="px-10 py-6 text-center text-xs font-bold text-retro-earth/40 italic tabular-nums">
                          {m.minStock} {m.unit}
                       </td>
                       <td className="px-10 py-6">
                          <div className="flex justify-center">
                             {isUnderStock ? (
-                              <div className="px-4 py-2 bg-rose-50 text-rose-600 rounded-2xl flex items-center gap-2 border border-rose-100 shadow-sm shadow-rose-100/50">
-                                 <AlertTriangle size={14} className="animate-pulse" />
-                                 <span className="text-[10px] font-black uppercase tracking-widest">Cần nhập hàng</span>
+                              <div className="px-4 py-2 border-2 border-retro-brick text-retro-brick shadow-inner animate-pulse flex items-center gap-3">
+                                 <AlertTriangle size={14} strokeWidth={2.5} />
+                                 <span className="text-[10px] font-black uppercase tracking-widest italic">Cần nhập hàng</span>
                               </div>
                             ) : isNearStock ? (
-                              <div className="px-4 py-2 bg-amber-50 text-amber-500 rounded-2xl flex items-center gap-2 border border-amber-100 shadow-sm shadow-amber-100/50">
-                                 <Info size={14} />
-                                 <span className="text-[10px] font-black uppercase tracking-widest">Sắp hết hàng</span>
+                              <div className="px-4 py-2 border-2 border-retro-mustard text-retro-mustard flex items-center gap-3">
+                                 <Info size={14} strokeWidth={2.5} />
+                                 <span className="text-[10px] font-black uppercase tracking-widest italic">Sắp hết hàng</span>
                               </div>
                             ) : (
-                              <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center gap-2 border border-emerald-100 shadow-sm shadow-emerald-100/50">
-                                 <Package size={14} />
-                                 <span className="text-[10px] font-black uppercase tracking-widest">An toàn</span>
+                              <div className="px-4 py-2 border-2 border-retro-moss text-retro-moss flex items-center gap-3 italic opacity-60">
+                                 <Package size={14} strokeWidth={2.5} />
+                                 <span className="text-[10px] font-black uppercase tracking-widest italic">An toàn</span>
                               </div>
                             )}
                          </div>
                       </td>
                       <td className="px-10 py-6 text-center">
                          <button className={cn(
-                           "p-3 rounded-xl transition-all shadow-sm border",
-                           isExpanded ? "bg-indigo-600 text-white border-indigo-600 rotate-90" : "bg-white text-gray-300 border-gray-50 hover:text-indigo-600 hover:border-indigo-100"
+                           "p-4 transition-all shadow-sm border-2 font-black",
+                           isExpanded ? "bg-retro-sepia text-retro-paper border-retro-sepia rotate-90" : "bg-white text-retro-sepia/20 border-retro-sepia/10 hover:text-retro-sepia hover:border-retro-sepia"
                          )}>
-                            <ChevronRight size={18} />
+                            <ChevronRight size={18} strokeWidth={2.5} />
                          </button>
                       </td>
                     </tr>
                     
-                    {/* BATCH DETAILS (IF EXPANDED) */}
+                    {/* BATCH DETAILS - THE SUB-LEDGER */}
                     {isExpanded && (
-                      <tr className="bg-indigo-50/10 border-l-4 border-indigo-500 animate-in slide-in-from-top-2 duration-300">
-                        <td colSpan={6} className="px-10 py-8">
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-3 mb-6">
-                              <div className="w-8 h-1 bg-indigo-500 rounded-full"></div>
-                              <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest italic flex items-center gap-2">
-                                <Layers size={14} /> Danh sách các lô hàng tồn kho (FIFO - Nhập trước xuất trước)
+                      <tr className="bg-retro-paper/20 border-l-8 border-retro-mustard/30 animate-in slide-in-from-top-2 duration-300">
+                        <td colSpan={6} className="px-10 py-12">
+                          <div className="space-y-10">
+                            <div className="flex items-center gap-6">
+                              <h4 className="text-[11px] font-black text-retro-sepia uppercase tracking-[0.3em] italic flex items-center gap-4">
+                                <Layers size={18} strokeWidth={2.5} className="text-retro-mustard" /> 
+                                Phân tích Lô hàng Trữ kho (Phương thức FIFO)
                               </h4>
+                              <div className="h-[2px] flex-1 bg-retro-sepia/10 border-b border-dashed border-retro-sepia/20" />
                             </div>
 
                             {loadingBatches === m.id ? (
-                              <div className="flex items-center gap-3 text-gray-400 py-4 italic text-sm">
-                                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                                Đang tải dữ liệu lô hàng...
+                              <div className="flex flex-col items-center gap-6 text-retro-earth/40 py-12 italic">
+                                <div className="w-10 h-10 border-4 border-retro-sepia/10 border-t-retro-mustard animate-spin" />
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">Đang truy lục Hồ sơ Lô hàng...</p>
                               </div>
                             ) : batches[m.id]?.length > 0 ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {batches[m.id].map((batch) => (
-                                  <div key={batch.id} className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-                                    <div className="flex justify-between items-start mb-4 relative z-10">
+                                  <div key={batch.id} className="bg-white p-8 border-2 border-retro-sepia/10 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all group overflow-hidden relative rotate-1 even:-rotate-1">
+                                    <div className="washi-tape-top opacity-10" />
+                                    <div className="flex justify-between items-start mb-6 relative z-10">
                                       <div>
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 italic">Mã Lô Hàng</p>
-                                        <p className="text-xs font-black text-gray-900 font-mono tracking-tight">{batch.batchCode}</p>
+                                        <p className="text-[9px] font-black text-retro-earth/40 uppercase tracking-widest mb-1 italic">Mã Lô Hàng</p>
+                                        <p className="text-sm font-black text-retro-sepia italic tracking-tight">{batch.batchCode}</p>
                                       </div>
-                                      <div className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-xl text-[9px] font-black uppercase">
-                                        Lô mới
+                                      <div className="px-4 py-1.5 bg-retro-paper border-2 border-retro-mustard/20 text-retro-mustard text-[10px] font-black uppercase tracking-widest shadow-inner rotate-3">
+                                        Vật phẩm
                                       </div>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 gap-4 relative z-10">
-                                      <div>
-                                        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest mb-1">Số lượng tồn</p>
-                                        <p className="text-sm font-black text-emerald-600 italic">{Number(batch.remainQuantity).toLocaleString()} {m.unit}</p>
+                                    <div className="grid grid-cols-2 gap-8 relative z-10">
+                                      <div className="space-y-2">
+                                        <p className="text-[9px] font-black text-retro-earth/30 uppercase tracking-widest italic">Số lượng tồn</p>
+                                        <p className="text-lg font-black text-retro-moss italic tabular-nums leading-none">
+                                          {Number(batch.remainQuantity).toLocaleString()} <span className="text-[10px] uppercase font-bold not-italic">{m.unit}</span>
+                                        </p>
                                       </div>
-                                      <div>
-                                        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest mb-1">Vị trí kho</p>
-                                        <p className="text-sm font-black text-gray-800 uppercase tracking-tighter flex items-center gap-1.5">
-                                          <MapPin size={12} className="text-indigo-400" />
-                                          {batch.location || 'Chưa định vị'}
+                                      <div className="space-y-2">
+                                        <p className="text-[9px] font-black text-retro-earth/30 uppercase tracking-widest italic">Vị trí kho</p>
+                                        <p className="text-xs font-black text-retro-earth uppercase tracking-tighter flex items-center gap-2 italic">
+                                          <MapPin size={12} strokeWidth={2} className="text-retro-brick/40" />
+                                          {batch.location || 'Ngoại vi'}
                                         </p>
                                       </div>
                                     </div>
                                     
-                                    <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center relative z-10">
-                                      <div className="flex items-center gap-1.5 text-gray-300">
-                                        <Calendar size={12} />
-                                        <span className="text-[9px] font-bold uppercase">{new Date(batch.createdAt).toLocaleDateString('vi-VN')}</span>
+                                    <div className="mt-8 pt-6 border-t-2 border-dashed border-retro-sepia/5 flex justify-between items-center relative z-10">
+                                      <div className="flex items-center gap-3 text-retro-earth/40">
+                                        <Calendar size={14} strokeWidth={2} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest tabular-nums">{new Date(batch.createdAt).toLocaleDateString('vi-VN')}</span>
                                       </div>
-                                      <div className="text-[10px] font-black text-indigo-500 italic">
+                                      <div className="text-[11px] font-black text-retro-brick italic underline decoration-retro-brick/10 underline-offset-4">
                                         {Number(batch.purchasePrice).toLocaleString()}đ/đv
                                       </div>
                                     </div>
 
                                     {/* Decoration */}
-                                    <div className="absolute -right-2 -bottom-2 text-indigo-50/20 group-hover:scale-110 transition-transform">
-                                      <Layers size={60} />
+                                    <div className="absolute -right-4 -bottom-4 text-retro-sepia opacity-[0.02] group-hover:opacity-[0.05] group-hover:scale-110 transition-all">
+                                      <Layers size={80} strokeWidth={0.5} />
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <div className="bg-white/50 p-10 rounded-3xl border border-dashed border-gray-200 text-center">
-                                <p className="text-xs font-bold text-gray-400 italic">Không tìm thấy lô hàng nào còn tồn cho vật tư này.</p>
+                              <div className="bg-retro-paper/40 p-16 border-4 border-dashed border-retro-sepia/10 text-center">
+                                <p className="text-xs font-black text-retro-earth/40 uppercase tracking-[0.3em] italic">Không tìm thấy bản ghi lô hàng hữu dụng cho vật tư này.</p>
                               </div>
                             )}
                           </div>

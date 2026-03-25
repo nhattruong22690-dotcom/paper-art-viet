@@ -13,8 +13,10 @@ import {
   ArrowUpRight,
   Clock,
   DollarSign,
-  Loader2
+  Loader2,
+  ChevronRight
 } from 'lucide-react';
+
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { getAllProducts, upsertProduct } from '@/services/product.service';
@@ -85,14 +87,25 @@ export default function ProductMaster() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700 pb-20 px-4">
+    <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700 pb-24 px-6 md:px-12 font-typewriter">
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tight italic">
-            Danh mục <span className="text-indigo-600 underline decoration-4 underline-offset-8">Sản phẩm</span>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10 bg-white/40 p-10 border-b-2 border-retro-sepia/10 relative overflow-hidden retro-card">
+        <div className="washi-tape-top" />
+        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+           <Package size={240} strokeWidth={0.5} className="text-retro-sepia" />
+        </div>
+        
+        <div className="relative z-10">
+          <nav className="flex items-center gap-3 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] mb-4 opacity-60">
+            <Package size={14} strokeWidth={1.5} />
+            <span>Sản xuất</span>
+            <ChevronRight size={12} strokeWidth={1.5} />
+            <span className="text-retro-sepia">Danh mục Vật phẩm</span>
+          </nav>
+          <h1 className="text-3xl md:text-4xl font-black text-retro-sepia uppercase tracking-tighter italic underline decoration-double decoration-retro-mustard/30 underline-offset-8">
+            Master List <span className="text-retro-brick">Sản phẩm</span>
           </h1>
-          <p className="text-[12px] text-gray-400 font-bold uppercase tracking-widest mt-3">Quản lý Master List & Định mức nguyên vật liệu (BOM)</p>
+          <p className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] italic mt-4 opacity-60">Quản lý Định mức nguyên vật liệu (BOM) & Kế hoạch sản xuất — 1984</p>
         </div>
 
         <button 
@@ -100,45 +113,48 @@ export default function ProductMaster() {
             setEditingProduct(null);
             setIsFormOpen(true);
           }}
-          className="flex items-center gap-3 px-8 py-4.5 bg-indigo-600 text-white rounded-[24px] text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95"
+          className="relative z-10 flex items-center gap-4 px-10 py-5 bg-retro-brick text-white shadow-[4px_4px_0px_#3E272333] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-retro-sepia transition-all active:scale-95"
         >
-          <Plus size={18} />
-          Thêm sản phẩm mới
+          <Plus size={20} strokeWidth={2.5} />
+          Khởi tạo Sản phẩm mới
         </button>
       </div>
 
+
       {/* SEARCH/FILTER BAR */}
-      <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-xl shadow-gray-50/50 flex flex-col md:flex-row gap-6">
-        <div className="relative flex-1">
+      <div className="bg-white/60 p-8 border-2 border-retro-sepia/10 shadow-inner flex flex-col md:flex-row gap-8 font-typewriter">
+        <div className="relative flex-1 group">
           <input 
             type="text"
-            placeholder="Tìm kiếm theo tên sản phẩm hoặc mã SKU..."
+            placeholder="Tra cứu tên sản phẩm hoặc mã định danh SKU..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-14 pr-8 py-5 bg-gray-50/50 border border-gray-100 rounded-[28px] text-[13px] font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-200 transition-all uppercase tracking-tight"
+            className="w-full pl-16 pr-8 py-5 bg-white/40 border-2 border-retro-sepia/10 text-xs font-black uppercase text-retro-sepia outline-none focus:bg-white focus:border-retro-sepia transition-all shadow-inner placeholder:italic placeholder:font-normal placeholder:lowercase"
           />
-          <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={22} strokeWidth={1.5} className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/20 group-focus-within:text-retro-brick transition-colors" />
         </div>
         
-        <button className="px-10 py-5 bg-white border border-gray-100 rounded-[28px] font-black text-[11px] uppercase tracking-widest text-gray-500 flex items-center gap-3 hover:bg-gray-50 transition-all">
-          <Filter size={18} /> Lọc nâng cao
+        <button className="px-10 py-5 bg-white border-2 border-retro-sepia/10 font-black text-[11px] uppercase tracking-[0.2em] text-retro-sepia flex items-center gap-4 hover:bg-retro-paper transition-all shadow-sm rotate-1 hover:rotate-0">
+          <Filter size={20} strokeWidth={1.5} /> Lọc thuộc tính
         </button>
       </div>
+
 
       {/* PRODUCTS GRID/LIST */}
       {isLoading ? (
-        <div className="py-24 flex flex-col items-center">
-           <Loader2 size={48} className="text-indigo-600 animate-spin mb-6" />
-           <p className="text-xs font-black uppercase text-gray-400 tracking-widest italic">Đang tải danh sách sản phẩm...</p>
+        <div className="py-32 flex flex-col items-center justify-center font-typewriter">
+           <Loader2 size={56} strokeWidth={1.5} className="text-retro-brick animate-spin mb-8" />
+           <p className="text-[10px] font-black uppercase text-retro-earth tracking-[0.4em] animate-pulse italic">Đang truy xuất Sổ cái vật phẩm...</p>
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="py-24 text-center bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-50/50 flex flex-col items-center">
-           <Package size={64} className="text-gray-100 mb-6" />
-           <h3 className="text-lg font-black text-gray-800 uppercase italic">Không tìm thấy sản phẩm nào</h3>
-           <p className="text-xs text-gray-400 font-bold uppercase mt-2">Thử thay đổi từ khóa tìm kiếm hoặc tạo sản phẩm mới.</p>
+        <div className="py-32 text-center bg-white/40 border-4 border-dashed border-retro-sepia/10 flex flex-col items-center font-typewriter">
+           <Package size={80} strokeWidth={1} className="text-retro-earth/20 mb-8" />
+           <h3 className="text-sm font-black text-retro-earth/60 uppercase tracking-[0.2em] italic">Không tìm thấy vật phẩm tương thích</h3>
+           <p className="text-[10px] text-retro-earth/40 font-black uppercase mt-4 tracking-widest">Vui lòng rà soát lại SKU hoặc khởi tạo bản ghi mới.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
            {filteredProducts.map((p) => (
              <div 
                key={p.id}
@@ -146,72 +162,72 @@ export default function ProductMaster() {
                  setSelectedProduct(p);
                  setIsDetailOpen(true);
                }}
-               className="group relative bg-white p-8 rounded-[48px] border border-gray-100 shadow-xl shadow-gray-100/30 hover:shadow-2xl hover:shadow-indigo-100/50 hover:-translate-y-1 transition-all cursor-pointer overflow-hidden"
+               className="group relative bg-white p-8 border-2 border-retro-sepia/5 hover:border-retro-sepia/20 shadow-sm hover:shadow-2xl transition-all cursor-pointer overflow-hidden font-typewriter"
              >
                 {/* Background Decor */}
-                <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-50/30 rounded-full group-hover:bg-indigo-100/50 transition-colors" />
+                <div className="absolute -top-16 -right-16 w-40 h-40 bg-retro-paper/40 group-hover:bg-retro-mustard/10 transition-colors rotate-12" />
                 
-                <div className="relative space-y-6">
+                <div className="relative space-y-8">
                    <div className="flex justify-between items-start">
-                      <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
-                         <Package size={28} />
+                      <div className="w-16 h-16 bg-retro-paper border-2 border-retro-sepia/10 flex items-center justify-center text-retro-earth/20 group-hover:bg-retro-sepia group-hover:text-retro-paper transition-all rotate-3 group-hover:rotate-0 shadow-sm">
+                         <Package size={32} strokeWidth={1.5} />
                       </div>
-                      <div className="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded-xl">
-                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                         <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">In Stock</span>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-retro-paper/50 border border-retro-sepia/5 shadow-inner">
+                         <div className="w-2 h-2 bg-retro-moss shadow-sm animate-pulse" />
+                         <span className="text-[9px] font-black text-retro-earth uppercase tracking-[0.2em] italic">Đang khả dụ</span>
                       </div>
                    </div>
 
                    <div>
-                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight line-clamp-1 group-hover:text-indigo-600 transition-all">
+                      <h3 className="text-[13px] font-black text-retro-sepia uppercase tracking-tighter line-clamp-1 group-hover:text-retro-brick transition-all underline decoration-retro-mustard/20 group-hover:decoration-retro-brick/20 underline-offset-4">
                         {p.name || '---'}
                       </h3>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">{p.sku || 'N/A'}</p>
+                      <p className="text-[10px] text-retro-earth/60 font-black uppercase tracking-[0.2em] mt-2 italic">{p.sku || 'CHƯA-GÁN-SKU'}</p>
                    </div>
 
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                         <div className="flex items-center gap-2 mb-1">
-                            <Clock size={12} className="text-gray-400" />
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Manufacturing</span>
+                   <div className="grid grid-cols-2 gap-6 bg-retro-paper/30 p-4 border border-retro-sepia/5 shadow-inner">
+                      <div className="space-y-2">
+                         <div className="flex items-center gap-3">
+                            <Clock size={14} strokeWidth={1.5} className="text-retro-sepia/20" />
+                            <span className="text-[8px] font-black text-retro-earth uppercase tracking-widest opacity-60">Thanh thời</span>
                          </div>
-                         <p className="text-xs font-black text-gray-700 tabular-nums">
-                            {p.productionTimeStd || 0} Phút
+                         <p className="text-xs font-black text-retro-sepia italic">
+                            {p.productionTimeStd || 0} <span className="text-[9px] uppercase not-italic">Phút</span>
                          </p>
                       </div>
-                      <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Tag size={12} className="text-indigo-500" />
-                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-tighter">Giá Sỉ</span>
+                      <div className="space-y-2 border-l border-retro-sepia/10 pl-4">
+                          <div className="flex items-center gap-3">
+                            <Tag size={14} strokeWidth={1.5} className="text-retro-brick/20" />
+                            <span className="text-[8px] font-black text-retro-brick uppercase tracking-widest opacity-60">Niêm giá</span>
                           </div>
-                          <p className="text-xs font-black text-indigo-800 tabular-nums">
+                          <p className="text-xs font-black text-retro-brick italic">
                             {(() => {
                                const config = (p as any).cogsConfig;
                                if (config?.suggestedPrices?.wholesale) return Number(config.suggestedPrices.wholesale).toLocaleString();
-                               // Fallback if not saved yet (just a quick estimate for UI)
-                               return 'Chưa báo';
-                            })()}đ
+                               return 'Liên hệ';
+                            })()} <span className="text-[9px] uppercase not-italic">VNĐ</span>
                           </p>
                       </div>
                    </div>
 
-                   <div className="flex items-center justify-between pt-4 border-t border-gray-50 group-hover:border-indigo-50 transition-all">
-                      <div className="flex items-center gap-2">
-                         <div className="flex -space-x-2">
+                   <div className="flex items-center justify-between pt-6 border-t-2 border-retro-sepia/5 group-hover:border-retro-sepia/10 transition-all italic">
+                      <div className="flex items-center gap-4">
+                         <div className="flex -space-x-4">
                             {[1, 2, 3].map(i => (
-                               <div key={i} className="w-5 h-5 rounded-full border-2 border-white bg-gray-100" />
+                               <div key={i} className="w-6 h-6 border-2 border-white bg-retro-paper shadow-sm" />
                             ))}
                          </div>
-                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">+{p.bomItems?.length || 0} Materials</span>
+                         <span className="text-[9px] font-black text-retro-earth/40 uppercase tracking-widest">+{p.bomItems?.length || 0} Linh kiện định mức</span>
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                         <ArrowUpRight size={16} />
+                      <div className="w-10 h-10 bg-retro-paper border-2 border-retro-sepia/10 flex items-center justify-center text-retro-sepia group-hover:bg-retro-sepia group-hover:text-retro-paper transition-all shadow-sm rotate-45 group-hover:rotate-0">
+                         <ArrowUpRight size={18} strokeWidth={1.5} />
                       </div>
                    </div>
                 </div>
              </div>
            ))}
         </div>
+
       )}
 
       {selectedProduct && (

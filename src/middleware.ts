@@ -82,7 +82,7 @@ export async function middleware(req: NextRequest) {
 
     // e. RBAC: PROTECT ADMIN ROUTES
     if (role.toLowerCase() !== 'admin') {
-       const adminRoutes = ['/settings', '/hr/users', '/logs'];
+       const adminRoutes = ['/settings', '/hr/users', '/logs', '/admin'];
        if (adminRoutes.some(route => pathname.startsWith(route))) {
           return NextResponse.redirect(new URL('/', req.url));
        }

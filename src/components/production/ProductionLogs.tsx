@@ -14,7 +14,8 @@ import {
   Search,
   Loader2,
   FileText,
-  Filter
+  Filter,
+  FileSpreadsheet
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -121,121 +122,136 @@ export default function ProductionLogs() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700 font-typewriter">
       {/* FILTER BAR */}
-      <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-xl shadow-gray-50/50 flex flex-wrap justify-between items-center gap-6">
-        <div className="flex items-center gap-4">
-           <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white">
-              <History size={24} />
+      <div className="bg-retro-paper border-2 border-retro-sepia/10 shadow-[0_15px_40px_-10px_rgba(62,39,35,0.1)] p-10 flex flex-wrap justify-between items-center gap-10 relative overflow-hidden">
+        <div className="washi-tape-top" />
+        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+           <FileSpreadsheet size={160} strokeWidth={0.5} className="text-retro-sepia" />
+        </div>
+
+        <div className="flex items-center gap-8 relative z-10">
+           <div className="w-16 h-16 bg-retro-sepia text-retro-paper flex items-center justify-center shadow-lg rotate-3">
+              <History size={28} strokeWidth={1.5} />
            </div>
            <div>
-              <h1 className="text-xl font-black text-gray-900 uppercase italic">Logs XS</h1>
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Lịch sử sản xuất vận hành</p>
+              <h1 className="text-2xl font-black text-retro-sepia uppercase tracking-tighter italic">Nhật trình <span className="text-retro-brick underline decoration-double decoration-retro-brick/30">Vận hành</span></h1>
+              <div className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] italic mt-4 opacity-60 flex items-center gap-3">
+                <div className="w-2 h-2 bg-retro-mustard rotate-45" />
+                Duyệt trình Công nhật & Thụ ký Sản lượng — MCMLXXXIV
+             </div>
            </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-8 relative z-10">
            {/* Search */}
-           <div className="relative">
+           <div className="relative group">
               <input 
                 type="text"
-                placeholder="Tìm tên NV, mã SKU..."
+                placeholder="Truy vấn Thợ, mã vật phẩm..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none focus:bg-white focus:border-indigo-200 transition-all w-64 uppercase tracking-tighter"
+                className="pl-14 pr-6 py-4 bg-white border-2 border-retro-sepia/10 text-xs font-black text-retro-sepia outline-none focus:border-retro-sepia shadow-inner transition-all w-80 uppercase tracking-tight italic placeholder:opacity-30"
               />
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={18} strokeWidth={1.5} className="absolute left-5 top-1/2 -translate-y-1/2 text-retro-sepia/30 group-focus-within:text-retro-sepia" />
            </div>
 
            {/* Date Nav */}
-           <div className="flex items-center gap-2 bg-indigo-50/50 p-1.5 rounded-2xl border border-indigo-100/50">
-              <button onClick={() => changeDay(-1)} className="p-2 hover:bg-white rounded-xl text-indigo-500 transition-all active:scale-90">
-                <ChevronLeft size={18} />
+           <div className="flex items-center gap-4 bg-white p-2 border-2 border-retro-sepia/10 shadow-sm">
+              <button 
+                onClick={() => changeDay(-1)} 
+                className="p-3 bg-retro-paper border border-retro-sepia/10 hover:bg-retro-sepia hover:text-white text-retro-sepia transition-all active:scale-95 shadow-sm"
+              >
+                <ChevronLeft size={20} strokeWidth={2.5} />
               </button>
-              <div className="px-4 flex flex-col items-center min-w-[120px]">
+              <div className="px-6 flex flex-col items-center min-w-[160px]">
+                 <p className="text-[9px] font-black text-retro-earth/40 uppercase tracking-[0.2em] mb-1 italic">Kỳ báo cáo</p>
                  <input 
                    type="date"
                    value={date}
                    onChange={(e) => handleDateChange(e.target.value)}
-                   className="bg-transparent text-[11px] font-black text-indigo-900 outline-none cursor-pointer uppercase"
+                   className="bg-transparent text-sm font-black text-retro-sepia outline-none cursor-pointer uppercase tracking-widest text-center italic"
                  />
               </div>
-              <button onClick={() => changeDay(1)} className="p-2 hover:bg-white rounded-xl text-indigo-500 transition-all active:scale-90">
-                <ChevronRight size={18} />
+              <button 
+                onClick={() => changeDay(1)} 
+                className="p-3 bg-retro-paper border border-retro-sepia/10 hover:bg-retro-sepia hover:text-white text-retro-sepia transition-all active:scale-95 shadow-sm"
+              >
+                <ChevronRight size={20} strokeWidth={2.5} />
               </button>
            </div>
         </div>
       </div>
 
       {/* LIST VIEW TABLE */}
-      <div className="bg-white rounded-[40px] border border-gray-100 shadow-2xl shadow-gray-100/50 overflow-hidden">
+      <div className="bg-white border-2 border-retro-sepia/10 shadow-[0_20px_50px_-12px_rgba(62,39,35,0.15)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Thời gian</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nhân viên</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Sản phẩm / SKU</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Sản lượng</th>
-                <th className="px-8 py-5 text-[10px] font-black text-rose-400 uppercase tracking-widest text-center">Lỗi 🛠️</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Trạng thái</th>
+              <tr className="bg-retro-paper border-b-2 border-retro-sepia/20">
+                <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60">Thời điểm</th>
+                <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60">Thợ vận hành</th>
+                <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60">Vật phẩm / Bản thiết kế</th>
+                <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60 text-center">Sản lượng</th>
+                <th className="px-10 py-6 text-[10px] font-black text-retro-brick uppercase tracking-[0.2em] italic opacity-60 text-center">Khuyết tật ⚙️</th>
+                <th className="px-10 py-6 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] italic opacity-60 text-center">Trạng thái</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y-2 divide-retro-sepia/5 relative z-0">
               {filteredLogs.map((log, index) => (
                 <tr 
                   key={log.id} 
                   ref={index === filteredLogs.length - 1 ? lastLogElementRef : null}
-                  className="hover:bg-indigo-50/20 transition-colors group"
+                  className="hover:bg-retro-paper/50 transition-all group"
                 >
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-3">
-                       <Clock size={14} className="text-gray-300 group-hover:text-indigo-400" />
-                       <span className="text-xs font-black text-gray-700">
+                  <td className="px-10 py-6">
+                    <div className="flex items-center gap-4">
+                       <Clock size={16} strokeWidth={1.5} className="text-retro-earth/40 group-hover:text-retro-sepia" />
+                       <span className="text-sm font-black text-retro-sepia italic">
                           {new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                        </span>
                     </div>
                   </td>
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 text-[10px] font-bold uppercase group-hover:bg-indigo-100 group-hover:text-indigo-600">
+                  <td className="px-10 py-6">
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 bg-retro-paper border border-retro-sepia/10 flex items-center justify-center text-retro-sepia text-sm font-black uppercase rotate-3 group-hover:rotate-0 transition-transform">
                           {log.staffName?.charAt(0)}
                        </div>
                        <div>
-                          <p className="text-xs font-black text-gray-900 uppercase tracking-tight">{log.staffName}</p>
-                          <p className="text-[9px] text-gray-400 font-bold tracking-widest">#{log.userId}</p>
+                          <p className="text-xs font-black text-retro-sepia uppercase tracking-tight italic">{log.staffName}</p>
+                          <p className="text-[9px] text-retro-earth/40 font-black tracking-[0.2em] mt-1 italic">MÃ THỢ: #{log.userId}</p>
                        </div>
                     </div>
                   </td>
-                  <td className="px-8 py-5">
-                    <div className="space-y-1">
-                       <p className="text-xs font-bold text-gray-700">{log.productionOrder.product.name}</p>
-                       <div className="inline-block px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[9px] font-black tracking-tighter uppercase">
+                  <td className="px-10 py-6">
+                    <div className="space-y-2">
+                       <p className="text-xs font-black text-retro-sepia uppercase tracking-tight">{log.productionOrder.product.name}</p>
+                       <div className="inline-block px-3 py-1 bg-retro-paper border border-retro-sepia/10 text-retro-sepia text-[10px] font-black tracking-widest uppercase italic">
                           {log.productionOrder.sku}
                        </div>
                     </div>
                   </td>
-                  <td className="px-8 py-5 text-center">
-                    <span className="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
+                  <td className="px-10 py-6 text-center">
+                    <span className="text-lg font-black text-retro-brick bg-retro-brick/5 px-5 py-2 border border-retro-brick/10 shadow-inner italic">
                       {log.quantityProduced}
                     </span>
                   </td>
-                  <td className="px-8 py-5 text-center">
-                    <div className="flex justify-center gap-3">
-                       <div className="text-[10px] font-black text-rose-500">
-                          <span className="block text-[8px] uppercase tracking-widest text-gray-300">Thợ</span>
-                          {log.technicalErrorCount}
+                  <td className="px-10 py-6 text-center">
+                    <div className="flex justify-center gap-6">
+                       <div className="text-center">
+                          <span className="block text-[8px] uppercase tracking-[0.2em] text-retro-earth/40 mb-1 italic">Kỹ nghệ</span>
+                          <span className="text-sm font-black text-retro-brick tabular-nums italic">{log.technicalErrorCount}</span>
                        </div>
-                       <div className="text-[10px] font-black text-gray-400">
-                          <span className="block text-[8px] uppercase tracking-widest text-gray-300">Giấy</span>
-                          {log.materialErrorCount}
+                       <div className="text-center">
+                          <span className="block text-[8px] uppercase tracking-[0.2em] text-retro-earth/40 mb-1 italic">Vật liệu</span>
+                          <span className="text-sm font-black text-retro-earth/60 tabular-nums italic">{log.materialErrorCount}</span>
                        </div>
                     </div>
                   </td>
-                  <td className="px-8 py-5 text-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest">
-                       <CheckCircle2 size={12} fill="currentColor" className="text-white" />
-                       Hoàn tất
+                  <td className="px-10 py-6 text-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 border-2 border-retro-moss text-retro-moss text-[10px] font-black uppercase tracking-[0.2em] shadow-sm italic rotate-1">
+                       <CheckCircle2 size={14} strokeWidth={2.5} />
+                       Đã Niêm yết
                     </div>
                   </td>
                 </tr>
@@ -246,18 +262,18 @@ export default function ProductionLogs() {
 
         {/* LOADING & EMPTY */}
         {isLoading && (
-          <div className="flex justify-center py-12 bg-gray-50/30">
-            <Loader2 className="animate-spin text-indigo-600" size={24} />
+          <div className="flex justify-center py-20 bg-retro-paper/10">
+            <Loader2 className="animate-spin text-retro-brick" size={32} strokeWidth={1.5} />
           </div>
         )}
 
         {!isLoading && filteredLogs.length === 0 && (
-          <div className="py-24 flex flex-col items-center text-center">
-             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-4">
-                <FileText size={32} />
+          <div className="py-32 flex flex-col items-center text-center">
+             <div className="w-24 h-24 bg-retro-paper border-2 border-retro-sepia/5 flex items-center justify-center text-retro-earth/10 mb-8 border-dashed rotate-3">
+                <FileText size={48} strokeWidth={0.5} />
              </div>
-             <h3 className="text-sm font-black text-gray-800 uppercase italic">Không có dữ liệu</h3>
-             <p className="text-[11px] text-gray-400 font-medium">Chưa có nhật ký sản xuất cho các tiêu chí đã chọn.</p>
+             <h3 className="text-base font-black text-retro-sepia uppercase tracking-widest italic opacity-60">Sổ cái trống rỗng</h3>
+             <p className="text-[10px] text-retro-earth/40 font-black uppercase tracking-[0.3em] mt-4 italic">Không tìm thấy bản ghi nào khớp với điều kiện tra cứu.</p>
           </div>
         )}
       </div>

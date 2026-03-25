@@ -9,14 +9,15 @@ import {
   ClipboardCheck,
   Archive,
   ChevronDown,
-  ChevronRight,
   Box,
   Circle,
   HelpCircle,
   Settings,
-  LogOut
+  LogOut,
+  X,
+  Package,
+  FileText
 } from 'lucide-react';
-import HelpIcon from '@/components/common/HelpIcon';
 import { useAuth } from '@/context/AuthContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -38,13 +39,13 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   {
-    name: 'Kinh doanh', icon: Users, roles: ['Admin', 'Sales'], children: [
+    name: 'Quản lý Kinh doanh', href: '/orders', icon: Users, roles: ['Admin', 'Sales'], children: [
       { name: 'Khách hàng', href: '/customers' },
-      { name: 'Đơn hàng', href: '/orders' },
+      { name: 'Danh sách đơn hàng', href: '/orders' },
     ]
   },
   {
-    name: 'Sản xuất', icon: ClipboardCheck, roles: ['Admin', 'Production'], children: [
+    name: 'Quản lý Sản xuất', href: '/production', icon: ClipboardCheck, roles: ['Admin', 'Production'], children: [
       { name: 'Danh mục Sản phẩm', href: '/production/products' },
       { name: 'Lệnh sản xuất', href: '/production' },
       { name: 'Gia công ngoài', href: '/outsourcing' },
@@ -53,25 +54,29 @@ const navigation: NavItem[] = [
     ]
   },
   {
-    name: 'Kho Vận', icon: Archive, roles: ['Admin', 'Warehouse'], children: [
+    name: 'Danh mục & Vật tư', href: '/production/products', icon: Package, roles: ['Admin', 'Warehouse', 'Production'], children: [
+      { name: 'Danh mục SP', href: '/production/products' },
+      { name: 'Vật tư NVL', href: '/logistics/materials' },
+    ]
+  },
+  {
+    name: 'Điều phối kho vận', href: '/logistics/inventory', icon: Archive, roles: ['Admin', 'Warehouse'], children: [
       { name: 'Đơn mua hàng', href: '/logistics/purchase' },
       { name: 'Tồn kho thực tế', href: '/logistics/inventory' },
       { name: 'Nhập kho', href: '/logistics/inward' },
-      { name: 'Danh mục vật tư', href: '/logistics/materials' },
       { name: 'Đóng gói', href: '/logistics/packing' },
     ]
   },
   {
-    name: 'Quản trị Nhân sự', icon: Users, roles: ['Admin', 'Supervisor'], children: [
+    name: 'Quản trị Nhân sự', href: '/hr/employees', icon: Users, roles: ['Admin', 'Supervisor', 'User'], children: [
+      { name: 'Chi tiết nhân viên', href: '/hr/employees' },
       { name: 'Hiệu suất (KPI)', href: '/production/performance' },
-      { name: 'Danh sách nhân viên', href: '/hr/employees' },
-      { name: 'Tài khoản hệ thống', href: '/hr/users' },
+      { name: 'Quản trị tài khoản', href: '/hr/users' },
     ]
   },
   {
-    name: 'Cài đặt hệ thống', icon: Settings, roles: ['Admin'], children: [
+    name: 'Cài đặt hệ thống', href: '/settings', icon: Settings, roles: ['Admin'], children: [
       { name: 'Cấu hình chung', href: '/settings' },
-      { name: 'Nhật ký hệ thống', href: '/logs' },
     ]
   },
   { name: 'Hướng dẫn sử dụng', href: '/guide', icon: HelpCircle },
@@ -92,147 +97,157 @@ export default function Sidebar() {
     });
   }, [pathname]);
 
-  const toggleMenu = (name: string) => {
+  const toggleMenu = (e: React.MouseEvent, name: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     setOpenMenus(prev =>
       prev.includes(name) ? prev.filter(m => m !== name) : [...prev, name]
     );
   };
 
   return (
-    <aside className="hidden lg:flex w-80 bg-white border-r border-gray-100 flex-col sticky top-0 h-screen overflow-y-auto">
-      <div className="p-8">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary-200 shrink-0">
-            <Box size={24} />
+    <aside className="hidden lg:flex fixed lg:sticky top-0 left-0 h-screen w-80 bg-retro-paper border-r border-retro-sepia/10 flex-col z-[101] overflow-y-auto shadow-2xl">
+      <div className="p-8 pb-32 lg:pb-8">
+        {/* Header (Simplified for Desktop Only) */}
+        <div className="flex items-center justify-between gap-3 mb-10 px-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-retro-sepia rounded-full flex items-center justify-center text-retro-mustard shadow-xl ring-2 ring-retro-mustard/20 shrink-0">
+              <Box size={24} strokeWidth={1.5} />
+            </div>
+            <span className="font-typewriter font-black text-xl tracking-tighter text-retro-sepia uppercase">
+              Paper Art <span className="text-retro-brick underline decoration-double underline-offset-4">ERP</span>
+            </span>
           </div>
-          <span className="font-black text-xl tracking-tight text-gray-800 uppercase italic">
-            PAPER ART <span className="text-primary-500 underline decoration-2 underline-offset-4">ERP</span>
-          </span>
         </div>
 
-        <nav className="space-y-1">
-          {navigation.filter(item => 
-            !item.roles || 
-            item.roles.some(r => r.toLowerCase() === currentRole.toLowerCase())
-          ).map((item) => {
+        <nav className="space-y-4">
+          {navigation.map((item) => {
             const hasChildren = !!item.children;
-            const isOpen = openMenus.includes(item.name);
+            const isOpenMenu = openMenus.includes(item.name);
+            const isActive = pathname === item.href || item.children?.some(c => pathname === c.href);
             
             return (
-              <div key={item.name} className="space-y-1">
+              <div key={item.name} className="space-y-2">
                 {hasChildren ? (
-                  <button
-                    onClick={() => toggleMenu(item.name)}
-                    className={cn(
-                      "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm group transition-all",
-                      isOpen
-                        ? "text-primary-600 bg-sky-light/50"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon
-                        size={18}
+                  <div className="relative group">
+                    <button
+                      onClick={(e) => toggleMenu(e, item.name)}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-3 border-b-2 transition-all min-h-[48px]",
+                        isActive 
+                          ? "text-retro-brick border-retro-brick bg-retro-paper" 
+                          : "text-retro-sepia border-transparent hover:border-retro-sepia/20 hover:bg-white/30"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon
+                          size={18}
+                          strokeWidth={isActive ? 2 : 1.2}
+                          className={cn(
+                            "flex-shrink-0",
+                            isActive ? "text-retro-brick" : "text-retro-sepia/60 group-hover:text-retro-sepia"
+                          )}
+                        />
+                        <span className="font-typewriter uppercase tracking-tighter text-xs font-black">
+                          {item.name}
+                        </span>
+                      </div>
+                      <ChevronDown
+                        size={14}
                         className={cn(
-                          "flex-shrink-0",
-                          isOpen ? "text-primary-600" : "text-gray-400 group-hover:text-gray-600"
+                          "transition-transform duration-300",
+                          isOpenMenu ? "rotate-180 text-retro-brick" : "text-retro-sepia/40"
                         )}
                       />
-                      <span className="uppercase tracking-widest text-[10px] font-black">
-                        {item.name}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      size={14}
-                      className={cn(
-                        "transition-transform",
-                        isOpen ? "text-primary-600 rotate-180" : "text-gray-300"
-                      )}
-                    />
-                  </button>
+                    </button>
+                    
+                  </div>
                 ) : (
                   <Link
                     href={item.href!}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl text-sm group transition-all",
+                      "flex items-center gap-3 px-4 py-3 transition-all min-h-[48px] border-b-2",
                       pathname === item.href
-                        ? "bg-primary-600 text-white shadow-lg shadow-primary-200"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                        ? "bg-retro-sepia text-retro-mustard border-retro-mustard shadow-inner"
+                        : "text-retro-sepia border-transparent hover:border-retro-sepia/20 hover:bg-white/30"
                     )}
                   >
                     <item.icon
                       size={18}
+                      strokeWidth={pathname === item.href ? 2 : 1.2}
                       className={cn(
                         "flex-shrink-0",
-                        pathname === item.href ? "text-white" : "text-gray-400 group-hover:text-gray-600"
+                        pathname === item.href ? "text-retro-mustard" : "text-retro-sepia/60 group-hover:text-retro-sepia"
                       )}
                     />
-                    <span className="uppercase tracking-widest text-[10px] font-black">
+                    <span className="font-typewriter uppercase tracking-tighter text-xs font-black">
                       {item.name}
                     </span>
                   </Link>
                 )}
 
-                {hasChildren && isOpen && (
-                  <div className="pl-10 space-y-1 py-1">
-                    {item.children!.filter(child => 
-                      !child.roles || 
-                      child.roles.some(r => r.toLowerCase() === currentRole.toLowerCase())
-                    ).map((child) => {
-                      const isChildActive = pathname === child.href;
-                      return (
-                        <Link
-                          key={child.name}
-                          href={child.href}
+                {/* Sub-menu with handwritten style */}
+                <div className={cn(
+                  "overflow-hidden transition-all duration-300 ease-in-out pl-8 space-y-1",
+                  hasChildren && isOpenMenu ? "max-h-[800px] py-2 opacity-100" : "max-h-0 py-0 opacity-0"
+                )}>
+                  {item.children?.map((child) => {
+                    const isChildActive = pathname === child.href;
+                    return (
+                      <Link
+                        key={child.name}
+                        href={child.href}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-2 text-[11px] font-handwriting transition-all min-h-[36px]",
+                          isChildActive
+                            ? "text-retro-brick border-l-2 border-retro-brick translate-x-1"
+                            : "text-retro-earth hover:text-retro-sepia hover:translate-x-1"
+                        )}
+                      >
+                         <Circle
+                          size={4}
                           className={cn(
-                            "flex items-center gap-3 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                            isChildActive
-                              ? "text-primary-900 bg-white shadow-sm ring-1 ring-gray-100 border-l-4 border-yellow-cadmium"
-                              : "text-gray-400 hover:text-yellow-cadmium hover:bg-gray-50/50"
+                            "flex-shrink-0 fill-current",
+                            isChildActive ? "text-retro-brick" : "text-retro-earth/30"
                           )}
-                        >
-                          <Circle
-                            size={6}
-                            className={cn(
-                              "flex-shrink-0 fill-current",
-                              isChildActive ? "text-yellow-cadmium" : "text-gray-200"
-                            )}
-                          />
-                          <span>{child.name}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+                        />
+                        <span>{child.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
         </nav>
       </div>
 
-      <div className="mt-auto p-6 border-t border-gray-50">
-        <div className="p-4 bg-gray-50/50 rounded-[28px] border border-gray-100/50 space-y-4">
+      <div className="mt-auto p-8 border-t border-retro-sepia/10 bg-retro-paper sticky bottom-0">
+        <div className="space-y-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-primary-100 shrink-0">
+            <div className="w-12 h-12 rounded-full bg-retro-beige border-2 border-retro-sepia/20 flex items-center justify-center text-retro-sepia font-typewriter text-xs shadow-inner shrink-0 overflow-hidden">
                {profile?.name?.substring(0, 2).toUpperCase() || 'PA'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-black text-gray-900 truncate uppercase tracking-tight">
+              <p className="font-typewriter text-xs font-black text-retro-sepia truncate uppercase tracking-tighter leading-none">
                 {profile?.name || 'User'}
               </p>
-              <p className="text-[10px] text-gray-400 truncate uppercase font-bold tracking-widest italic leading-none">
+              <p className="font-handwriting text-xs text-retro-earth truncate mt-1">
                 {currentRole}
               </p>
             </div>
           </div>
           
           <button 
-            onClick={signOut}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-white hover:bg-rose-50 border border-gray-100 hover:border-rose-100 rounded-2xl text-[9px] font-black text-gray-400 hover:text-rose-600 uppercase tracking-[0.2em] transition-all shadow-sm active:scale-95"
+            onClick={() => signOut()}
+            className="retro-btn w-full bg-retro-sepia text-retro-mustard border-none shadow-md hover:bg-retro-brick hover:text-white"
           >
-             <LogOut size={14} />
-             Đăng xuất
+             <LogOut size={14} className="mr-2" />
+             Rời trạm
           </button>
+        </div>
+        <div className="mt-6 text-center">
+           <p className="font-handwriting text-[10px] text-retro-earth/60 italic">© 2026 Paper Art Việt</p>
         </div>
       </div>
     </aside>
