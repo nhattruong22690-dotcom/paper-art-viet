@@ -12,8 +12,10 @@ import {
   LayoutDashboard,
   Box,
   Package,
-  Pin
+  Pin,
+  ShieldAlert
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -57,8 +59,22 @@ const menuItems = [
 ];
 
 export default function MobileMenuPage() {
+  const { isAdmin } = useAuth();
+
   return (
     <div className="min-h-screen pb-32 px-4 pt-12 animate-in fade-in duration-700 relative overflow-hidden">
+      {/* Admin Quick Access */}
+      {isAdmin && (
+        <Link 
+          href="/admin/users"
+          className="fixed top-6 right-6 z-[100] w-14 h-16 bg-retro-brick border-2 border-retro-sepia flex items-center justify-center text-white shadow-2xl rotate-3 hover:rotate-0 transition-all active:scale-90"
+        >
+          <div className="absolute top-0 left-0 w-full h-1 bg-white/30" />
+          <ShieldAlert size={24} />
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-retro-mustard border border-retro-sepia rotate-45" />
+        </Link>
+      )}
+
       {/* Decorative String */}
       <div className="absolute top-24 left-0 right-0 h-px bg-retro-sepia/20 z-0 pointer-events-none" />
       
@@ -87,9 +103,9 @@ export default function MobileMenuPage() {
             key={item.href}
             href={item.href}
             className={cn(
-              "group relative bg-white p-2 pb-8 polaroid-shimmer border border-gray-200 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all active:scale-95 duration-500",
-              item.rotation,
-              "hover:rotate-0 hover:-translate-y-2"
+               "group relative bg-white p-2 pb-8 polaroid-shimmer border border-gray-200 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all active:scale-95 duration-500",
+               item.rotation,
+               "hover:rotate-0 hover:-translate-y-2"
             )}
           >
             {/* Clothespin / Pin */}
