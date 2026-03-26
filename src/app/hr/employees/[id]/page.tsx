@@ -22,7 +22,8 @@ import {
   Calendar,
   Mail,
   Building2,
-  Key
+  Key,
+  Users
 } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 

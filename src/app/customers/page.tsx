@@ -193,7 +193,7 @@ export default function CustomersPage() {
     if (element) {
       const offset = 100;
       const elementPosition = element.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      window.scrollTo({ top: elementPosition, behavior: 'smooth' });
     }
   };
 

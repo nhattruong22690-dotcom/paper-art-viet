@@ -16,7 +16,8 @@ import {
   Newspaper,
   Book,
   Info,
-  ChevronDown
+  ChevronDown,
+  Loader2
 } from 'lucide-react';
 import { GUIDE_DATA, NEWS_UPDATES } from '@/data/guide';
 import { useSearchParams } from 'next/navigation';
