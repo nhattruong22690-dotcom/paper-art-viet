@@ -102,6 +102,18 @@ export async function upsertMaterial(data: any) {
 }
 
 /**
+ * Xóa vật tư.
+ */
+export async function deleteMaterial(id: string) {
+  const { error } = await supabase
+    .from('Material')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+  return true;
+}
+
+/**
  * Lấy thống kê tồn kho (Cards).
  */
 export async function getInventoryStats() {

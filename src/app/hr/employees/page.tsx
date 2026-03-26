@@ -24,6 +24,12 @@ import {
 } from 'lucide-react';
 import { getEmployees, deleteEmployee } from '@/services/employee.service';
 import { useNotification } from '@/context/NotificationContext';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 interface Employee {
   id: string;
@@ -42,7 +48,7 @@ interface Employee {
 }
 
 export default function EmployeesPage() {
-  const { showToast } = useNotification();
+  const { showToast, confirm: confirmDialog } = useNotification();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,7 +81,7 @@ export default function EmployeesPage() {
   );
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) return;
+    if (!await confirmDialog('Bạn có chắc chắn muốn xóa nhân viên này?')) return;
     try {
       const res = await fetch(`/api/hr/employees/${id}`, { method: 'DELETE' });
       if (!res.ok) {

@@ -22,7 +22,7 @@ import {
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { getAllProducts, upsertProduct } from '@/services/product.service';
+import { getAllProducts, upsertProduct, updateProductBOM } from '@/services/product.service';
 import ProductDetailModal from './ProductDetailModal';
 import ProductFormModal from './ProductFormModal';
 import { useNotification } from "@/context/NotificationContext";
@@ -79,7 +79,6 @@ export default function ProductMaster() {
       
       // 2. Save BOM if present (Sequential)
       if (bomItems && bomItems.length > 0) {
-          const { updateProductBOM } = await import('@/services/product.service');
           await updateProductBOM(savedProduct.id, bomItems);
       }
       
