@@ -24,6 +24,7 @@ import {
 import { getSuppliers, upsertSupplier, deleteSupplier } from '@/services/supplier.service';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useNotification } from '@/context/NotificationContext';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -50,6 +51,7 @@ export default function SupplierManagementModal({ onClose }: { onClose: () => vo
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Supplier>>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const { showToast, confirm: confirmDialog } = useNotification();
 
   const loadData = async () => {
     setLoading(true);
@@ -120,11 +122,12 @@ export default function SupplierManagementModal({ onClose }: { onClose: () => vo
   };
 
   const handleDelete = async () => {
-    if (!selectedSupplier || !confirm(`Xác nhận xóa nhà cung ứng ${selectedSupplier.name}?`)) return;
+    if (!selectedSupplier || !await confirmDialog(`Xác nhận xóa nhà cung ứng ${selectedSupplier.name}?`)) return;
     
     setLoading(true);
     try {
       await deleteSupplier(selectedSupplier.id);
+      showToast('success', 'Đã xóa nhà cung ứng thành công');
       setSelectedSupplier(null);
       loadData();
     } catch (error: any) {
