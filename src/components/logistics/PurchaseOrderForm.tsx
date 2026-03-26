@@ -22,6 +22,7 @@ import SupplierManagementModal from './SupplierManagementModal';
 import { getMaterials } from '@/services/material.service';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useNotification } from '@/context/NotificationContext';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -59,6 +60,7 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
   ]);
   const [isSaving, setIsSaving] = useState(false);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const { showToast, showModal } = useNotification();
 
   useEffect(() => {
     const loadData = async () => {
@@ -105,12 +107,12 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
 
   const handleSave = async () => {
     if (!selectedSupplier) {
-      alert("Vui lòng chọn nhà cung cấp");
+      showToast('warning', "Vui lòng chọn nhà cung cấp");
       return;
     }
     const validItems = items.filter(i => i.materialId && i.quantityOrdered > 0);
     if (validItems.length === 0) {
-      alert("Vui lòng nhập ít nhất một mặt hàng hợp lệ");
+      showToast('warning', "Vui lòng nhập ít nhất một mặt hàng hợp lệ");
       return;
     }
 
@@ -126,10 +128,11 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
           expectedPrice: i.expectedPrice
         }))
       });
+      showToast('success', 'Đã tạo đơn mua hàng thành công');
       onSuccess();
     } catch (error) {
       console.error("Save failed:", error);
-      alert("Lỗi khi lưu: " + (error as any).message);
+      showModal('error', "Không thể tạo đơn hàng", (error as any).message);
     } finally {
       setIsSaving(false);
     }

@@ -20,8 +20,9 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { getMaterials, upsertMaterial } from '@/services/material.service';
+import { getMaterials, upsertMaterial, deleteMaterial } from '@/services/material.service';
 import MaterialFormModal from './MaterialFormModal';
+import { useNotification } from '@/context/NotificationContext';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -46,6 +47,7 @@ export default function MaterialMasterList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeType, setActiveType] = useState('All');
   const [isLoading, setIsLoading] = useState(false);
+  const { showToast, showModal, confirm: confirmDialog } = useNotification();
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -86,17 +88,31 @@ export default function MaterialMasterList() {
       await upsertMaterial(data as any);
       setIsModalOpen(false);
       setEditingMaterial(null);
+      showToast('success', 'Đã lưu vật tư thành công');
       fetchMaterials();
     } catch (error: any) {
       console.error('Failed to save material full error:', error);
       const errorMsg = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
-      alert(`Có lỗi xảy ra khi lưu vật tư: ${errorMsg}`);
+      showModal('error', 'Không thể lưu vật tư', errorMsg);
     }
   };
 
   const handleEdit = (material: Material) => {
     setEditingMaterial(material);
     setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!await confirmDialog('Bạn có chắc chắn muốn xóa vật tư này?')) return;
+    
+    try {
+      await deleteMaterial(id);
+      showToast('success', 'Đã xóa vật tư thành công');
+      fetchMaterials();
+    } catch (error: any) {
+      console.error('Failed to delete material:', error);
+      showModal('error', 'Không thể xóa vật tư', 'Vật tư này có thể đang được sử dụng trong BOM hoặc đơn hàng.');
+    }
   };
 
   const types = ['All', 'Giấy', 'Keo', 'Phụ kiện'];
@@ -240,7 +256,10 @@ export default function MaterialMasterList() {
                        >
                           <Edit2 size={16} />
                        </button>
-                       <button className="p-2 bg-white border border-slate-200 text-slate-400 rounded-lg hover:text-rose-600 hover:border-rose-600 transition-all shadow-sm">
+                       <button 
+                        onClick={() => handleDelete(m.id)}
+                        className="p-2 bg-white border border-slate-200 text-slate-400 rounded-lg hover:text-rose-600 hover:border-rose-600 transition-all shadow-sm"
+                       >
                           <Trash2 size={16} />
                        </button>
                     </div>

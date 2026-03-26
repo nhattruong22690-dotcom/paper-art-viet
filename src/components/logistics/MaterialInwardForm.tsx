@@ -25,6 +25,7 @@ import { createMaterialBatchInward, getMaterials } from '@/services/material.ser
 import { getPurchaseOrders, getPOWithItems } from '@/services/purchase.service';
 import { getSuppliers } from '@/services/supplier.service';
 import { QRCodeSVG } from 'qrcode.react';
+import { useNotification } from '@/context/NotificationContext';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -67,6 +68,7 @@ export default function MaterialInwardForm() {
     { id: '1', materialId: '', packingQty: 0, itemsPerPacking: 1, totalPrice: 0, location: '', note: '' }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showToast, showModal } = useNotification();
 
   useEffect(() => {
     const loadData = async () => {
@@ -155,7 +157,7 @@ export default function MaterialInwardForm() {
 
   const handleSave = async () => {
     if (!selectedPartner) {
-        alert('Vui lòng chọn đối tác giao hàng');
+        showToast('warning', 'Vui lòng chọn đối tác giao hàng');
         return;
     }
     setIsSubmitting(true);
@@ -174,7 +176,7 @@ export default function MaterialInwardForm() {
           poItemId: item.poItemId
         }))
       });
-      alert('Đã hoàn thành nhập kho thành công!');
+      showToast('success', 'Đã hoàn thành nhập kho thành công!');
       
       const updatedPOs = await getPurchaseOrders({ status: 'ordered' });
       setPendingPOs(updatedPOs as any);
@@ -184,7 +186,7 @@ export default function MaterialInwardForm() {
       setSelectedPOId('');
     } catch (error) {
       console.error('Failed to save inward:', error);
-      alert('Có lỗi xảy ra khi lưu nhập kho.');
+      showModal('error', 'Không thể lưu nhập kho', (error as any).message);
     } finally {
       setIsSubmitting(false);
     }
