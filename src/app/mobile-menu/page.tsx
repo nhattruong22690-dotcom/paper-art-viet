@@ -12,8 +12,11 @@ import {
   LayoutDashboard,
   Box,
   Package,
-  Pin,
-  ShieldAlert
+  ShieldAlert,
+  ChevronRight,
+  TrendingUp,
+  Truck,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { clsx, type ClassValue } from 'clsx';
@@ -28,32 +31,32 @@ const menuItems = [
     name: 'Kinh doanh',
     href: '/mobile-menu/orders',
     icon: Users,
-    color: 'bg-retro-earth',
-    rotation: '-rotate-3',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
     description: 'Bán hàng & Đối tác'
   },
   {
     name: 'Sản xuất',
     href: '/mobile-menu/production',
     icon: ClipboardCheck,
-    color: 'bg-retro-moss',
-    rotation: 'rotate-2',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
     description: 'Xưởng & Sản lượng'
   },
   {
     name: 'Kho vận',
     href: '/mobile-menu/logistics',
     icon: Archive,
-    color: 'bg-retro-mustard',
-    rotation: '-rotate-1',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50',
     description: 'Xuất nhập & Tồn'
   },
   {
     name: 'Nhân sự',
     href: '/mobile-menu/hr',
     icon: UserCircle,
-    color: 'bg-retro-brick',
-    rotation: 'rotate-3',
+    color: 'text-rose-600',
+    bgColor: 'bg-rose-50',
     description: 'Hồ sơ & Tài khoản'
   }
 ];
@@ -62,94 +65,94 @@ export default function MobileMenuPage() {
   const { isAdmin } = useAuth();
 
   return (
-    <div className="min-h-screen pb-32 px-4 pt-12 animate-in fade-in duration-700 relative overflow-hidden">
-      {/* Admin Quick Access */}
-      {isAdmin && (
-        <Link 
-          href="/admin/users"
-          className="fixed top-6 right-6 z-[100] w-14 h-16 bg-retro-brick border-2 border-retro-sepia flex items-center justify-center text-white shadow-2xl rotate-3 hover:rotate-0 transition-all active:scale-90"
-        >
-          <div className="absolute top-0 left-0 w-full h-1 bg-white/30" />
-          <ShieldAlert size={24} />
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-retro-mustard border border-retro-sepia rotate-45" />
-        </Link>
-      )}
-
-      {/* Decorative String */}
-      <div className="absolute top-24 left-0 right-0 h-px bg-retro-sepia/20 z-0 pointer-events-none" />
-      
-      <header className="mb-12 px-2 text-center relative z-10">
-        <div className="flex justify-center mb-6">
-           <div className="wwas-tape-top washi-tape-top">
-              <div className="w-20 h-20 bg-retro-paper rounded-full border-4 border-dashed border-retro-sepia/20 flex items-center justify-center text-retro-sepia shadow-inner">
-                <Box size={36} strokeWidth={1.5} />
-              </div>
-           </div>
+    <div className="min-h-screen bg-gray-50 pb-32 px-4 pt-8 animate-in fade-in duration-700">
+      {/* Header */}
+      <header className="mb-8 px-2 flex justify-between items-center">
+        <div>
+           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">Cổng điều hành Di động</p>
+           <h1 className="text-3xl font-bold text-foreground tracking-tight">
+             Paper Art <span className="text-primary italic">Việt</span>
+           </h1>
         </div>
-        <h1 className="text-3xl font-typewriter font-black text-retro-sepia tracking-tighter uppercase mb-2">
-          Bản Tin <span className="text-retro-brick italic">ERP</span>
-        </h1>
-        <div className="inline-block px-4 py-1 bg-retro-mustard/20 border border-retro-mustard/40 rounded-full">
-           <p className="text-[9px] font-handwriting text-retro-sepia font-bold uppercase tracking-[0.1em]">
-             Lưu hành nội bộ - Paper Art Việt
-           </p>
-        </div>
+        
+        {isAdmin && (
+          <Link 
+            href="/admin/users"
+            className="w-12 h-12 bg-white border border-border rounded-2xl flex items-center justify-center text-rose-600 shadow-sm transition-all active:scale-95"
+          >
+            <ShieldAlert size={22} />
+          </Link>
+        )}
       </header>
 
-      {/* Grid for Polaroid Buttons */}
-      <div className="grid grid-cols-2 gap-y-12 gap-x-6 max-w-lg mx-auto relative z-10">
+      {/* Stats Quick Look */}
+      <div className="grid grid-cols-2 gap-3 mb-8">
+         <div className="card !p-4 !bg-white border-border shadow-sm flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
+               <TrendingUp size={20} />
+            </div>
+            <div>
+               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Hiệu suất</p>
+               <p className="text-sm font-black text-foreground tracking-tight">94.2%</p>
+            </div>
+         </div>
+         <div className="card !p-4 !bg-white border-border shadow-sm flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+               <Truck size={20} />
+            </div>
+            <div>
+               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Đang giao</p>
+               <p className="text-sm font-black text-foreground tracking-tight">12 ĐH</p>
+            </div>
+         </div>
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 gap-4 max-w-lg mx-auto">
         {menuItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={cn(
-               "group relative bg-white p-2 pb-8 polaroid-shimmer border border-gray-200 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all active:scale-95 duration-500",
-               item.rotation,
-               "hover:rotate-0 hover:-translate-y-2"
-            )}
+            className="group relative bg-white p-5 rounded-2xl border border-border shadow-sm transition-all active:scale-[0.98] active:bg-gray-50 flex items-center gap-5"
           >
-            {/* Clothespin / Pin */}
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-8 bg-[#D2B48C] border border-sepia-200 z-20 shadow-sm opacity-90">
-               <div className="w-full h-1/2 border-b border-gray-300/50" />
-            </div>
-
             <div className={cn(
-              "aspect-square w-full flex flex-col items-center justify-center text-white relative overflow-hidden",
+              "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 shadow-sm",
+              item.bgColor,
               item.color
             )}>
-              <item.icon size={44} strokeWidth={1.2} className="relative z-10" />
-              {/* Scratch / Sketch pattern overlay */}
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/scratched-metal.png')] opacity-20" />
+              <item.icon size={32} strokeWidth={1.5} />
             </div>
             
-            <div className="mt-4 px-2">
-              <h3 className="text-sm font-typewriter font-black text-retro-sepia uppercase tracking-tighter">
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-foreground tracking-tight">
                 {item.name}
               </h3>
-              <p className="text-[10px] font-handwriting text-gray-500 leading-tight mt-1">
+              <p className="text-xs font-medium text-muted-foreground mt-0.5">
                 {item.description}
               </p>
+            </div>
+
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all">
+               <ChevronRight size={20} />
             </div>
           </Link>
         ))}
       </div>
 
-      {/* Handwritten Footer Note */}
-      <div className="mt-20 text-center px-8 relative">
-        <div className="relative inline-block rotate-1">
-           <Pin className="absolute -top-4 -left-4 text-retro-earth rotate-45" size={20} />
-           <div className="bg-yellow-50/80 p-6 border border-yellow-200/50 shadow-lg transform -rotate-1">
-              <p className="font-handwriting text-retro-sepia text-sm">
-                "Cần hỗ trợ? Hãy nhấn vào mục 
-                <span className="text-retro-brick underline decoration-double mx-1">Wiki</span> 
-                để xem hướng dẫn vận hành!"
-              </p>
-           </div>
-           {/* Decorative hand-drawn arrow */}
-           <div className="absolute -bottom-8 right-0 text-retro-earth text-3xl font-handwriting select-none">
-             ↘
-           </div>
-        </div>
+      {/* Quick Actions Footer */}
+      <div className="mt-12 grid grid-cols-2 gap-4 max-w-lg mx-auto">
+         <Link href="/guide" className="p-4 bg-gray-100 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:bg-gray-200 transition-all">
+            <HelpCircle size={16} /> Wiki ERP
+         </Link>
+         <Link href="/settings" className="p-4 bg-gray-100 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:bg-gray-200 transition-all">
+            <Settings size={16} /> Cài đặt
+         </Link>
+      </div>
+
+      <div className="mt-12 text-center">
+         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-30">
+           © 2025 Paper Art Việt • v2.4.0
+         </p>
       </div>
     </div>
   );

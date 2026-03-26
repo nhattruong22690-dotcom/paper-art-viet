@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, ShoppingCart, ChevronRight } from 'lucide-react';
 import KanbanBoard from '@/components/orders/KanbanBoard';
 import CreateSalesOrder from '@/components/orders/CreateSalesOrder';
+import Link from 'next/link';
 
 export default function OrdersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,30 +15,37 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-8 pb-20 px-4">
-      <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-6 rounded-lg border border-border shadow-sm">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Quy trình Đơn hàng</h1>
-          <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest italic flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Paper Art Việt - Realtime Kanban
-          </p>
+          <nav className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
+            <ShoppingCart size={12} />
+            <span>Kinh doanh</span>
+            <ChevronRight size={10} />
+            <span className="text-primary">Đơn hàng</span>
+          </nav>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            Quản trị Đơn hàng
+          </h1>
         </div>
+        
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="px-8 py-5 bg-gray-900 text-white rounded-[24px] font-black shadow-2xl shadow-gray-200 hover:bg-primary-600 transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest active:scale-95 shrink-0"
+          className="btn-primary gap-2"
         >
-          <div className="bg-white/20 p-1 rounded-lg">
-            <Plus size={18} />
-          </div>
+          <Plus size={18} />
           Tạo đơn hàng mới
         </button>
-      </header>
+      </div>
 
-      {/* KANBAN BOARD */}
-      <KanbanBoard key={refreshKey} />
+      {/* Kanban Board Area */}
+      <div className="bg-gray-50/50 p-4 rounded-lg border border-border">
+        <KanbanBoard key={refreshKey} />
+      </div>
 
-      {/* CREATE ORDER MODAL */}
+      {/* Create Order Modal */}
       <CreateSalesOrder 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

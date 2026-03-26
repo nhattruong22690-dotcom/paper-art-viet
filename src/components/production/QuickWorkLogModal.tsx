@@ -13,16 +13,11 @@ import {
   FileText,
   User,
   History,
-  AlertCircle
+  AlertCircle,
+  ChevronDown
 } from 'lucide-react';
 import { createBatchWorkLogs } from '@/services/workLog.service';
 import { useNotification } from "@/context/NotificationContext";
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 interface Worker {
   id: string;
@@ -64,7 +59,6 @@ export default function QuickWorkLogModal({
       errorNote: ''
   }]);
   const [isSaving, setIsSaving] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Fetch workers on mount
   useEffect(() => {
@@ -109,22 +103,23 @@ export default function QuickWorkLogModal({
     const validEntries = entries.filter(e => e.userId && (e.quantityProduced > 0 || e.technicalErrorCount > 0 || e.materialErrorCount > 0));
     
     if (validEntries.length === 0) {
-      showModal('error', 'Dữ liệu trống', 'Vui lòng chọn nhân viên và nhập số lượng sản xuất hoặc lỗi.');
+      showToast('warning', 'Vui lòng chọn nhân viên và nhập số lượng.');
       return;
     }
 
     setIsSaving(true);
     try {
-      await createBatchWorkLogs({
-        productionOrderId,
-        logs: validEntries.map(e => ({
-          userId: e.userId,
+      await createBatchWorkLogs(
+        validEntries.map(e => ({
+          productionOrderId,
+          employeeId: e.userId,
           quantityProduced: Number(e.quantityProduced),
           technicalErrorCount: Number(e.technicalErrorCount),
           materialErrorCount: Number(e.materialErrorCount),
           errorNote: e.errorNote
-        }))
-      });
+        })),
+        []
+      );
       
       showToast('success', 'Đã lưu nhật trình sản xuất thành công');
       onSuccess();
@@ -138,87 +133,85 @@ export default function QuickWorkLogModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-500 overflow-hidden">
-      <div className="absolute inset-0 bg-retro-sepia/60 backdrop-blur-md" onClick={onClose} />
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative w-full max-w-4xl max-h-[90vh] retro-card !p-0 shadow-[0_30px_60px_-15px_rgba(62,39,35,0.6)] flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden border-2">
-        <div className="washi-tape-top" />
-        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-           <History size={400} strokeWidth={0.5} className="text-retro-sepia" />
-        </div>
-
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">
+        
         {/* HEADER */}
-        <div className="p-8 md:p-14 border-b-2 border-retro-sepia/10 flex justify-between items-center bg-retro-paper/40 relative shrink-0">
-          <div className="relative z-10 font-typewriter">
-            <h3 className="text-3xl font-black text-retro-sepia tracking-tighter italic uppercase underline decoration-double decoration-retro-mustard/30 underline-offset-8">
-               Khai báo <span className="text-retro-brick">Sản lượng</span>
+        <div className="p-6 md:px-8 md:py-6 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+               <History size={20} className="text-blue-600" />
+               Khai báo Sản lượng
             </h3>
-            <p className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] mt-6 italic flex items-center gap-3 opacity-60">
-               <Package size={16} strokeWidth={1.5} className="text-retro-mustard" /> {orderName}
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1 flex items-center gap-1.5 opacity-80">
+               <Package size={14} /> {orderName}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-5 bg-retro-paper border-2 border-retro-sepia/10 hover:bg-retro-brick/10 hover:text-retro-brick transition-all rotate-2 hover:rotate-0 shadow-sm"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
           >
-            <X size={28} strokeWidth={2.5} />
+            <X size={24} />
           </button>
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 overflow-y-auto p-8 md:p-14 scrollbar-hide bg-retro-paper/30 pb-32">
-          <div className="space-y-10">
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+          <div className="space-y-4">
             {entries.map((entry, index) => (
               <div 
                 key={entry.id} 
-                className="bg-white border-2 border-retro-sepia/5 p-8 shadow-sm flex flex-col md:flex-row gap-10 items-start md:items-end animate-in slide-in-from-top-4 duration-300 relative group"
+                className="bg-slate-50 rounded-xl p-6 border border-slate-200 flex flex-col md:flex-row gap-6 items-start md:items-end group relative"
               >
-                <div className="w-10 h-10 absolute -left-5 top-1/2 -translate-y-1/2 bg-retro-sepia text-retro-paper flex items-center justify-center font-black text-xs rotate-3 shadow-lg z-10">
+                <div className="w-6 h-6 absolute -left-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold text-[10px] shadow-md z-10 transition-transform group-hover:scale-110">
                    {index + 1}
                 </div>
 
-                <div className="flex-1 space-y-3 font-typewriter min-w-[240px]">
-                  <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60 flex items-center gap-3">
-                     <User size={14} className="text-retro-mustard" /> Thợ vận hành
-                  </label>
-                  <select 
-                    className="w-full px-6 py-4 bg-retro-paper border-2 border-retro-sepia/10 text-xs font-black uppercase text-retro-sepia outline-none focus:border-retro-sepia appearance-none shadow-inner"
-                    value={entry.userId}
-                    onChange={(e) => updateEntry(entry.id, 'userId', e.target.value)}
-                  >
-                    <option value="">LỰA CHỌN NHÂN SỰ...</option>
-                    {workers.map(w => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
-                    ))}
-                  </select>
+                <div className="flex-1 space-y-1.5 min-w-[200px]">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Thợ vận hành</label>
+                  <div className="relative">
+                    <select 
+                      className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-all appearance-none shadow-sm"
+                      value={entry.userId}
+                      onChange={(e) => updateEntry(entry.id, 'userId', e.target.value)}
+                    >
+                      <option value="">-- CHỌN NHÂN VIÊN --</option>
+                      {workers.map(w => (
+                        <option key={w.id} value={w.id}>{w.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-6 w-full md:w-auto font-typewriter">
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-retro-moss/60 uppercase tracking-widest text-center italic">Đạt chuẩn</label>
+                <div className="grid grid-cols-3 gap-4 w-full md:w-auto">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest text-center block">Sản lượng</label>
                     <input 
                       type="number"
-                      className="w-full px-4 py-4 bg-white border-2 border-retro-sepia/10 text-center text-sm font-black text-retro-moss outline-none focus:border-retro-moss shadow-inner italic"
+                      className="w-full bg-white border border-slate-200 rounded-lg py-2.5 text-center text-sm font-bold text-slate-900 focus:border-blue-500 outline-none transition-all shadow-sm"
                       value={entry.quantityProduced || ''}
                       placeholder="0"
                       onChange={(e) => updateEntry(entry.id, 'quantityProduced', parseInt(e.target.value) || 0)}
                     />
                   </div>
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-retro-brick/60 uppercase tracking-widest text-center italic">Lỗi k.nghệ</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-rose-600 uppercase tracking-widest text-center block">Lỗi KT</label>
                     <input 
                       type="number"
-                      className="w-full px-4 py-4 bg-white border-2 border-retro-brick/10 text-center text-sm font-black text-retro-brick outline-none focus:border-retro-brick shadow-inner italic"
+                      className="w-full bg-rose-50 border border-rose-100 rounded-lg py-2.5 text-center text-sm font-bold text-rose-700 focus:bg-white focus:border-rose-500 outline-none transition-all shadow-sm"
                       value={entry.technicalErrorCount || ''}
                       placeholder="0"
                       onChange={(e) => updateEntry(entry.id, 'technicalErrorCount', parseInt(e.target.value) || 0)}
                     />
                   </div>
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-retro-earth/40 uppercase tracking-widest text-center italic">Lỗi v.liệu</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center block">Lỗi VT</label>
                     <input 
                       type="number"
-                      className="w-full px-4 py-4 bg-white border-2 border-retro-sepia/10 text-center text-sm font-black text-retro-earth outline-none focus:border-retro-sepia shadow-inner italic"
+                      className="w-full bg-white border border-slate-200 rounded-lg py-2.5 text-center text-sm font-bold text-slate-600 focus:border-blue-500 outline-none transition-all shadow-sm"
                       value={entry.materialErrorCount || ''}
                       placeholder="0"
                       onChange={(e) => updateEntry(entry.id, 'materialErrorCount', parseInt(e.target.value) || 0)}
@@ -226,60 +219,57 @@ export default function QuickWorkLogModal({
                   </div>
                 </div>
 
-                <div className="flex-1 space-y-3 font-typewriter min-w-[200px]">
-                  <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">Ghi chú đặc hưu</label>
+                <div className="flex-1 space-y-1.5 min-w-[180px]">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ghi chú</label>
                   <input 
                     type="text"
-                    className="w-full px-6 py-4 bg-retro-paper/20 border-2 border-dashed border-retro-sepia/10 text-xs font-bold text-retro-earth outline-none focus:border-retro-mustard placeholder:italic placeholder:font-normal"
-                    placeholder="Mô tả nguyên nhân (nếu có)..."
+                    className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 transition-all shadow-sm placeholder:text-slate-300"
+                    placeholder="Mô tả nhanh..."
                     value={entry.errorNote}
                     onChange={(e) => updateEntry(entry.id, 'errorNote', e.target.value)}
                   />
                 </div>
 
-                <div className="h-full flex items-end">
-                   <button 
-                    onClick={() => handleRemoveRow(entry.id)}
-                    className="p-4 text-retro-brick/20 hover:text-retro-brick hover:bg-retro-brick/5 transition-all mb-1"
-                   >
-                     <Trash2 size={20} strokeWidth={2.5} />
-                   </button>
-                </div>
+                <button 
+                  onClick={() => handleRemoveRow(entry.id)}
+                  className="p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all mb-0.5"
+                >
+                  <Trash2 size={18} />
+                </button>
               </div>
             ))}
 
             <button
               onClick={handleAddRow}
-              className="w-full py-8 bg-white/40 border-4 border-dashed border-retro-sepia/10 flex flex-col items-center justify-center gap-4 text-retro-sepia/40 hover:text-retro-sepia hover:border-retro-sepia transition-all group font-typewriter"
+              className="w-full py-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-all group"
             >
-              <Plus size={32} strokeWidth={1} className="group-hover:rotate-90 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] italic">Thêm dòng Nhật trình</span>
+              <Plus size={24} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Thêm dòng báo cáo</span>
             </button>
           </div>
         </div>
 
         {/* FOOTER */}
-        <div className="p-10 md:p-14 bg-white/60 border-t-2 border-retro-sepia/10 flex justify-between gap-8 relative z-20 font-typewriter">
+        <div className="p-6 md:px-8 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
            <button
              onClick={onClose}
-             className="px-10 py-5 bg-retro-paper border-2 border-retro-sepia/10 text-[11px] font-black uppercase tracking-[0.2em] text-retro-earth/60 hover:text-retro-sepia hover:border-retro-sepia transition-all italic active:scale-95"
+             className="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all font-sans"
            >
-             Hủy bỏ Nhật trình
+             Hủy bỏ
            </button>
            <button
              onClick={handleSave}
              disabled={isSaving}
-             className="flex-1 md:flex-none flex items-center justify-center gap-6 px-16 py-5 bg-retro-brick text-white shadow-[4px_4px_0px_#3E272333] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-retro-sepia transition-all disabled:opacity-50 active:scale-95 italic"
+             className="flex items-center justify-center gap-2 px-8 py-2.5 bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-200 text-xs font-bold uppercase tracking-wider hover:bg-blue-700 transition-all disabled:opacity-50 active:scale-95 font-sans"
            >
              {isSaving ? (
-               <Loader2 className="animate-spin" size={20} strokeWidth={2.5} />
+               <Loader2 className="animate-spin" size={16} />
              ) : (
-               <Save size={20} strokeWidth={2.5} />
+               <Save size={16} />
              )}
-             {isSaving ? 'Đang hạ bút...' : 'Xác nhận Báo cáo Sản lượng'}
+             {isSaving ? 'Đang lưu...' : 'Xác nhận Báo cáo'}
            </button>
         </div>
-        <div className="torn-paper-bottom" />
       </div>
     </div>
   );

@@ -1,0 +1,1 @@
+﻿src/components/production/QuickWorkLogModal.tsx(118,13): error TS2554: Expected 2 arguments, but got 1.

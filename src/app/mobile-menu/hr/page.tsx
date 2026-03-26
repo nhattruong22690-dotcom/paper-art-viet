@@ -9,8 +9,8 @@ import {
   UserCircle,
   BarChart3,
   Contact2,
-  MoveLeft,
-  Key
+  Key,
+  ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { clsx, type ClassValue } from 'clsx';
@@ -25,21 +25,24 @@ const items = [
     name: 'Nhân viên',
     href: '/hr/employees',
     icon: Contact2,
-    color: 'bg-retro-brick',
+    color: 'text-rose-600',
+    bgColor: 'bg-rose-50',
     description: 'Hồ sơ nhân sự'
   },
   {
     name: 'Hiệu suất',
     href: '/production/performance',
     icon: BarChart3,
-    color: 'bg-retro-earth',
-    description: 'Theo dõi KPI'
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    description: 'Theo dõi KPI & Sản lượng'
   },
   {
     name: 'Tài khoản',
     href: '/hr/users',
     icon: ShieldCheck,
-    color: 'bg-retro-sepia',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
     description: 'Quản trị hệ thống'
   }
 ];
@@ -50,7 +53,8 @@ const adminItems = [
     name: 'Quyền hạn',
     href: '/admin/users',
     icon: Key,
-    color: 'bg-retro-brick',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50',
     description: 'Phân quyền Admin'
   }
 ];
@@ -60,52 +64,55 @@ export default function HRMenuPage() {
   const displayItems = isAdmin ? adminItems : items;
 
   return (
-    <div className="min-h-screen bg-retro-paper pb-32 px-4 pt-8 animate-in slide-in-from-right duration-500">
-      <header className="mb-10 px-2 flex items-center gap-6">
+    <div className="min-h-screen bg-gray-50 pb-32 px-4 pt-8 animate-in slide-in-from-right duration-500">
+      <header className="mb-8 px-2 flex items-center gap-4">
         <Link 
           href="/mobile-menu"
-          className="w-12 h-14 bg-white border-2 border-retro-sepia flex items-center justify-center text-retro-sepia shadow-md active:scale-95 transition-all relative overflow-hidden group"
+          className="w-12 h-12 bg-white border border-border rounded-2xl flex items-center justify-center text-foreground shadow-sm active:scale-95 transition-all"
         >
-          <div className="absolute top-0 left-0 w-full h-2 bg-retro-brick/40" />
-          <MoveLeft size={24} strokeWidth={2} className="group-hover:-translate-x-1 transition-transform" />
+          <ArrowLeft size={22} />
         </Link>
         <div>
-          <h1 className="text-2xl font-typewriter font-black text-retro-sepia tracking-tighter uppercase mb-1">
-            Quản trị <span className="text-retro-brick italic">Nhân sự</span>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">Cổng điều hành Di động</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            Quản trị <span className="text-primary italic">Nhân sự</span>
           </h1>
-          <div className="font-handwriting text-[10px] text-retro-earth uppercase tracking-widest flex items-center gap-2">
-             <span className="w-8 h-px bg-retro-earth/30" />
-             Human Resources
-          </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-x-6 gap-y-10 max-w-lg mx-auto">
+      <div className="grid grid-cols-1 gap-4 max-w-lg mx-auto">
         {displayItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={cn(
-               "group relative bg-white p-4 pt-10 border border-retro-sepia/10 shadow-lg transition-all active:scale-95",
-               "washi-tape-top shadow-xl"
-            )}
+            className="group relative bg-white p-4 rounded-2xl border border-border shadow-sm transition-all active:scale-[0.98] active:bg-gray-50 flex items-center gap-4"
           >
             <div className={cn(
-              "w-full aspect-square flex items-center justify-center text-white transition-all duration-500 group-hover:scale-110",
+              "w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 shadow-sm",
+              item.bgColor,
               item.color
             )}>
-              <item.icon size={36} strokeWidth={1} />
+              <item.icon size={28} strokeWidth={1.5} />
             </div>
-            <div className="mt-4 text-center">
-              <h3 className="text-xs font-typewriter font-black text-retro-sepia uppercase tracking-tighter">
+            
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-foreground tracking-tight">
                 {item.name}
               </h3>
-              <p className="text-[9px] font-handwriting text-gray-400 mt-1 italic">
+              <p className="text-[11px] font-medium text-muted-foreground">
                 {item.description}
               </p>
             </div>
+
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all">
+               <ChevronRight size={18} />
+            </div>
           </Link>
         ))}
+      </div>
+
+      <div className="mt-12 flex justify-center opacity-20">
+         <UserCircle size={40} className="text-muted-foreground" />
       </div>
     </div>
   );

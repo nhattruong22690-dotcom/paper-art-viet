@@ -10,13 +10,14 @@ export async function GET() {
         *,
         employees:employee_id (full_name, employee_code)
       `)
-      .order('email');
+      .order('account');
 
     if (error) throw error;
 
-    // Transform to match frontend expectations
+    // Transform to match frontend expectations (Mapping 'account' back to 'email' if UI needs it)
     const transformedUsers = users.map(u => ({
       ...u,
+      email: u.account, // Mapping for UI compatibility
       employeeName: u.employees?.full_name,
       employeeCode: u.employees?.employee_code
     }));

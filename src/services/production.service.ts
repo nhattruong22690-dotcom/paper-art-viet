@@ -252,3 +252,46 @@ export async function splitProductionOrders(
   if (insertError) throw insertError;
   return created;
 }
+
+export async function getProductionOrders() {
+  const { data, error } = await supabase
+    .from('ProductionOrder')
+    .select(`
+      *,
+      product:Product(sku, name),
+      order:Order(
+        contract_code,
+        customer:Customer(name)
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map(po => ({
+    id: po.id,
+    sku: po.product?.sku || 'N/A',
+    title: po.product?.name || 'Sản phẩm không tên',
+    customer: po.order?.customer?.name || 'Khách lẻ',
+    quantity: po.quantity_target,
+    status: (po.current_status === 'pending' ? 'Pending' : 
+            po.current_status === 'processing' ? 'Processing' : 
+            po.current_status === 'qc' ? 'QualityControl' : 'Completed') as any,
+    dueDate: po.deadline_production ? new Date(po.deadline_production).toLocaleDateString('vi-VN') : 'N/A',
+    assignedTo: po.assigned_to,
+    priority: (po.priority === 'High' ? 'High' : po.priority === 'Low' ? 'Low' : 'Medium') as any
+  }));
+}
+
+export async function updateProductionStatus(id: string, status: string) {
+  const dbStatus = status === 'Pending' ? 'pending' : 
+                   status === 'Processing' ? 'processing' : 
+                   status === 'QualityControl' ? 'qc' : 'completed';
+                   
+  const { error } = await supabase
+    .from('ProductionOrder')
+    .update({ current_status: dbStatus })
+    .eq('id', id);
+
+  if (error) throw error;
+}

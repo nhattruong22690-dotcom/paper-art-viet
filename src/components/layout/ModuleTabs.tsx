@@ -23,32 +23,21 @@ export default function ModuleTabs({ items }: ModuleTabsProps) {
   const pathname = usePathname();
 
   return (
-    <div className="lg:hidden mb-10 overflow-x-auto no-scrollbar -mx-4 px-4 py-2">
-      <div className="flex bg-retro-paper/50 p-1 border-2 border-retro-sepia/20 rounded-lg min-w-max shadow-sm relative">
-        <div className="absolute inset-0 pointer-events-none border border-retro-sepia/5 rounded-lg" />
-        {items.map((item) => {
-          const isActive = pathname === item.href;
-          
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 font-typewriter relative",
-                isActive 
-                  ? "bg-retro-sepia text-retro-mustard shadow-md z-10 -my-1 rounded-md transform scale-105" 
-                  : "text-retro-sepia/40 hover:text-retro-sepia"
-              )}
-            >
-              {item.name}
-              {isActive && (
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-retro-mustard rounded-full" />
-              )}
-            </Link>
-          );
-        })}
-      </div>
+    <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 mb-8 overflow-x-auto scrollbar-hide shadow-inner max-w-fit">
+      {items.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={cn(
+            "px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.15em] transition-all whitespace-nowrap rounded-xl flex items-center justify-center active:scale-95",
+            pathname === item.href
+              ? "bg-white text-primary shadow-soft border border-slate-200/50"
+              : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+          )}
+        >
+          {item.name}
+        </Link>
+      ))}
     </div>
-
   );
 }

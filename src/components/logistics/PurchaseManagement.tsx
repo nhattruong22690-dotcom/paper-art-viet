@@ -17,8 +17,10 @@ export default function PurchaseManagement() {
   }
 
   return (
-    <PurchaseOrderList 
-      onAddNew={() => setView('create')}
-    />
+    <div className="bg-background min-h-screen">
+      <PurchaseOrderList 
+        onAddNew={() => setView('create')}
+      />
+    </div>
   );
 }

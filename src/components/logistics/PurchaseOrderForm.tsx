@@ -14,7 +14,8 @@ import {
   Briefcase,
   ChevronRight,
   ArrowUpRight,
-  ArrowLeft
+  ArrowLeft,
+  Loader2
 } from 'lucide-react';
 import { createPurchaseOrder, getSuppliersForDropdown } from '@/services/purchase.service';
 import SupplierManagementModal from './SupplierManagementModal';
@@ -135,71 +136,61 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
   };
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-700 pb-24 font-typewriter">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       {/* HEADER SECTION */}
-      <div className="bg-white p-10 border-b-2 border-retro-sepia/10 shadow-[0_15px_40px_-10px_rgba(62,39,35,0.1)] relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
-        <div className="washi-tape-top" />
-        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-           <Save size={240} strokeWidth={0.5} className="text-retro-sepia" />
-        </div>
-        
-        <div className="flex items-center gap-8 relative z-10 font-typewriter">
+      <div className="bg-white p-8 border-b border-border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="flex items-center gap-4">
            <button 
              onClick={onBack}
-             className="w-14 h-14 bg-retro-paper border-2 border-retro-sepia/10 flex items-center justify-center text-retro-sepia hover:bg-retro-brick/10 hover:text-retro-brick transition-all rotate-3 hover:rotate-0 shadow-sm"
+             className="w-10 h-10 bg-white border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all rounded-lg shadow-sm"
            >
-              <ArrowLeft size={24} strokeWidth={1.5} />
+              <ArrowLeft size={20} />
            </button>
            <div>
-              <nav className="flex items-center gap-3 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] mb-4 opacity-60">
-                <Package size={14} strokeWidth={1.5} />
+              <nav className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                <Package size={12} />
                 <span>Thu mua</span>
-                <ChevronRight size={12} strokeWidth={1.5} />
-                <span className="text-retro-sepia">Khai báo Đơn mua hàng (PO)</span>
+                <ChevronRight size={10} />
+                <span className="text-primary">Khai báo Đơn mua hàng (PO)</span>
               </nav>
-              <h2 className="text-3xl font-black text-retro-sepia uppercase tracking-tighter italic">
-                Lập <span className="text-retro-brick underline decoration-double decoration-retro-brick/30 underline-offset-4">Đơn Mới</span>
-              </h2>
+              <h2 className="text-xl font-bold text-foreground tracking-tight">Lập đơn mua hàng mới</h2>
            </div>
         </div>
 
-        <div className="flex gap-6 w-full md:w-auto relative z-10">
+        <div className="flex gap-4 w-full md:w-auto">
            <button 
              onClick={handleSave}
              disabled={isSaving}
-             className="flex-1 md:flex-none flex items-center justify-center gap-4 px-12 py-5 bg-retro-brick text-white shadow-[4px_4px_0px_#3E272333] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-retro-sepia transition-all active:scale-95 italic disabled:opacity-50"
+             className="btn-primary flex-1 md:flex-none gap-2"
            >
               {isSaving ? (
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white animate-spin" />
+                <Loader2 className="animate-spin" size={18} />
               ) : (
-                <Save size={20} strokeWidth={2.5} />
+                <Save size={18} />
               )}
-              {isSaving ? 'Đang thụ lý...' : 'Lưu Bản Nháp'}
+              {isSaving ? 'Đang lưu...' : 'Lưu đơn hàng'}
            </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-4 md:px-8">
         {/* LEFT COLUMN: BASIC INFO */}
-        <div className="lg:col-span-1 space-y-10">
-          <div className="retro-card !bg-white p-10 border-2 border-retro-sepia/10 shadow-xl space-y-10 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-8 text-retro-sepia/5 group-hover:text-retro-mustard/10 transition-colors pointer-events-none">
-               <Briefcase size={100} strokeWidth={1} />
-            </div>
+        <div className="lg:col-span-1 space-y-8">
+          <div className="bg-white p-8 rounded-lg border border-border shadow-sm space-y-6">
             
-            <div className="space-y-8 relative z-10 font-typewriter">
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">
-                  <User size={14} strokeWidth={1.5} className="text-retro-mustard" />
-                  Nhà cung cấp đối tác
+            <div className="space-y-6 relative z-10">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
+                  <User size={12} className="text-primary" />
+                  Nhà cung cấp
                 </label>
                 <div className="relative">
                   <select 
-                    className="w-full px-8 py-5 bg-retro-paper border-2 border-retro-sepia/10 text-xs font-black uppercase text-retro-sepia outline-none focus:border-retro-sepia appearance-none transition-all shadow-inner pr-16"
+                    className="form-input pr-12"
                     value={selectedSupplier}
                     onChange={(e) => setSelectedSupplier(e.target.value)}
                   >
-                    <option value="">Lựa chọn nhà cung ứng...</option>
+                    <option value="">Chọn nhà cung cung cấp...</option>
                     {suppliers.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
@@ -207,34 +198,34 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
                   <button 
                     type="button"
                     onClick={() => setShowSupplierModal(true)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border-2 border-retro-sepia/10 flex items-center justify-center text-retro-sepia hover:bg-retro-sepia hover:text-retro-paper transition-all shadow-sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-gray-50 border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all rounded"
                   >
-                    <Plus size={16} strokeWidth={2} />
+                    <Plus size={16} />
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">
-                  <Calendar size={14} strokeWidth={1.5} className="text-retro-mustard" />
-                  Kỳ hạn nhận nộp dự kiến
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
+                  <Calendar size={12} className="text-primary" />
+                  Ngày giao hàng dự kiến
                 </label>
                 <input 
                   type="date"
-                  className="w-full px-8 py-5 bg-white border-2 border-retro-sepia/10 text-xs font-black text-retro-sepia outline-none focus:border-retro-sepia transition-all shadow-inner"
+                  className="form-input"
                   value={expectedDate}
                   onChange={(e) => setExpectedDate(e.target.value)}
                 />
               </div>
 
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 opacity-60">
-                  <FileText size={14} strokeWidth={1.5} className="text-retro-mustard" />
-                  Ký lục Nội bộ
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
+                  <FileText size={12} className="text-primary" />
+                  Ghi chú nội bộ
                 </label>
                 <textarea 
-                  placeholder="Yêu cầu đặc thù về tiếp nhận Logistics hoặc chất lượng vật bản..."
-                  className="w-full px-8 py-6 bg-retro-paper/50 border-2 border-dashed border-retro-sepia/10 text-xs font-bold text-retro-earth outline-none focus:border-retro-mustard transition-all min-h-[140px] resize-none font-handwriting italic"
+                  placeholder="Yêu cầu đặc thù về giao hàng hoặc chất lượng..."
+                  className="form-input min-h-[120px] resize-none"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
@@ -243,86 +234,85 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
           </div>
 
           {/* TOTAL CARD */}
-          <div className="bg-retro-sepia p-10 shadow-2xl border-t-4 border-retro-brick relative overflow-hidden group">
-            <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:scale-110 transition-transform">
-               <DollarSign size={160} strokeWidth={2} className="text-white" />
+          <div className="bg-primary p-8 rounded-lg shadow-lg relative overflow-hidden group border border-blue-400/20">
+            <div className="absolute -bottom-6 -right-6 opacity-10 group-hover:scale-110 transition-transform">
+               <DollarSign size={120} strokeWidth={2} className="text-white" />
             </div>
-            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] italic font-typewriter">Tổng Thụ Giá Hiện Hành</p>
-            <h3 className="text-4xl font-black text-white mt-4 italic tracking-tighter font-typewriter tabular-nums">
-               {calculateTotal().toLocaleString()} <span className="text-lg text-white/40 not-italic uppercase ml-4 tracking-widest">VNĐ</span>
+            <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Tạm tính đơn hàng</p>
+            <h3 className="text-3xl font-bold text-white mt-2 tabular-nums">
+               {calculateTotal().toLocaleString()} <span className="text-sm font-normal text-white/60 ml-1">VNĐ</span>
             </h3>
-            <div className="h-1 w-24 bg-retro-brick mt-8 opacity-50"></div>
           </div>
         </div>
 
         {/* RIGHT COLUMN: ITEMS TABLE */}
         <div className="lg:col-span-2">
-          <div className="bg-white border-2 border-retro-sepia/10 shadow-[0_20px_50px_-12px_rgba(62,39,35,0.15)] overflow-hidden">
-            <div className="p-8 border-b-2 border-retro-sepia/10 bg-retro-paper/20 flex justify-between items-center font-typewriter">
-               <h3 className="text-[11px] font-black text-retro-earth uppercase tracking-[0.2em] flex items-center gap-4 italic opacity-60">
-                  <Package size={20} className="text-retro-brick" strokeWidth={1.5} />
-                  Sổ mục Vật phẩm Thu mua
+          <div className="bg-white border border-border rounded-lg shadow-sm overflow-hidden min-h-[500px] flex flex-col">
+            <div className="p-6 border-b border-border bg-gray-50/50 flex justify-between items-center">
+               <h3 className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
+                  <Package size={16} className="text-primary" />
+                  Danh mục vật tư thu mua
                </h3>
-               <div className="px-5 py-1 bg-retro-paper border-2 border-retro-sepia/5 text-[9px] font-black text-retro-sepia uppercase tracking-widest italic shadow-sm">
-                  {items.length} Dòng mục
-               </div>
+               <span className="px-2 py-1 bg-white border border-border rounded text-[10px] font-bold text-muted-foreground uppercase">
+                  {items.length} Dòng
+               </span>
             </div>
             
-            <div className="overflow-x-auto font-typewriter">
-              <table className="w-full text-left">
+            <div className="flex-1 overflow-x-auto">
+              <table className="w-full text-left border-none rounded-none shadow-none">
                 <thead>
-                  <tr className="bg-retro-paper text-[9px] font-black text-retro-earth uppercase tracking-[0.2em] border-b-2 border-retro-sepia/20 italic opacity-60">
-                    <th className="px-8 py-6 w-16">#</th>
-                    <th className="px-8 py-6">Vật liệu Thu mua</th>
-                    <th className="px-8 py-6 w-32 text-center">Số lượng</th>
-                    <th className="px-8 py-6 w-44 text-right">Đơn giá Dự kiến</th>
-                    <th className="px-8 py-6 w-44 text-right">Thành tiền</th>
-                    <th className="px-8 py-6 w-20"></th>
+                  <tr className="bg-gray-50/30 text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border italic">
+                    <th className="px-6 py-4 w-12">#</th>
+                    <th className="px-6 py-4">Vật tư</th>
+                    <th className="px-6 py-4 w-28 text-center">Số lượng</th>
+                    <th className="px-6 py-4 w-36 text-right">Đơn giá</th>
+                    <th className="px-6 py-4 w-36 text-right">Thành tiền</th>
+                    <th className="px-6 py-4 w-16"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y-2 divide-retro-sepia/5">
+                <tbody className="divide-y divide-border">
                   {items.map((item, index) => (
-                    <tr key={item.id} className="group hover:bg-retro-paper/40 transition-all">
-                      <td className="px-8 py-6">
-                        <span className="text-[11px] font-black text-retro-earth/30 italic">{(index + 1).toString().padStart(2, '0')}</span>
+                    <tr key={item.id} className="group hover:bg-gray-50 transition-all">
+                      <td className="px-6 py-4">
+                        <span className="text-[10px] font-bold text-muted-foreground italic">{(index + 1).toString().padStart(2, '0')}</span>
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-6 py-4">
                         <select 
-                          className="w-full bg-white border-2 border-retro-sepia/10 px-6 py-4 text-xs font-black uppercase text-retro-sepia focus:border-retro-sepia outline-none transition-all shadow-inner"
+                          className="form-input py-1.5 px-3 h-9"
                           value={item.materialId}
                           onChange={(e) => updateItem(item.id, 'materialId', e.target.value)}
                         >
-                          <option value="">Chọn vật bản...</option>
+                          <option value="">Chọn vật tư...</option>
                           {materials.map(m => (
                             <option key={m.id} value={m.id}>{m.sku} - {m.name}</option>
                           ))}
                         </select>
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-6 py-4">
                          <input 
                            type="number"
-                           className="w-full bg-white border-2 border-retro-sepia/10 px-4 py-4 text-xs font-black text-retro-brick text-center focus:border-retro-sepia outline-none transition-all shadow-inner tabular-nums"
+                           className="form-input py-1.5 px-2 h-9 text-center tabular-nums"
                            value={item.quantityOrdered}
                            onChange={(e) => updateItem(item.id, 'quantityOrdered', Number(e.target.value))}
                          />
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-6 py-4">
                          <input 
                            type="number"
-                           className="w-full bg-white border-2 border-retro-sepia/10 px-4 py-4 text-xs font-black text-retro-sepia text-right focus:border-retro-sepia outline-none transition-all shadow-inner tabular-nums"
+                           className="form-input py-1.5 px-2 h-9 text-right tabular-nums"
                            value={item.expectedPrice}
                            onChange={(e) => updateItem(item.id, 'expectedPrice', Number(e.target.value))}
                          />
                       </td>
-                      <td className="px-8 py-6 text-right font-black text-sm text-retro-sepia italic tabular-nums">
+                      <td className="px-6 py-4 text-right font-bold text-xs text-foreground tabular-nums tracking-tight">
                          {(item.quantityOrdered * item.expectedPrice).toLocaleString()}
                       </td>
-                      <td className="px-8 py-6 text-right">
+                      <td className="px-6 py-4 text-right">
                          <button 
                            onClick={() => removeItem(item.id)}
-                           className="p-3 text-retro-earth/20 hover:text-retro-brick transition-all opacity-0 group-hover:opacity-100"
+                           className="p-2 text-muted-foreground hover:text-destructive transition-all"
                          >
-                            <Trash2 size={18} strokeWidth={1.5} />
+                            <Trash2 size={16} />
                          </button>
                       </td>
                     </tr>
@@ -331,13 +321,13 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
               </table>
             </div>
 
-            <div className="p-10 bg-retro-paper/20 flex justify-center border-t-2 border-retro-sepia/10">
+            <div className="p-8 bg-gray-50/30 flex justify-center border-t border-border mt-auto">
               <button 
                 onClick={addItem}
-                className="flex items-center gap-4 px-10 py-5 bg-white border-2 border-dashed border-retro-sepia/20 text-[10px] font-black uppercase text-retro-earth/40 tracking-[0.2em] shadow-sm hover:border-retro-sepia hover:text-retro-sepia transition-all group italic"
+                className="flex items-center gap-2 px-6 py-2.5 bg-white border border-dashed border-border rounded-lg text-xs font-bold text-muted-foreground hover:text-primary hover:border-primary transition-all group shadow-sm"
               >
-                <Plus size={18} strokeWidth={2.5} className="group-hover:rotate-180 transition-transform duration-500" />
-                Thêm Dòng Vật Bản
+                <Plus size={16} className="group-hover:rotate-90 transition-transform" />
+                Thêm dòng vật tư
               </button>
             </div>
           </div>

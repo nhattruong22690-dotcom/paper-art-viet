@@ -18,7 +18,8 @@ import {
   FileText,
   ChevronRight,
   Edit3,
-  Building
+  Building,
+  Briefcase
 } from 'lucide-react';
 import { getSuppliers, upsertSupplier, deleteSupplier } from '@/services/supplier.service';
 import { clsx, type ClassValue } from 'clsx';
@@ -135,213 +136,227 @@ export default function SupplierManagementModal({ onClose }: { onClose: () => vo
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-500 overflow-hidden">
-      <div className="absolute inset-0 bg-retro-sepia/60 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative w-full max-w-6xl h-[85vh] retro-card !p-0 shadow-[0_30px_60px_-15px_rgba(62,39,35,0.6)] flex flex-col md:flex-row animate-in zoom-in-95 duration-300 overflow-hidden border-2">
-        <div className="washi-tape-top" />
-        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-           <Building2 size={600} strokeWidth={0.5} className="text-retro-sepia" />
-        </div>
-
+      <div className="relative w-full max-w-6xl h-[85vh] bg-white rounded-lg shadow-2xl flex flex-col md:flex-row animate-in zoom-in-95 duration-300 overflow-hidden border border-border">
+        
         {/* SIDEBAR: LIST OF SUPPLIERS */}
-        <div className="w-full md:w-[350px] bg-white border-r-2 border-retro-sepia/10 flex flex-col h-full relative z-10 font-typewriter">
-           <div className="p-8 border-b-2 border-retro-sepia/10 bg-retro-paper/20">
-              <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-lg font-black text-retro-sepia uppercase tracking-tighter italic underline decoration-retro-mustard/30 underline-offset-4">Nhà cung ứng</h3>
+        <div className="w-full md:w-[320px] bg-gray-50 border-r border-border flex flex-col h-full shrink-0">
+           <div className="p-6 border-b border-border bg-white">
+              <div className="flex justify-between items-center mb-4">
+                 <div>
+                    <h3 className="text-sm font-bold text-foreground tracking-tight">Nhà cung ứng</h3>
+                 </div>
                  <button 
                   onClick={handleAddNew}
-                  className="w-10 h-10 bg-retro-brick text-white flex items-center justify-center shadow-md hover:bg-retro-sepia transition-all rotate-3 hover:rotate-0"
+                  className="w-8 h-8 bg-primary text-white rounded flex items-center justify-center shadow hover:bg-blue-700 transition-all"
                  >
-                   <Plus size={20} strokeWidth={2.5} />
+                   <Plus size={16} />
                  </button>
               </div>
-              <div className="relative group">
-                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-retro-sepia/20 group-focus-within:text-retro-brick transition-all" size={16} strokeWidth={2} />
+              <div className="relative">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                  <input 
                    type="text"
-                   placeholder="Tra cứu danh tính..."
-                   className="w-full pl-12 pr-4 py-3 bg-white border-2 border-retro-sepia/10 text-[11px] font-black uppercase text-retro-sepia outline-none focus:border-retro-sepia shadow-inner italic"
+                   placeholder="Tìm đối tác..."
+                   className="form-input pl-10 py-1.5 text-xs"
                    value={search}
                    onChange={(e) => setSearch(e.target.value)}
                  />
               </div>
            </div>
 
-           <div className="flex-1 overflow-y-auto scrollbar-hide divide-y-2 divide-retro-sepia/5">
+           <div className="flex-1 overflow-y-auto divide-y divide-border/50">
               {suppliers.map(s => (
                 <button
                   key={s.id}
                   onClick={() => handleSelect(s)}
                   className={cn(
-                    "w-full p-6 text-left transition-all group relative",
-                    selectedSupplier?.id === s.id ? "bg-retro-paper" : "hover:bg-retro-paper/30"
+                    "w-full px-6 py-4 text-left transition-all relative",
+                    selectedSupplier?.id === s.id ? "bg-white shadow-sm" : "hover:bg-gray-100/50"
                   )}
                 >
-                   {selectedSupplier?.id === s.id && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-retro-brick" />}
+                   {selectedSupplier?.id === s.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
                    <p className={cn(
-                     "text-[12px] font-black uppercase tracking-tight italic mb-2 transition-all",
-                     selectedSupplier?.id === s.id ? "text-retro-brick" : "text-retro-sepia group-hover:text-retro-brick"
+                     "text-sm font-bold tracking-tight mb-1 transition-all text-foreground",
+                     selectedSupplier?.id === s.id && "text-primary"
                    )}>{s.name}</p>
-                   <div className="flex items-center gap-4 text-[9px] font-black text-retro-earth/40 uppercase tracking-widest opacity-60">
-                      <Tag size={12} strokeWidth={2} className="text-retro-mustard" />
-                      {s.mainMaterialType || 'Hạng mục chung'}
+                   <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      <Tag size={10} />
+                      {s.mainMaterialType || 'Phổ thông'}
                    </div>
                 </button>
               ))}
               {suppliers.length === 0 && (
-                <div className="p-10 text-center text-retro-earth/20 italic text-[10px] uppercase tracking-[0.2em]">
-                   Vô thư bản ghi
+                <div className="p-10 text-center text-slate-300 italic text-[10px] uppercase tracking-widest">
+                   Không có dữ liệu
                 </div>
               )}
            </div>
         </div>
 
         {/* MAIN CONTENT: DETAILS & FORM */}
-        <div className="flex-1 overflow-y-auto p-10 md:p-14 bg-retro-paper/30 relative z-0 flex flex-col font-typewriter">
+        <div className="flex-1 overflow-y-auto p-10 md:p-14 bg-white relative flex flex-col">
            {selectedSupplier || isEditing ? (
-             <div className="space-y-12 animate-in slide-in-from-right-10 duration-500 pb-32">
+             <div className="max-w-3xl mx-auto w-full space-y-8 animate-in fade-in duration-500 pb-20">
                 <div className="flex justify-between items-start gap-10">
                    <div>
-                      <h4 className="text-3xl font-black text-retro-sepia uppercase tracking-tighter italic mb-4 underline decoration-double decoration-retro-mustard/30 underline-offset-8">
-                        {isEditing ? (selectedSupplier ? 'Hiệu đính đối tác' : 'Khai báo mới') : 'Hồ sơ Chi tiết'}
+                      <h4 className="text-xl font-bold text-foreground tracking-tight mb-1">
+                        {isEditing ? (selectedSupplier ? 'Sửa hồ sơ' : 'Thêm đối tác') : 'Chi tiết đối tác'}
                       </h4>
-                      <p className="text-[10px] text-retro-earth/60 font-black uppercase tracking-[0.2em] italic flex items-center gap-3">
-                         <Building size={16} strokeWidth={2} className="text-retro-mustard" /> Thư tịch đối tác Cung ứng & Hậu cần
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest flex items-center gap-2">
+                         <Building size={12} className="text-primary" /> Thông tin cung ứng & Liên hệ
                       </p>
                    </div>
-                   <div className="flex gap-4">
-                      {!isEditing ? (
-                        <>
-                          <button 
-                            onClick={() => setIsEditing(true)}
-                            className="w-12 h-12 bg-white border-2 border-retro-sepia/10 text-retro-sepia flex items-center justify-center hover:text-retro-brick hover:bg-white transition-all rotate-2 hover:rotate-0 shadow-sm"
-                          >
-                            <Edit3 size={20} strokeWidth={2} />
-                          </button>
-                          <button 
-                            onClick={handleDelete}
-                            className="w-12 h-12 bg-white border-2 border-retro-brick/10 text-retro-brick flex items-center justify-center hover:bg-retro-brick hover:text-white transition-all -rotate-2 hover:rotate-0 shadow-sm"
-                          >
-                            <Trash2 size={20} strokeWidth={2} />
-                          </button>
-                        </>
-                      ) : (
-                        <button 
-                          onClick={() => setIsEditing(false)}
-                          className="px-6 py-3 bg-retro-paper border-2 border-retro-sepia/10 text-[10px] font-black uppercase tracking-widest text-retro-earth/40 hover:text-retro-sepia hover:border-retro-sepia shadow-sm italic transition-all"
-                        >
-                          Đình chỉ
-                        </button>
-                      )}
-                      <button 
-                        onClick={onClose}
-                        className="w-12 h-12 bg-retro-sepia text-retro-paper flex items-center justify-center hover:bg-retro-brick transition-all shadow-lg"
-                      >
-                        <X size={24} strokeWidth={2.5} />
-                      </button>
-                   </div>
-                </div>
+                   <div className="flex gap-2">
+                       {!isEditing ? (
+                         <>
+                           <button 
+                             onClick={() => setIsEditing(true)}
+                             className="p-2 bg-white border border-border text-muted-foreground rounded-lg hover:text-primary hover:border-primary transition-all shadow-sm"
+                           >
+                             <Edit3 size={18} />
+                           </button>
+                           <button 
+                             onClick={handleDelete}
+                             className="p-2 bg-white border border-border text-muted-foreground rounded-lg hover:text-destructive hover:border-destructive transition-all shadow-sm"
+                           >
+                             <Trash2 size={18} />
+                           </button>
+                         </>
+                       ) : (
+                         <button 
+                           onClick={() => setIsEditing(false)}
+                           className="px-4 py-2 bg-gray-50 border border-border text-[10px] font-bold uppercase tracking-widest text-muted-foreground rounded-lg hover:text-foreground transition-all"
+                         >
+                           Hủy
+                         </button>
+                       )}
+                       <button 
+                         onClick={onClose}
+                         className="p-2 bg-foreground text-white rounded-lg hover:bg-muted-text transition-all shadow-lg"
+                       >
+                         <X size={18} />
+                       </button>
+                    </div>
+                 </div>
 
                 {message && (
                   <div className={cn(
-                    "p-6 border-2 flex items-center gap-6 animate-in slide-in-from-top-4 italic font-typewriter",
-                    message.type === 'success' ? "bg-retro-moss/5 border-retro-moss text-retro-moss" : "bg-retro-brick/5 border-retro-brick text-retro-brick"
+                    "p-5 rounded-2xl border flex items-center gap-4 animate-in slide-in-from-top-4",
+                    message.type === 'success' ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-rose-50 border-rose-100 text-rose-600"
                   )}>
-                    {message.type === 'success' ? <CheckCircle2 size={22} strokeWidth={2.5} /> : <AlertCircle size={22} strokeWidth={2.5} />}
-                    <p className="text-[11px] font-black uppercase tracking-tight">{message.text}</p>
+                    {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+                    <p className="text-xs font-bold uppercase tracking-wider">{message.text}</p>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8">
-                   {/* Name & ID */}
-                   <div className="space-y-4">
-                      <label className="text-[10px] font-black text-retro-earth/40 uppercase tracking-widest ml-1 opacity-60">Danh hiệu Cơ sở / Công ty</label>
-                      <input 
-                        disabled={!isEditing}
-                        className="w-full px-8 py-5 bg-white border-2 border-retro-sepia/10 focus:border-retro-sepia transition-all text-sm font-black uppercase text-retro-sepia outline-none shadow-inner italic placeholder:font-normal"
-                        value={formData.name || ''}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        placeholder="Nhập tôn danh chính thức..."
-                      />
-                   </div>
-                   <div className="space-y-4">
-                      <label className="text-[10px] font-black text-retro-earth/40 uppercase tracking-widest ml-1 opacity-60">Mã số Thuế / Thu ngân</label>
-                      <input 
-                        disabled={!isEditing}
-                        className="w-full px-8 py-5 bg-retro-paper/50 border-2 border-retro-sepia/10 focus:border-retro-brick transition-all text-sm font-black uppercase text-retro-brick outline-none shadow-inner text-center tracking-widest"
-                        value={formData.taxId || ''}
-                        onChange={(e) => setFormData({...formData, taxId: e.target.value})}
-                        placeholder="00-000-000-00"
-                      />
-                   </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    {/* Name & ID */}
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Tên Công ty</label>
+                       <input 
+                         disabled={!isEditing}
+                         className="form-input disabled:opacity-50"
+                         value={formData.name || ''}
+                         onChange={(e) => setFormData({...formData, name: e.target.value})}
+                         placeholder="Nhập tên chính thức..."
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Mã số thuế</label>
+                       <div className="relative">
+                         <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                         <input 
+                           disabled={!isEditing}
+                           className="form-input pl-11 disabled:opacity-50 tracking-widest"
+                           value={formData.taxId || ''}
+                           onChange={(e) => setFormData({...formData, taxId: e.target.value})}
+                           placeholder="000-000-000"
+                         />
+                       </div>
+                    </div>
 
                    {/* Contacts */}
-                   <div className="space-y-4">
-                      <label className="text-[10px] font-black text-retro-earth/40 uppercase tracking-widest ml-1 opacity-60">Đại diện Thụ lý / Contact</label>
-                      <div className="relative">
-                        <User className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/20" size={18} strokeWidth={1.5} />
-                        <input 
-                          disabled={!isEditing}
-                          className="w-full pl-16 pr-8 py-5 bg-white border-2 border-retro-sepia/10 focus:border-retro-sepia transition-all text-sm font-black text-retro-sepia outline-none shadow-inner italic"
-                          value={formData.contactPerson || ''}
-                          onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
-                          placeholder="Họ và tên..."
-                        />
-                      </div>
-                   </div>
-                   <div className="space-y-4">
-                      <label className="text-[10px] font-black text-retro-earth/40 uppercase tracking-widest ml-1 opacity-60">Số hiệu Viễn thông (Phone)</label>
-                      <div className="relative">
-                        <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/20" size={18} strokeWidth={1.5} />
-                        <input 
-                          disabled={!isEditing}
-                          className="w-full pl-16 pr-8 py-5 bg-white border-2 border-retro-sepia/10 focus:border-retro-sepia transition-all text-sm font-black text-retro-sepia outline-none shadow-inner"
-                          value={formData.phone || ''}
-                          onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                          placeholder="09xx.xxx.xxx"
-                        />
-                      </div>
-                   </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Người liên hệ</label>
+                       <div className="relative">
+                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                         <input 
+                           disabled={!isEditing}
+                           className="form-input pl-11 disabled:opacity-50"
+                           value={formData.contactPerson || ''}
+                           onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
+                           placeholder="Họ và tên..."
+                         />
+                       </div>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Số điện thoại</label>
+                       <div className="relative">
+                         <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                         <input 
+                           disabled={!isEditing}
+                           className="form-input pl-11 disabled:opacity-50"
+                           value={formData.phone || ''}
+                           onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                           placeholder="09xx.xxx.xxx"
+                         />
+                       </div>
+                    </div>
 
-                   {/* Address */}
-                   <div className="md:col-span-2 space-y-4">
-                      <label className="text-[10px] font-black text-retro-earth/40 uppercase tracking-widest ml-1 opacity-60">Địa chỉ Trụ sở & Logistics</label>
-                      <div className="relative">
-                        <MapPin className="absolute left-6 top-6 text-retro-brick/40" size={20} strokeWidth={2} />
-                        <textarea 
-                          disabled={!isEditing}
-                          className="w-full pl-18 pr-8 py-6 bg-white border-2 border-retro-sepia/10 focus:border-retro-sepia transition-all text-sm font-bold text-retro-earth h-28 resize-none outline-none shadow-inner leading-relaxed italic"
-                          value={formData.address || ''}
-                          onChange={(e) => setFormData({...formData, address: e.target.value})}
-                          placeholder="Mô tả tọa độ giao nhận..."
-                        />
-                      </div>
-                   </div>
+                    {/* Material Type */}
+                    <div className="md:col-span-2 space-y-2">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Phân loại Vật tư</label>
+                       <div className="relative">
+                         <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                         <input 
+                           disabled={!isEditing}
+                           className="form-input pl-11 disabled:opacity-50"
+                           value={formData.mainMaterialType || ''}
+                           onChange={(e) => setFormData({...formData, mainMaterialType: e.target.value})}
+                           placeholder="Giấy, Keo, Phụ liệu..."
+                         />
+                       </div>
+                    </div>
+
+                    {/* Address */}
+                    <div className="md:col-span-2 space-y-2">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Địa chỉ trụ sở</label>
+                       <div className="relative">
+                         <MapPin className="absolute left-4 top-4 text-muted-foreground" size={18} />
+                         <textarea 
+                           disabled={!isEditing}
+                           className="form-input pl-11 h-24 resize-none disabled:opacity-50"
+                           value={formData.address || ''}
+                           onChange={(e) => setFormData({...formData, address: e.target.value})}
+                           placeholder="Nhập địa chỉ chi tiết..."
+                         />
+                       </div>
+                    </div>
                 </div>
 
-                {isEditing && (
-                  <div className="flex justify-end pt-10">
-                     <button 
-                      onClick={handleSave}
-                      className="flex items-center gap-6 px-16 py-5 bg-retro-brick text-white shadow-[4px_4px_0px_#3E272333] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-retro-sepia transition-all active:scale-95 italic"
-                     >
-                       <Save size={20} strokeWidth={2.5} />
-                       Hạ bút Lưu hồ sơ
-                     </button>
-                  </div>
-                )}
+                 {isEditing && (
+                   <div className="flex justify-end pt-4">
+                      <button 
+                       onClick={handleSave}
+                       className="btn-primary gap-2 h-11 px-8"
+                      >
+                        <Save size={18} />
+                        Lưu hồ sơ đối tác
+                      </button>
+                   </div>
+                 )}
              </div>
            ) : (
-             <div className="h-full flex flex-col items-center justify-center text-center opacity-30 select-none">
-                <div className="w-32 h-32 border-4 border-dashed border-retro-sepia/10 rounded-full flex items-center justify-center mb-10 rotate-12">
-                   <Building size={64} strokeWidth={0.5} className="text-retro-sepia" />
+             <div className="h-full flex flex-col items-center justify-center text-center opacity-40 select-none">
+                <div className="w-24 h-24 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                   <Building size={40} className="text-slate-300" />
                 </div>
-                <h4 className="text-xl font-black text-retro-sepia uppercase tracking-[0.2em] italic">Vô Thư Bản Ghi</h4>
-                <p className="text-[11px] font-black text-retro-earth uppercase tracking-widest mt-4">Vui lòng lựa chọn hoặc khởi tạo hồ sơ đối tác mới.</p>
+                <h4 className="text-base font-bold text-slate-900 uppercase tracking-widest">Hồ sơ đối tác</h4>
+                <p className="text-xs font-medium text-slate-500 mt-2">Vui lòng chọn một nhà cung ứng để xem chi tiết<br/>hoặc khởi tạo đối tác mới.</p>
              </div>
            )}
-
-           <div className="torn-paper-bottom" />
         </div>
       </div>
     </div>

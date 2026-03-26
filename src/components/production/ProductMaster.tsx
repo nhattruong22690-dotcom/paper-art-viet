@@ -14,7 +14,10 @@ import {
   Clock,
   DollarSign,
   Loader2,
-  ChevronRight
+  ChevronRight,
+  LayoutGrid,
+  List,
+  Activity
 } from 'lucide-react';
 
 import { clsx, type ClassValue } from 'clsx';
@@ -66,11 +69,21 @@ export default function ProductMaster() {
     fetchProducts();
   }, []);
 
-  const handleSaveProduct = async (data: Partial<Product>) => {
+  const handleSaveProduct = async (payload: any) => {
     setIsLoading(true);
     try {
-      await upsertProduct(data);
-      showToast('success', 'Đã lưu sản phẩm thành công');
+      const { bomItems, ...productData } = payload;
+      
+      // 1. Save Basic Product (this creates ID if new)
+      const savedProduct = await upsertProduct(productData);
+      
+      // 2. Save BOM if present (Sequential)
+      if (bomItems && bomItems.length > 0) {
+          const { updateProductBOM } = await import('@/services/product.service');
+          await updateProductBOM(savedProduct.id, bomItems);
+      }
+      
+      showToast('success', 'Đã lưu sản phẩm và định mức thành công');
       setIsFormOpen(false);
       fetchProducts();
     } catch (error) {
@@ -87,74 +100,74 @@ export default function ProductMaster() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700 pb-24 px-6 md:px-12 font-typewriter">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-24">
+      
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10 bg-white/40 p-10 border-b-2 border-retro-sepia/10 relative overflow-hidden retro-card">
-        <div className="washi-tape-top" />
-        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-           <Package size={240} strokeWidth={0.5} className="text-retro-sepia" />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div>
+          <nav className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+            <Package size={12} />
+            <span>Sản xuất</span>
+            <ChevronRight size={10} />
+            <span className="text-primary italic">Product Master List</span>
+          </nav>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
+            Danh mục <span className="text-primary italic">Sản phẩm</span>
+          </h1>
+          <p className="text-slate-500 text-sm mt-1 font-medium italic">
+             Quản lý hồ sơ định danh, định mức vật tư (BOM) và giá thành sản xuất.
+          </p>
         </div>
         
-        <div className="relative z-10">
-          <nav className="flex items-center gap-3 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] mb-4 opacity-60">
-            <Package size={14} strokeWidth={1.5} />
-            <span>Sản xuất</span>
-            <ChevronRight size={12} strokeWidth={1.5} />
-            <span className="text-retro-sepia">Danh mục Vật phẩm</span>
-          </nav>
-          <h1 className="text-3xl md:text-4xl font-black text-retro-sepia uppercase tracking-tighter italic underline decoration-double decoration-retro-mustard/30 underline-offset-8">
-            Master List <span className="text-retro-brick">Sản phẩm</span>
-          </h1>
-          <p className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] italic mt-4 opacity-60">Quản lý Định mức nguyên vật liệu (BOM) & Kế hoạch sản xuất — 1984</p>
-        </div>
-
         <button 
           onClick={() => {
             setEditingProduct(null);
             setIsFormOpen(true);
           }}
-          className="relative z-10 flex items-center gap-4 px-10 py-5 bg-retro-brick text-white shadow-[4px_4px_0px_#3E272333] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-retro-sepia transition-all active:scale-95"
+          className="btn-primary gap-3 shadow-vibrant"
         >
           <Plus size={20} strokeWidth={2.5} />
-          Khởi tạo Sản phẩm mới
+          <span>Thêm sản phẩm mới</span>
         </button>
       </div>
 
-
-      {/* SEARCH/FILTER BAR */}
-      <div className="bg-white/60 p-8 border-2 border-retro-sepia/10 shadow-inner flex flex-col md:flex-row gap-8 font-typewriter">
-        <div className="relative flex-1 group">
+      {/* FILTER / SEARCH BAR */}
+      <div className="card !p-5 flex flex-col md:flex-row gap-5 border border-slate-50 shadow-soft">
+        <div className="flex-1 relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={20} />
           <input 
-            type="text"
-            placeholder="Tra cứu tên sản phẩm hoặc mã định danh SKU..."
+            type="text" 
+            placeholder="Tìm theo tên sản phẩm hoặc mã SKU..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-16 pr-8 py-5 bg-white/40 border-2 border-retro-sepia/10 text-xs font-black uppercase text-retro-sepia outline-none focus:bg-white focus:border-retro-sepia transition-all shadow-inner placeholder:italic placeholder:font-normal placeholder:lowercase"
+            className="form-input pl-12 h-12 bg-slate-50/50 border-slate-100 rounded-xl"
           />
-          <Search size={22} strokeWidth={1.5} className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/20 group-focus-within:text-retro-brick transition-colors" />
         </div>
-        
-        <button className="px-10 py-5 bg-white border-2 border-retro-sepia/10 font-black text-[11px] uppercase tracking-[0.2em] text-retro-sepia flex items-center gap-4 hover:bg-retro-paper transition-all shadow-sm rotate-1 hover:rotate-0">
-          <Filter size={20} strokeWidth={1.5} /> Lọc thuộc tính
+        <button className="btn-secondary gap-3 whitespace-nowrap px-8 shadow-sm">
+          <Filter size={18} strokeWidth={2.5} /> 
+          <span>Bộ lọc nâng cao</span>
         </button>
       </div>
 
-
-      {/* PRODUCTS GRID/LIST */}
+      {/* PRODUCTS GRID */}
       {isLoading ? (
-        <div className="py-32 flex flex-col items-center justify-center font-typewriter">
-           <Loader2 size={56} strokeWidth={1.5} className="text-retro-brick animate-spin mb-8" />
-           <p className="text-[10px] font-black uppercase text-retro-earth tracking-[0.4em] animate-pulse italic">Đang truy xuất Sổ cái vật phẩm...</p>
+        <div className="py-40 flex flex-col items-center justify-center gap-4 text-slate-400 animate-in fade-in">
+           <Loader2 size={48} className="animate-spin text-primary opacity-30" />
+           <p className="text-[10px] font-black uppercase tracking-[0.3em]">Đang đồng bộ Master List...</p>
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="py-32 text-center bg-white/40 border-4 border-dashed border-retro-sepia/10 flex flex-col items-center font-typewriter">
-           <Package size={80} strokeWidth={1} className="text-retro-earth/20 mb-8" />
-           <h3 className="text-sm font-black text-retro-earth/60 uppercase tracking-[0.2em] italic">Không tìm thấy vật phẩm tương thích</h3>
-           <p className="text-[10px] text-retro-earth/40 font-black uppercase mt-4 tracking-widest">Vui lòng rà soát lại SKU hoặc khởi tạo bản ghi mới.</p>
+        <div className="py-40 text-center bg-slate-50/50 rounded-[32px] border-2 border-dashed border-slate-100 flex flex-col items-center animate-in fade-in">
+           <Package size={80} strokeWidth={1} className="text-slate-200 mb-6 opacity-30" />
+           <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">Không có dữ liệu SKU</p>
+           <button 
+             onClick={() => setIsFormOpen(true)}
+             className="mt-8 text-[10px] font-black text-primary uppercase tracking-widest hover:underline"
+           >
+             Bắt đầu khai báo sản phẩm đầu tiên
+           </button>
         </div>
       ) : (
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
            {filteredProducts.map((p) => (
              <div 
                key={p.id}
@@ -162,73 +175,85 @@ export default function ProductMaster() {
                  setSelectedProduct(p);
                  setIsDetailOpen(true);
                }}
-               className="group relative bg-white p-8 border-2 border-retro-sepia/5 hover:border-retro-sepia/20 shadow-sm hover:shadow-2xl transition-all cursor-pointer overflow-hidden font-typewriter"
+               className="group card !p-8 hover:shadow-vibrant hover:border-primary/20 transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[280px]"
              >
-                {/* Background Decor */}
-                <div className="absolute -top-16 -right-16 w-40 h-40 bg-retro-paper/40 group-hover:bg-retro-mustard/10 transition-colors rotate-12" />
-                
-                <div className="relative space-y-8">
+                <div className="relative space-y-6">
                    <div className="flex justify-between items-start">
-                      <div className="w-16 h-16 bg-retro-paper border-2 border-retro-sepia/10 flex items-center justify-center text-retro-earth/20 group-hover:bg-retro-sepia group-hover:text-retro-paper transition-all rotate-3 group-hover:rotate-0 shadow-sm">
-                         <Package size={32} strokeWidth={1.5} />
+                      <div className="w-14 h-14 bg-slate-50 border border-slate-100 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
+                         <Package size={28} strokeWidth={2} />
                       </div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-retro-paper/50 border border-retro-sepia/5 shadow-inner">
-                         <div className="w-2 h-2 bg-retro-moss shadow-sm animate-pulse" />
-                         <span className="text-[9px] font-black text-retro-earth uppercase tracking-[0.2em] italic">Đang khả dụ</span>
+                      <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 flex items-center gap-1.5">
+                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                         <span className="text-[9px] font-black uppercase tracking-widest leading-none">In Production</span>
                       </div>
                    </div>
 
                    <div>
-                      <h3 className="text-[13px] font-black text-retro-sepia uppercase tracking-tighter line-clamp-1 group-hover:text-retro-brick transition-all underline decoration-retro-mustard/20 group-hover:decoration-retro-brick/20 underline-offset-4">
-                        {p.name || '---'}
+                      <h3 className="text-base font-black text-slate-900 group-hover:text-primary transition-colors tracking-tight line-clamp-2">
+                        {p.name || 'Untitled SKU'}
                       </h3>
-                      <p className="text-[10px] text-retro-earth/60 font-black uppercase tracking-[0.2em] mt-2 italic">{p.sku || 'CHƯA-GÁN-SKU'}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2 italic">{p.sku || 'NO-REF'}</p>
                    </div>
+                </div>
 
-                   <div className="grid grid-cols-2 gap-6 bg-retro-paper/30 p-4 border border-retro-sepia/5 shadow-inner">
-                      <div className="space-y-2">
-                         <div className="flex items-center gap-3">
-                            <Clock size={14} strokeWidth={1.5} className="text-retro-sepia/20" />
-                            <span className="text-[8px] font-black text-retro-earth uppercase tracking-widest opacity-60">Thanh thời</span>
+                <div className="space-y-6 mt-8">
+                   <div className="grid grid-cols-2 gap-4 py-6 border-y border-slate-50">
+                      <div className="space-y-1">
+                         <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Lead Time</p>
+                         <div className="flex items-center gap-2">
+                            <Clock size={14} className="text-slate-300" />
+                            <p className="text-sm font-black text-slate-700 tabular-nums">
+                               {p.productionTimeStd || 0} <span className="text-[10px] text-slate-400 font-bold">Min</span>
+                            </p>
                          </div>
-                         <p className="text-xs font-black text-retro-sepia italic">
-                            {p.productionTimeStd || 0} <span className="text-[9px] uppercase not-italic">Phút</span>
-                         </p>
                       </div>
-                      <div className="space-y-2 border-l border-retro-sepia/10 pl-4">
-                          <div className="flex items-center gap-3">
-                            <Tag size={14} strokeWidth={1.5} className="text-retro-brick/20" />
-                            <span className="text-[8px] font-black text-retro-brick uppercase tracking-widest opacity-60">Niêm giá</span>
+                      <div className="space-y-1">
+                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Target Price</p>
+                          <div className="flex items-center gap-2">
+                            <DollarSign size={14} className="text-amber-500/50" />
+                            <p className="text-sm font-black text-slate-900 tabular-nums tracking-tight">
+                              {Number(p.wholesalePrice || 0).toLocaleString()} <span className="text-[10px] text-amber-500 font-bold">SỈ</span>
+                            </p>
                           </div>
-                          <p className="text-xs font-black text-retro-brick italic">
-                            {(() => {
-                               const config = (p as any).cogsConfig;
-                               if (config?.suggestedPrices?.wholesale) return Number(config.suggestedPrices.wholesale).toLocaleString();
-                               return 'Liên hệ';
-                            })()} <span className="text-[9px] uppercase not-italic">VNĐ</span>
-                          </p>
                       </div>
                    </div>
 
-                   <div className="flex items-center justify-between pt-6 border-t-2 border-retro-sepia/5 group-hover:border-retro-sepia/10 transition-all italic">
-                      <div className="flex items-center gap-4">
-                         <div className="flex -space-x-4">
+                   <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                         <div className="flex -space-x-2">
                             {[1, 2, 3].map(i => (
-                               <div key={i} className="w-6 h-6 border-2 border-white bg-retro-paper shadow-sm" />
+                               <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[9px] font-black text-slate-300">
+                                  {i < 3 ? <Layers size={12} /> : '+' + (p.bomItems?.length || 0)}
+                               </div>
                             ))}
                          </div>
-                         <span className="text-[9px] font-black text-retro-earth/40 uppercase tracking-widest">+{p.bomItems?.length || 0} Linh kiện định mức</span>
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">BOM Configuration</span>
                       </div>
-                      <div className="w-10 h-10 bg-retro-paper border-2 border-retro-sepia/10 flex items-center justify-center text-retro-sepia group-hover:bg-retro-sepia group-hover:text-retro-paper transition-all shadow-sm rotate-45 group-hover:rotate-0">
-                         <ArrowUpRight size={18} strokeWidth={1.5} />
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-200 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
+                         <ArrowUpRight size={20} strokeWidth={2.5} />
                       </div>
                    </div>
                 </div>
              </div>
            ))}
         </div>
-
       )}
+
+      {/* FOOTER METRICS */}
+      <div className="flex justify-between items-center py-8 border-t border-slate-100 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] opacity-50 px-4">
+         <div className="flex items-center gap-3">
+            <Activity size={16} strokeWidth={2.5} /> 
+            <span>Productivity Index: Stable</span>
+         </div>
+         <div className="flex items-center gap-6">
+            <span>{products.length} SKU Enrolled</span>
+            <span className="w-px h-3 bg-slate-200" />
+            <span className="flex items-center gap-2">
+               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+               Master Registry Online
+            </span>
+         </div>
+      </div>
 
       {selectedProduct && (
         <ProductDetailModal 

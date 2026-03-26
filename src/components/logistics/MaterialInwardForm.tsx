@@ -9,17 +9,15 @@ import {
   Calendar, 
   CheckCircle2, 
   Loader2,
-  Copy,
   ChevronDown,
-  Tag,
   Package, 
   MapPin, 
   ChevronRight, 
-  Filter, 
   ShoppingBag,
-  ArrowRight,
   FileText,
-  Printer
+  Printer,
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -156,6 +154,10 @@ export default function MaterialInwardForm() {
   };
 
   const handleSave = async () => {
+    if (!selectedPartner) {
+        alert('Vui lòng chọn đối tác giao hàng');
+        return;
+    }
     setIsSubmitting(true);
     try {
       await createMaterialBatchInward({
@@ -189,186 +191,183 @@ export default function MaterialInwardForm() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-1000 pb-40">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b-2 border-retro-sepia/10 pb-10">
-        <div className="flex items-center gap-6">
-           <div className="w-20 h-20 bg-retro-sepia border-2 border-retro-sepia flex items-center justify-center text-retro-paper rotate-3 shadow-xl transform hover:rotate-0 transition-transform cursor-pointer">
-              <Truck size={40} strokeWidth={1.5} />
+    <div className="space-y-6 animate-in fade-in duration-500 pb-40">
+      {/* Header Section */}
+      <div className="card !flex-col md:!flex-row justify-between items-start md:items-center gap-6">
+        <div className="flex items-center gap-4">
+           <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg">
+              <Truck size={24} />
            </div>
            <div>
-              <h1 className="text-4xl font-typewriter font-black text-retro-sepia tracking-tighter uppercase italic mb-2">
-                Hòa đơn <span className="text-retro-brick underline decoration-double decoration-1 underline-offset-8">Nhập kho</span>
+              <nav className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                <Package size={12} />
+                <span>Kho vận</span>
+                <ChevronRight size={10} />
+                <span className="text-primary">Phiếu nhập kho</span>
+              </nav>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                Ghi nhận vật tư nhập xưởng
               </h1>
-              <p className="font-handwriting text-xl text-retro-earth flex items-center gap-2">
-                <FileText size={20} strokeWidth={1.5} /> Nhật giám lô hàng nguyên vật liệu xưởng
-              </p>
            </div>
         </div>
 
-        <div className="retro-card !bg-retro-sepia text-retro-paper !p-6 transform -rotate-2">
-           <p className="font-typewriter text-[10px] uppercase font-black tracking-widest mb-1 opacity-60">Thống kê giá trị</p>
-           <p className="text-3xl font-typewriter font-black italic tracking-tighter tabular-nums">
-             {calculateTotal().toLocaleString()} <span className="text-sm">đ</span>
-           </p>
+        <div className="card !bg-primary text-white !p-4 !px-6 border-none shadow-xl flex items-center gap-6">
+           <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Tổng giá trị lô hàng</p>
+              <p className="text-2xl font-black tabular-nums">
+                {calculateTotal().toLocaleString()} <span className="text-xs">đ</span>
+              </p>
+           </div>
+           <div className="h-10 w-px bg-white/20" />
+           <FileText size={24} className="opacity-40" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-        {/* SIDEBAR CONFIG */}
-        <div className="lg:col-span-1 space-y-8">
-          <div className="retro-card !bg-retro-paper relative isolate">
-             <div className="washi-tape-top" />
-             <div className="space-y-8 mt-6">
-                <div className="space-y-3">
-                   <label className="font-typewriter text-[11px] font-black text-retro-sepia uppercase tracking-widest flex items-center gap-2">
-                      <Calendar size={14} className="text-retro-brick" /> Ngày nhập kho
-                   </label>
-                   <input 
-                     type="date"
-                     value={inwardDate}
-                     onChange={(e) => setInwardDate(e.target.value)}
-                     className="w-full bg-white/50 border-2 border-retro-sepia/10 px-5 py-4 font-typewriter text-xs font-bold text-retro-sepia outline-none focus:border-retro-sepia focus:bg-white transition-all uppercase tracking-tighter"
-                   />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar Config */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="card space-y-6 !p-6">
+             <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Ngày nhập kho</label>
+                <div className="relative">
+                  <input 
+                    type="date"
+                    value={inwardDate}
+                    onChange={(e) => setInwardDate(e.target.value)}
+                    className="form-input pl-10"
+                  />
+                  <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 </div>
+             </div>
 
-                <div className="space-y-3">
-                  <label className="font-typewriter text-[11px] font-black text-retro-sepia uppercase tracking-widest flex items-center gap-2">
-                    <ShoppingBag size={14} className="text-retro-brick" />
-                    Chỉ định Đơn hàng (PO)
-                  </label>
-                  <div className="relative group">
-                    <select 
-                      className="w-full px-5 py-4 bg-white/50 border-2 border-retro-sepia/10 font-typewriter text-[11px] font-bold text-retro-sepia outline-none focus:border-retro-sepia focus:bg-white appearance-none transition-all"
-                      value={selectedPOId}
-                      onChange={(e) => {
-                        setSelectedPOId(e.target.value);
-                        handleImportPO(e.target.value);
-                      }}
-                    >
-                      <option value="">Lập phiếu tự do</option>
-                      {pendingPOs.map(po => (
-                        <option key={po.id} value={po.id}>{po.poNumber} - {po.supplier.name}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-retro-sepia/30 pointer-events-none" />
-                  </div>
+             <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Đơn mua hàng (PO)</label>
+                <div className="relative">
+                  <select 
+                    className="form-input appearance-none"
+                    value={selectedPOId}
+                    onChange={(e) => {
+                      setSelectedPOId(e.target.value);
+                      handleImportPO(e.target.value);
+                    }}
+                  >
+                    <option value="">Lập phiếu tự do</option>
+                    {pendingPOs.map(po => (
+                      <option key={po.id} value={po.id}>{po.poNumber} - {po.supplier.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 </div>
+             </div>
 
-                <div className="space-y-3">
-                  <label className="font-typewriter text-[11px] font-black text-retro-sepia uppercase tracking-widest flex items-center gap-2">
-                    <MapPin size={14} className="text-retro-brick" />
-                    Nguồn hàng / Đối tác
-                  </label>
-                  <div className="relative group">
-                    <select 
-                      className="w-full px-5 py-4 bg-white/50 border-2 border-retro-sepia/10 font-typewriter text-[11px] font-bold text-retro-sepia outline-none focus:border-retro-sepia focus:bg-white appearance-none transition-all"
-                      value={selectedPartner}
-                      onChange={(e) => setSelectedPartner(e.target.value)}
-                    >
-                      <option value="">Chọn đối tác giao</option>
-                      {partners.map(p => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-retro-sepia/30 pointer-events-none" />
-                  </div>
+             <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Đối tác / Nhà cung cấp</label>
+                <div className="relative">
+                  <select 
+                    className="form-input appearance-none"
+                    value={selectedPartner}
+                    onChange={(e) => setSelectedPartner(e.target.value)}
+                  >
+                    <option value="">Chọn đối tác giao hàng</option>
+                    {partners.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 </div>
              </div>
           </div>
           
-          <div className="p-6 border-2 border-dashed border-retro-sepia/10 text-retro-earth italic font-handwriting text-lg text-center">
-            * Cẩn thận kiểm tra quy cách đóng gói trước khi ký nhận hồ sơ.
+          <div className="p-5 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 flex items-start gap-3">
+            <AlertCircle size={20} className="shrink-0 mt-0.5" />
+            <p className="text-xs font-medium leading-relaxed">
+              Vui lòng kiểm duyệt kỹ quy cách và số thực nhận so với PO trước khi ký xác nhận nhập kho.
+            </p>
           </div>
         </div>
 
-        {/* BATCH LEDGER */}
+        {/* Batch Ledger */}
         <div className="lg:col-span-3">
-          <div className="retro-card !p-0 !bg-white overflow-hidden border-2">
+          <div className="card !p-0 overflow-hidden shadow-sm">
              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left !mt-0">
                     <thead>
-                       <tr className="bg-retro-sepia text-retro-paper text-[11px] font-black uppercase tracking-widest border-b border-retro-sepia font-typewriter">
-                          <th className="px-8 py-6 min-w-[200px]">Sản phẩm / Mã hiệu</th>
-                          <th className="px-4 py-6 text-center w-24">Số Lượng</th>
-                          <th className="px-4 py-6 text-center w-24">Quy cách</th>
-                          <th className="px-4 py-6 text-center w-28">Thực nhận</th>
-                          <th className="px-6 py-6 text-right w-40 bg-white/10 italic">Tổng Thành Tiền</th>
-                          <th className="px-4 py-6 text-center w-24 text-retro-mustard italic">Giá PO</th>
-                          <th className="px-6 py-6 w-32">Vị Trí</th>
-                          <th className="px-8 py-6 w-16"></th>
+                       <tr className="bg-gray-50 border-b border-border">
+                          <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider">Vật tư / Mã hiệu</th>
+                          <th className="px-4 py-4 text-center text-[10px] font-bold uppercase tracking-wider w-24">Số Lượng</th>
+                          <th className="px-4 py-4 text-center text-[10px] font-bold uppercase tracking-wider w-24">Quy cách</th>
+                          <th className="px-4 py-4 text-center text-[10px] font-bold uppercase tracking-wider w-28">Thực nhận</th>
+                          <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-wider w-40">Thành Tiền</th>
+                          <th className="px-4 py-4 text-center text-[10px] font-bold uppercase tracking-wider w-28">Xếp kho</th>
+                          <th className="px-6 py-4 w-16"></th>
                        </tr>
                     </thead>
-                    <tbody className="divide-y-2 divide-retro-sepia/5">
+                    <tbody className="divide-y divide-border">
                        {items.map((item) => (
-                          <tr key={item.id} className="hover:bg-retro-paper/20 transition-all font-serif italic">
-                             <td className="px-8 py-6">
-                                <div className="space-y-2">
+                          <tr key={item.id} className="hover:bg-gray-50/50 transition-all group">
+                             <td className="px-6 py-4">
+                                <div className="space-y-1 min-w-[200px]">
                                    <select 
                                      value={item.materialId}
                                      onChange={(e) => updateItem(item.id, 'materialId', e.target.value)}
-                                     className="w-full bg-transparent border-b-2 border-retro-sepia/10 focus:border-retro-brick py-1 text-[13px] font-black text-retro-sepia outline-none appearance-none transition-all uppercase tracking-tighter not-italic"
+                                     className="w-full bg-transparent border-b border-border focus:border-primary py-1 text-sm font-bold text-foreground outline-none transition-all"
                                    >
                                      <option value="">Chọn vật tư...</option>
                                      {materials.map(m => <option key={m.id} value={m.id}>{m.name} ({m.sku})</option>)}
                                    </select>
-                                   {item.sku && <p className="font-typewriter text-[10px] font-bold text-retro-earth uppercase tracking-widest opacity-60 px-1">{item.sku}</p>}
+                                   {item.sku && <p className="text-[10px] font-bold text-primary px-1 uppercase tracking-wider">{item.sku}</p>}
                                 </div>
                              </td>
-                             <td className="px-4 py-6">
+                             <td className="px-4 py-4">
                                 <input 
                                   type="number"
                                   value={item.packingQty || ''}
                                   onChange={(e) => updateItem(item.id, 'packingQty', Number(e.target.value))}
                                   placeholder="0"
-                                  className="w-full bg-retro-paper/30 border border-retro-sepia/5 px-3 py-2 text-center font-typewriter text-xs font-black text-retro-sepia outline-none focus:bg-white focus:border-retro-sepia transition-all italic"
+                                  className="w-full bg-gray-50 border border-border rounded-lg px-2 py-2 text-center text-sm font-bold focus:bg-white focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                                 />
                              </td>
-                             <td className="px-4 py-6">
+                             <td className="px-4 py-4">
                                 <input 
                                   type="number"
                                   value={item.itemsPerPacking || ''}
                                   onChange={(e) => updateItem(item.id, 'itemsPerPacking', Number(e.target.value))}
                                   placeholder="0"
-                                  className="w-full bg-retro-paper/30 border border-retro-sepia/5 px-3 py-2 text-center font-typewriter text-xs font-black text-retro-sepia outline-none focus:bg-white focus:border-retro-sepia transition-all italic"
+                                  className="w-full bg-gray-50 border border-border rounded-lg px-2 py-2 text-center text-sm font-bold focus:bg-white focus:ring-1 focus:ring-primary/20 outline-none transition-all"
                                 />
                              </td>
-                             <td className="px-4 py-6 text-center">
+                             <td className="px-4 py-4">
                                 <div className="flex flex-col items-center">
-                                  <span className="text-sm font-typewriter font-black text-retro-sepia tabular-nums not-italic">
+                                  <span className="text-sm font-black text-foreground tabular-nums">
                                     {(item.packingQty * item.itemsPerPacking).toLocaleString()}
                                   </span>
-                                  <span className="font-handwriting text-[12px] text-retro-earth mt-1">
+                                  <span className="text-[10px] font-bold text-muted-foreground mt-0.5">
                                     {((item.packingQty * item.itemsPerPacking) > 0 
                                       ? (item.totalPrice / (item.packingQty * item.itemsPerPacking)) 
-                                      : 0).toLocaleString()} <span className="text-[9px]">đ/c</span>
+                                      : 0).toLocaleString()} <span className="opacity-60">đ/pcs</span>
                                   </span>
                                 </div>
                              </td>
-                             <td className="px-6 py-6 bg-retro-paper/10">
+                             <td className="px-6 py-4">
                                 <input 
                                   type="number"
                                   value={item.totalPrice || ''}
                                   onChange={(e) => updateItem(item.id, 'totalPrice', Number(e.target.value))}
-                                  placeholder="0"
-                                  className="w-full bg-transparent border-b border-retro-sepia/20 text-right px-1 py-1 font-typewriter text-sm font-black text-retro-brick focus:border-retro-sepia outline-none transition-all italic placeholder:opacity-20"
+                                  className="w-full bg-transparent border-b border-border text-right px-1 py-1 text-sm font-black text-primary focus:border-primary outline-none transition-all"
                                 />
                              </td>
-                             <td className="px-4 py-6 text-center font-typewriter text-[10px] font-black text-retro-moss italic opacity-70">
-                                {item.expectedPrice ? item.expectedPrice.toLocaleString() : '--'}
-                             </td>
-                             <td className="px-6 py-6">
+                             <td className="px-4 py-4">
                                 <input 
                                   type="text"
                                   value={item.location}
                                   onChange={(e) => updateItem(item.id, 'location', e.target.value)}
-                                  placeholder="Hàng A..."
-                                  className="w-full bg-transparent border-b border-retro-sepia/10 focus:border-retro-sepia py-1 font-typewriter text-[10px] font-black text-retro-sepia outline-none transition-all uppercase tracking-tighter"
+                                  placeholder="Vị trí..."
+                                  className="w-full bg-transparent border-b border-border focus:border-primary py-1 text-[11px] font-bold text-foreground text-center outline-none transition-all uppercase"
                                 />
                              </td>
-                             <td className="px-8 py-6 text-right">
-                                <button onClick={() => removeItem(item.id)} className="p-2 text-retro-earth/20 hover:text-retro-brick hover:bg-retro-brick/5 transition-all">
-                                   <Trash2 size={16} strokeWidth={1.5} />
+                             <td className="px-6 py-4 text-right">
+                                <button onClick={() => removeItem(item.id)} className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                                   <Trash2 size={16} />
                                 </button>
                              </td>
                           </tr>
@@ -377,65 +376,64 @@ export default function MaterialInwardForm() {
                 </table>
              </div>
              
-             <div className="p-8 bg-retro-paper/20">
+             <div className="p-6 bg-gray-50/50">
                 <button 
                   onClick={addItem}
-                  className="w-full py-5 border-2 border-dashed border-retro-sepia/20 bg-white/50 flex items-center justify-center gap-3 text-retro-sepia/40 hover:text-retro-sepia hover:bg-white transition-all font-typewriter text-[11px] font-black uppercase tracking-widest group"
+                  className="w-full py-4 border-2 border-dashed border-border bg-white flex items-center justify-center gap-3 text-muted-foreground hover:text-primary hover:border-primary/30 transition-all font-bold text-xs uppercase tracking-widest rounded-xl hover:shadow-sm"
                 >
-                   <Plus size={18} className="group-hover:rotate-90 transition-transform" />
-                   Ghi thêm hạng mục mới vào sổ
+                   <Plus size={18} />
+                   Thêm dòng mới
                 </button>
              </div>
           </div>
         </div>
       </div>
 
-      {/* STICKY CONTROL PANEL */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-4xl px-8 z-50">
-        <div className="bg-white/80 backdrop-blur-3xl border-2 border-retro-sepia p-5 shadow-2xl flex items-center justify-between gap-10 ring-4 ring-white/50">
-          <div className="flex items-center gap-6 ml-6">
-             <div className="flex flex-col border-r-2 border-retro-sepia/10 pr-10">
-                <p className="font-typewriter text-[10px] font-black text-retro-earth uppercase tracking-widest opacity-50">Tổng số hạng mục</p>
-                <p className="text-2xl font-typewriter font-black text-retro-sepia tracking-tighter uppercase italic">{items.length} <span className="text-sm">Bản ghi</span></p>
+      {/* Control Panel */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-5xl px-6 z-40">
+        <div className="card !p-4 !px-8 shadow-2xl flex items-center justify-between gap-8 border-primary/20 bg-white/90 backdrop-blur-md">
+          <div className="hidden md:flex items-center gap-8">
+             <div className="flex flex-col border-r border-border pr-8">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Hạng mục kê khai</p>
+                <p className="text-xl font-black text-foreground">{items.length} <span className="text-xs font-bold text-muted-foreground uppercase ml-1">Bản ghi</span></p>
              </div>
-             <p className="font-handwriting text-lg text-retro-earth max-w-[180px] leading-tight">Vui lòng kiểm duyệt kỹ trước khi niêm phong hồ sơ.</p>
+             <p className="text-xs font-medium text-muted-foreground max-w-[200px] leading-relaxed italic">
+               Kiểm tra thông tin kỹ trước khi xác nhận lưu kho vĩnh viễn.
+             </p>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 w-full md:w-auto">
             <button 
               onClick={() => window.print()}
-              className="px-6 py-4 bg-retro-paper border-2 border-retro-sepia text-retro-sepia font-typewriter text-[11px] font-black uppercase tracking-widest hover:bg-retro-sepia hover:text-white transition-all flex items-center gap-3 active:scale-95 shadow-[4px_4px_0px_#3E272333]"
+              className="btn-secondary h-12 px-6 flex items-center gap-2 whitespace-nowrap"
             >
-              <Printer size={18} strokeWidth={1.5} /> In mã QR
+              <Printer size={18} /> In thẻ kho
             </button>
             <button 
               onClick={handleSave}
-              disabled={isSubmitting || !selectedPartner || items.some(i => !i.materialId || i.packingQty <= 0)}
-              className={cn(
-                "retro-btn px-10 py-5 bg-retro-brick text-white min-w-[240px]",
-                (isSubmitting || !selectedPartner || items.some(i => !i.materialId || i.packingQty <= 0)) && "opacity-50 grayscale cursor-not-allowed shadow-none"
-              )}
+              disabled={isSubmitting || !selectedPartner || items.some(i => !i.materialId || (i.packingQty * i.itemsPerPacking) <= 0)}
+              className="btn-primary h-12 px-10 flex-1 md:flex-none flex items-center justify-center gap-3 shadow-lg shadow-primary/20"
             >
                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
-               Ký nhận và Nhập kho
+               Xác nhận Nhập kho
             </button>
           </div>
         </div>
       </div>
 
-      {/* QR PRINT SECTION (LEDGER STYLE) */}
-      <div className="hidden print:block font-typewriter">
-        <h2 className="text-center text-xl font-black uppercase mb-10 border-b-2 border-black pb-4">Tem nhãn Lô hàng - Paper Art Việt</h2>
+      {/* Print labels (hidden usually) */}
+      <div className="hidden print:block p-8">
+        <h2 className="text-center text-xl font-bold uppercase mb-8 pb-4 border-b">Tem định danh Lô hàng - Paper Art Việt</h2>
         <div className="grid grid-cols-4 gap-6">
-          {items.filter(i => i.materialId).map((item, idx) => (
-            <div key={idx} className="border-2 border-black p-4 flex flex-col items-center">
-              <p className="text-[9px] font-black uppercase mb-2 text-center h-8 overflow-hidden">{item.name}</p>
+          {items.filter(i => i.materialId && (i.packingQty * i.itemsPerPacking) > 0).map((item, idx) => (
+            <div key={idx} className="border border-black p-4 flex flex-col items-center gap-2">
+              <p className="text-[10px] font-bold text-center h-8 overflow-hidden">{item.name}</p>
               <QRCodeSVG 
                 value={JSON.stringify({ sku: item.sku, loc: item.location, date: inwardDate })}
-                size={70} 
+                size={80} 
               />
-              <p className="text-[10px] font-black mt-3 italic tracking-widest">{item.sku}</p>
-              <p className="text-[8px] font-bold mt-1 uppercase">LOC: {item.location || 'N/A'}</p>
+              <p className="text-xs font-black tracking-widest">{item.sku}</p>
+              <p className="text-[9px] font-bold uppercase">LOC: {item.location || '---'}</p>
             </div>
           ))}
         </div>

@@ -13,7 +13,10 @@ import {
   Bookmark,
   Hexagon,
   HelpCircle,
-  Newspaper
+  Newspaper,
+  Book,
+  Info,
+  ChevronDown
 } from 'lucide-react';
 import { GUIDE_DATA, NEWS_UPDATES } from '@/data/guide';
 import { useSearchParams } from 'next/navigation';
@@ -53,147 +56,130 @@ function GuideContent() {
   }, [searchTerm]);
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-retro-paper font-typewriter overflow-hidden">
-      {/* Sidebar Navigation - The Index */}
-      <aside className="w-full lg:w-[400px] bg-white border-r-2 border-retro-sepia/10 flex flex-col h-auto lg:h-screen lg:sticky lg:top-0 overflow-y-auto z-10 shadow-2xl scrollbar-hide">
-        <div className="p-10 space-y-10">
-          <Link href="/" className="flex items-center gap-3 text-retro-earth hover:text-retro-brick transition-all group italic">
-            <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-2 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Hoàn nguyên ERP</span>
+    <div className="flex flex-col lg:flex-row min-h-screen bg-white">
+      {/* Sidebar Navigation */}
+      <aside className="w-full lg:w-[320px] bg-gray-50 border-r border-border flex flex-col h-auto lg:h-screen lg:sticky lg:top-0 overflow-y-auto z-10">
+        <div className="p-6 space-y-8">
+          <Link href="/mobile-menu" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-all group">
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Quay lại Menu</span>
           </Link>
 
-          <div className="space-y-4 border-b-2 border-retro-sepia/5 pb-8">
-            <h1 className="text-3xl font-black text-retro-sepia tracking-tighter flex items-center gap-4 italic uppercase">
-              <BookOpen size={28} className="text-retro-brick" strokeWidth={2} />
-              Bách khoa <span className="text-retro-brick underline decoration-double underline-offset-4">Wiki</span>
+          <div className="space-y-1">
+            <h1 className="text-xl font-black text-foreground tracking-tight flex items-center gap-3">
+              <BookOpen size={24} className="text-primary" />
+              Wiki <span className="text-primary">ERP</span>
             </h1>
-            <p className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] leading-relaxed opacity-60 italic">Sổ tay Nghị thảo & Vận hành PAV — 1984</p>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">Trung tâm Hướng dẫn & Vận hành</p>
           </div>
 
           <div className="relative group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/20 group-focus-within:text-retro-brick transition-all" size={20} strokeWidth={1.5} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-all" size={16} />
             <input 
               type="text"
-              placeholder="Tra cứu chức danh/ngữ nghĩa..."
+              placeholder="Tìm kiếm hướng dẫn..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-16 pr-6 py-4 bg-retro-paper/20 border-2 border-retro-sepia/10 text-xs font-black uppercase text-retro-sepia outline-none focus:border-retro-sepia transition-all shadow-inner placeholder:italic placeholder:font-normal placeholder:lowercase tracking-tight"
+              className="form-input pl-10 h-10 !bg-white !text-sm"
             />
           </div>
 
-          <nav className="space-y-10">
-            <div className="space-y-3">
-               <p className="px-4 text-[10px] font-black text-retro-earth/30 uppercase tracking-[0.3em] mb-6 italic underline decoration-retro-mustard/20 underline-offset-4">Mục lục Chương hồi</p>
+          <nav className="space-y-6">
+            <div className="space-y-1">
+               <p className="px-2 text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-4 opacity-40">Danh mục tài liệu</p>
                {filteredGuides.map(guide => (
                  <button
                   key={guide.id}
                   onClick={() => setActiveGuideId(guide.id)}
                   className={cn(
-                    "w-full flex items-center justify-between px-6 py-4 transition-all text-[11px] font-black uppercase tracking-widest border-2 group italic relative overflow-hidden",
+                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-xs font-bold text-left",
                     activeGuideId === guide.id 
-                    ? 'bg-retro-sepia text-retro-paper border-retro-sepia shadow-xl translate-x-2' 
-                    : 'bg-white text-retro-earth hover:bg-retro-paper/50 hover:text-retro-sepia border-retro-sepia/5'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+                    : 'text-muted-foreground hover:bg-white hover:text-primary border border-transparent'
                   )}
                  >
-                   <div className="flex items-center gap-4 relative z-10">
-                     <span className={cn(
-                       "w-2 h-2 rotate-45 transition-all duration-500",
-                       activeGuideId === guide.id ? 'bg-retro-mustard animate-pulse' : 'bg-retro-sepia/10 group-hover:bg-retro-sepia/40'
-                     )} />
-                     {guide.title}
+                   <div className="flex items-center gap-3">
+                     <Book size={14} className={activeGuideId === guide.id ? 'opacity-100' : 'opacity-40'} />
+                     <span className="truncate">{guide.title}</span>
                    </div>
-                   {activeGuideId === guide.id && <ChevronRight size={16} strokeWidth={2.5} className="text-retro-mustard animate-in slide-in-from-left-2" />}
-                   
-                   {/* Layout décor for active state */}
-                   {activeGuideId === guide.id && (
-                     <div className="absolute top-0 left-0 w-1 h-full bg-retro-mustard" />
-                   )}
+                   {activeGuideId === guide.id && <ChevronRight size={14} className="shrink-0" />}
                  </button>
                ))}
             </div>
             
-            <div className="pt-10 border-t-2 border-retro-sepia/5 space-y-8">
-               <p className="px-4 text-[10px] font-black text-retro-earth/30 uppercase tracking-[0.3em] italic flex items-center gap-3">
-                 <Newspaper size={16} strokeWidth={2} /> Cập nhật Sắc lệnh
-               </p>
-               <div className="space-y-4">
+            <div className="pt-6 border-t border-border space-y-6">
+               <p className="px-2 text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">Bản tin cập nhật</p>
+               <div className="space-y-3">
                  {NEWS_UPDATES.map((news, idx) => (
-                   <div key={idx} className="p-6 bg-retro-paper/20 border-2 border-retro-sepia/5 space-y-3 group cursor-pointer hover:bg-white hover:border-retro-sepia/10 hover:shadow-xl transition-all rotate-1 hover:rotate-0">
+                   <div key={idx} className="p-4 bg-white border border-border rounded-xl space-y-2 group cursor-pointer hover:border-primary/50 transition-all shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-black text-retro-brick uppercase tracking-widest italic opacity-80 decoration-retro-brick/20 underline">[{news.category}]</span>
-                        <span className="text-[9px] text-retro-earth/40 font-black tabular-nums">{news.date}</span>
+                        <span className="text-[8px] font-bold text-primary uppercase tracking-widest px-1.5 py-0.5 bg-blue-50 rounded">{news.category}</span>
+                        <span className="text-[8px] text-muted-foreground font-bold">{news.date}</span>
                       </div>
-                      <p className="text-[11px] font-black text-retro-sepia uppercase leading-relaxed group-hover:text-retro-brick transition-colors italic group-hover:underline">{news.title}</p>
+                      <p className="text-[11px] font-bold text-foreground leading-snug group-hover:text-primary transition-colors">{news.title}</p>
                    </div>
                  ))}
                </div>
             </div>
           </nav>
-          
-          <div className="py-10 text-center border-t-2 border-retro-sepia/5 opacity-40">
-             <Hexagon size={48} strokeWidth={0.5} className="mx-auto text-retro-sepia rotate-12" />
-          </div>
         </div>
       </aside>
 
-      {/* Main Content Area - THE MANUSCRIPT */}
-      <main className="flex-1 overflow-y-auto bg-retro-paper/40 relative scrollbar-hide">
-        {/* Layout Background Decor */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#3E2723 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-        
-        <div className="max-w-4xl mx-auto p-10 lg:p-24 space-y-20 relative z-10">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto bg-white relative">
+        <div className="max-w-4xl mx-auto p-6 lg:p-16 space-y-12">
           {/* Active Guide View */}
-          <div className="space-y-20 animate-in fade-in slide-in-from-right-8 duration-700">
-             <header className="space-y-8 border-b-2 border-retro-sepia/10 pb-16 relative">
-                <div className="absolute -top-10 -right-10 p-20 opacity-[0.02] pointer-events-none overflow-hidden">
-                   <HelpCircle size={400} strokeWidth={0.5} className="text-retro-sepia" />
-                </div>
-                
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 relative z-10">
-                  <span className="px-6 py-2 bg-retro-sepia text-retro-paper text-[10px] font-black uppercase tracking-[0.2em] shadow-xl rotate-1 italic">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+             <header className="space-y-6 border-b border-border pb-10">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <span className="px-3 py-1 bg-gray-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest">
                     {activeGuide.role}
                   </span>
-                  <div className="flex items-center gap-3 text-[10px] text-retro-earth/40 font-black uppercase tracking-widest italic">
-                    <Clock size={14} strokeWidth={2} className="text-retro-mustard" /> 
-                    Ghi chép sau cùng: {activeGuide.lastUpdated}
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+                    <Clock size={12} className="text-primary" /> 
+                    Cập nhật mới nhất: {activeGuide.lastUpdated}
                   </div>
                 </div>
                 
-                <h2 className="text-4xl md:text-5xl font-black text-retro-sepia tracking-tighter uppercase italic leading-tight underline decoration-retro-brick/10 underline-offset-8 decoration-8">{activeGuide.title}</h2>
-                <p className="text-lg text-retro-earth font-bold leading-relaxed max-w-2xl font-handwriting italic opacity-80 border-l-4 border-retro-mustard/30 pl-8 bg-white/30 p-6 shadow-sm">
-                  "{activeGuide.description}"
-                </p>
+                <h2 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-tight">
+                   {activeGuide.title}
+                </h2>
+                <div className="p-5 bg-blue-50/50 border-l-4 border-primary rounded-r-xl">
+                   <p className="text-sm font-medium text-blue-900 leading-relaxed italic">
+                     "{activeGuide.description}"
+                   </p>
+                </div>
              </header>
 
-             {/* Steps Grid */}
-             <div className="space-y-16">
-                <h3 className="text-[11px] font-black text-retro-earth uppercase tracking-[0.4em] border-b-2 border-dashed border-retro-sepia/20 pb-6 italic opacity-40">Diễn trình Vận hành</h3>
-                <div className="grid gap-12">
+             {/* Steps Section */}
+             <div className="space-y-12 mt-12">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                   <Info size={18} />
+                   <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Quy trình thực hiện</h3>
+                </div>
+
+                <div className="grid gap-8">
                    {activeGuide.steps.map((step, idx) => (
-                    <div key={idx} className="group bg-white border-2 border-retro-sepia/10 p-12 lg:p-16 hover:shadow-2xl hover:border-retro-sepia/20 transition-all duration-500 space-y-12 overflow-hidden relative shadow-lg">
-                       <div className="washi-tape-top" />
-                       <div className="absolute top-0 right-0 p-16 text-9xl font-black text-retro-sepia/5 select-none pointer-events-none italic tabular-nums -rotate-3 group-hover:scale-110 transition-transform duration-700">
+                    <div key={idx} className="group bg-white border border-border rounded-2xl p-6 lg:p-10 hover:shadow-xl hover:border-primary/20 transition-all duration-500 space-y-8 relative overflow-hidden shadow-sm">
+                       <div className="absolute top-0 right-0 p-8 text-7xl font-black text-primary/5 select-none pointer-events-none group-hover:scale-110 transition-transform duration-700 uppercase tracking-tighter">
                          {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
                        </div>
                        
-                       <div className="max-w-2xl space-y-8 relative z-10">
-                          <div className="space-y-3">
-                            <span className="text-[10px] font-black text-retro-brick uppercase tracking-[0.3em] italic border-b-2 border-retro-brick/20 pb-1">Công thu thứ {idx + 1}</span>
-                            <h4 className="text-3xl font-black text-retro-sepia tracking-tighter uppercase italic underline decoration-retro-mustard/20 underline-offset-4">{step.title}</h4>
+                       <div className="max-w-2xl space-y-4 relative z-10">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">Bước {idx + 1}</span>
+                            <h4 className="text-xl font-bold text-foreground tracking-tight">{step.title}</h4>
                           </div>
-                          <p className="text-base text-retro-earth leading-relaxed font-bold italic opacity-70 group-hover:opacity-100 transition-opacity">{step.description}</p>
+                          <p className="text-sm text-foreground/70 leading-relaxed font-medium">{step.description}</p>
                           
                           {step.proTip && (
-                            <div className="flex gap-6 p-8 bg-retro-paper border-2 border-retro-mustard/20 shadow-inner relative group/tip overflow-hidden">
-                              <div className="absolute -bottom-4 -right-4 opacity-10 group-hover/tip:opacity-20 transition-all">
-                                <Lightbulb size={100} strokeWidth={1} className="text-retro-mustard" />
+                            <div className="flex gap-4 p-5 bg-emerald-50 border border-emerald-100 rounded-xl relative group/tip overflow-hidden">
+                              <div className="w-10 h-10 bg-emerald-500 text-white rounded-lg flex items-center justify-center shrink-0 shadow-sm">
+                                <Lightbulb size={20} />
                               </div>
-                              <div className="w-12 h-12 bg-retro-mustard text-white flex items-center justify-center shadow-xl rotate-12 group-hover/tip:rotate-0 transition-transform shrink-0">
-                                <Lightbulb size={24} strokeWidth={2.5} />
-                              </div>
-                              <div className="space-y-3 pt-1">
-                                <span className="font-black uppercase tracking-[0.2em] text-[10px] text-retro-earth/60 italic block">Mẹo vận hành Chuyên thủ:</span>
-                                <p className="text-sm text-retro-sepia font-black italic leading-relaxed uppercase tracking-tight">
+                              <div className="space-y-1">
+                                <span className="font-bold uppercase tracking-widest text-[9px] text-emerald-700 block">Mẹo chuyên gia:</span>
+                                <p className="text-[13px] text-emerald-900 font-bold leading-relaxed">
                                   {step.proTip}
                                 </p>
                               </div>
@@ -201,18 +187,14 @@ function GuideContent() {
                           )}
                        </div>
 
-                       {/* Mock Image Placeholder */}
-                       <div className="aspect-video bg-retro-paper/20 border-2 border-retro-sepia/10 flex items-center justify-center text-retro-earth/30 group-hover:scale-[1.01] transition-transform duration-700 shadow-inner group-hover:bg-white overflow-hidden relative grayscale group-hover:grayscale-0">
-                          <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#3E2723 1px, transparent 1px), linear-gradient(90deg, #3E2723 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-                          <div className="flex flex-col items-center gap-4 relative z-10">
-                             <div className="w-20 h-20 bg-white border-2 border-retro-sepia/10 flex items-center justify-center shadow-[4px_4px_0px_#3E272311] rotate-6 group-hover:rotate-0 transition-all">
-                               <ExternalLink size={28} className="text-retro-sepia/40" strokeWidth={1.5} />
+                       {/* Image Placeholder */}
+                       <div className="aspect-video bg-gray-50 border border-border rounded-xl flex items-center justify-center text-muted-foreground/30 transition-all duration-700 shadow-inner overflow-hidden relative group-hover:bg-white">
+                          <div className="flex flex-col items-center gap-3 relative z-10">
+                             <div className="w-12 h-12 bg-white border border-border rounded-xl flex items-center justify-center shadow-sm">
+                               <ExternalLink size={20} className="text-muted-foreground/40" />
                              </div>
-                             <p className="text-[11px] font-black uppercase tracking-[0.2em] italic opacity-60">Thụy đồ chức năng đang thụ pháp...</p>
+                             <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Xem hình ảnh minh họa</p>
                           </div>
-                          {/* Layout décor */}
-                          <div className="absolute inset-0 bg-gradient-to-tr from-retro-brick/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <div className="washi-tape-top opacity-20" />
                        </div>
                     </div>
                   ))}
@@ -220,30 +202,26 @@ function GuideContent() {
              </div>
 
              {/* FAQ Section */}
-             <div className="space-y-16 pt-20 border-t-4 border-double border-retro-sepia/10">
-                <div className="flex items-center gap-6">
-                  <h3 className="text-[11px] font-black text-retro-brick uppercase tracking-[0.4em] whitespace-nowrap italic underline underline-offset-8">Vấn nghi Thường gặp</h3>
-                  <div className="h-[2px] bg-retro-sepia/10 w-full" />
+             <div className="space-y-10 pt-16 border-t border-border mt-16 pb-20">
+                <div className="flex items-center gap-4">
+                   <h3 className="text-[10px] font-black text-foreground uppercase tracking-[0.2em] whitespace-nowrap">Câu hỏi thường gặp</h3>
+                   <div className="h-px bg-border w-full" />
                 </div>
-                <div className="grid lg:grid-cols-2 gap-10">
+                <div className="grid lg:grid-cols-2 gap-6">
                    {activeGuide.faqs.map((faq, idx) => (
-                     <div key={idx} className="p-10 bg-white border-2 border-retro-sepia/10 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all space-y-6 group relative overflow-hidden rotate-1 hover:rotate-0">
-                        <div className="absolute -top-4 -right-4 w-12 h-12 bg-retro-paper opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rotate-45 border-2 border-retro-sepia/10">
-                           <Bookmark size={20} className="text-retro-mustard" strokeWidth={2.5} />
+                     <div key={idx} className="p-6 bg-gray-50 border border-border rounded-2xl hover:shadow-lg hover:border-primary/20 transition-all space-y-4 group">
+                        <div className="flex gap-4">
+                          <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center shrink-0 mt-0.5">
+                             <MessageSquare size={16} />
+                          </div>
+                          <h5 className="font-bold text-foreground text-sm leading-snug">{faq.question}</h5>
                         </div>
-                        <div className="flex gap-5">
-                          <MessageSquare size={20} className="text-retro-brick shrink-0 mt-1" strokeWidth={2.5} />
-                          <h5 className="font-black text-retro-sepia text-[15px] leading-snug italic uppercase underline decoration-retro-mustard/20 decoration-dashed underline-offset-4">{faq.question}</h5>
-                        </div>
-                        <p className="text-xs text-retro-earth leading-relaxed font-bold italic opacity-60 pl-10 border-l-2 border-retro-sepia/5">{faq.answer}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed font-medium pl-12">
+                           {faq.answer}
+                        </p>
                      </div>
                    ))}
                 </div>
-             </div>
-
-             <div className="flex flex-col items-center py-20 opacity-20 italic">
-                <div className="w-16 h-[2px] bg-retro-sepia mb-8" />
-                <p className="text-[10px] font-black text-retro-earth uppercase tracking-[0.6em]">Hoàn chương</p>
              </div>
           </div>
         </div>
@@ -255,9 +233,9 @@ function GuideContent() {
 export default function GuidePage() {
   return (
     <Suspense fallback={
-       <div className="min-h-screen bg-retro-paper flex flex-col items-center justify-center font-typewriter italic gap-8 p-20 text-center">
-          <div className="w-16 h-16 border-4 border-retro-sepia/10 border-t-retro-brick animate-spin" />
-          <p className="text-[11px] font-black text-retro-earth uppercase tracking-[0.4em] animate-pulse">Đang rà soát Bách khoa Toàn thư...</p>
+       <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4 p-20 text-center">
+          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest animate-pulse">Đang nạp dữ liệu Wiki...</p>
        </div>
     }>
       <GuideContent />

@@ -1,123 +1,148 @@
 @import "tailwindcss";
 
 :root {
-  --foreground-rgb: 62, 39, 35; /* Dark Sepia text */
-  --background-paper: 242, 235, 217; /* #F2EBD9 */
-  --retro-brown: 62, 39, 35;
-  --retro-earth: 141, 110, 99;
-  --retro-moss: 85, 107, 47;
-  --retro-brick: 178, 34, 34;
-  --retro-mustard: 218, 165, 32;
+  --background: #f8fafc; /* Slate 50 - Modern SaaS Background */
+  --foreground: #0f172a; /* Slate 900 - High contrast text */
+  --muted-text: #475569; /* Slate 600 - Muted content */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #3b82f6; /* Vibrant Blue (SaaS standard) */
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9; /* Slate 100 */
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b; /* Slate 500 */
+  --accent: #eff6ff; /* Blue 50 */
+  --accent-foreground: #3b82f6;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0; /* Slate 200 */
+  --input: #e2e8f0;
+  --ring: #3b82f6;
+  --radius: 16px; /* Bo góc 16px - Standard SaaS Modern */
 }
 
 @theme {
-  --color-retro-paper: #F2EBD9;
-  --color-retro-sepia: #3E2723;
-  --color-retro-earth: #8D6E63;
-  --color-retro-moss: #556B2F;
-  --color-retro-brick: #B22222;
-  --color-retro-mustard: #DAA520;
-  --color-retro-beige: #D7CCC8;
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted-text: var(--muted-text);
 
-  --font-typewriter: "Special Elite", "Courier Prime", Courier, monospace;
-  --font-handwriting: "Architects Daughter", cursive;
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --radius-2xl: var(--radius);
+  --radius-xl: calc(var(--radius) - 4px);
+  --radius-lg: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 10px);
 }
 
-body {
-  color: #3E2723;
-  background-color: #F2EBD9;
-  background-image: url("https://www.transparenttextures.com/patterns/parched-paper.png");
-  min-height: 100vh;
-}
-
-@layer utilities {
-  .torn-paper-bottom {
-    position: relative;
-    padding-bottom: 20px;
+@layer base {
+  * {
+    @apply border-border;
   }
-  
-  .torn-paper-bottom::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 15px;
-    background: linear-gradient(135deg, transparent 75%, #F2EBD9 75%),
-                linear-gradient(225deg, transparent 75%, #F2EBD9 75%);
-    background-size: 15px 30px;
-    background-repeat: repeat-x;
+  body {
+    @apply bg-background text-muted-text antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
-
-  .torn-paper-top {
-     position: relative;
-  }
-
-  .torn-paper-top::before {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: 0;
-    right: 0;
-    height: 15px;
-    background: linear-gradient(-135deg, transparent 75%, #F2EBD9 75%),
-                linear-gradient(-225deg, transparent 75%, #F2EBD9 75%);
-    background-size: 15px 30px;
-    background-size: 15px 15px;
-    background-repeat: repeat-x;
-    transform: rotate(180deg);
-  }
-
-  .polaroid-shimmer {
-    background: linear-gradient(to bottom, #ffffff 0%, #f5f5f5 100%);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
-  }
-
-  .paper-clip {
-    position: relative;
-  }
-
-  .paper-clip::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    right: 20px;
-    width: 25px;
-    height: 40px;
-    background: rgba(200, 200, 200, 0.5);
-    border: 2px solid #ccc;
-    border-radius: 8px;
-    z-index: 20;
-    transform: rotate(15deg);
-  }
-
-  .washi-tape-top {
-    position: relative;
-  }
-
-  .washi-tape-top::before {
-    content: '';
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%) rotate(-2deg);
-    width: 80px;
-    height: 24px;
-    background-color: rgba(218, 165, 32, 0.4);
-    opacity: 0.7;
-    z-index: 10;
-    box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-foreground font-semibold tracking-tight;
   }
 }
 
 @layer components {
-  .retro-card {
-    @apply bg-white border border-retro-earth/20 p-6 shadow-lg transition-all transform hover:-translate-y-1 hover:rotate-1;
-    position: relative;
+  .card {
+    @apply bg-card text-card-foreground rounded-2xl border-none shadow-xl shadow-slate-200/40 p-8 transition-all hover:shadow-2xl hover:shadow-slate-200/60;
   }
   
-  .retro-btn {
-    @apply inline-flex items-center justify-center px-6 py-3 uppercase tracking-widest text-xs border-2 border-retro-sepia bg-transparent hover:bg-retro-sepia hover:text-white transition-all active:scale-95;
-    font-family: var(--font-typewriter);
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-2xl text-sm font-bold transition-all focus:ring-4 focus:ring-primary/10 disabled:opacity-50 bg-primary text-primary-foreground hover:bg-blue-600 h-12 px-8 shadow-lg shadow-blue-500/20 active:scale-95;
   }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-2xl text-sm font-bold transition-all focus:ring-4 focus:ring-secondary/20 disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-slate-200 h-12 px-8 active:scale-95;
+  }
+
+  .form-input {
+    @apply w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm text-foreground outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-400;
+  }
+
+  /* Status Badges - Muted & Minimal */
+  .badge-success {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100;
+  }
+
+  .badge-error {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-100;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100;
+  }
+
+  /* Table Cell standard */
+  .table-cell-padding {
+    @apply px-6 py-5;
+  }
+}
+
+/* Modern Minimalist Table */
+table {
+  @apply w-full border-collapse text-left text-sm bg-white rounded-2xl overflow-hidden shadow-sm mt-4;
+}
+
+thead th {
+  @apply bg-slate-50 border-b border-slate-100 px-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[10px];
+}
+
+tbody td {
+  @apply border-b border-slate-50 px-6 py-5 text-muted-text transition-colors;
+}
+
+tbody tr:last-child td {
+  @apply border-b-0;
+}
+
+tbody tr:hover {
+  @apply bg-slate-50/50;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200/50 rounded-full hover:bg-slate-300 transition-colors;
+}
+
+/* Eliminated legacy classes */
+.glass-panel, .retro-paper, .liquid-bg, .glass-card, .bento-container, .washi-tape-top, .paper-clip {
+  display: none !important;
 }

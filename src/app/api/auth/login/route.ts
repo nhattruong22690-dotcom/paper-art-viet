@@ -13,8 +13,8 @@ export async function POST(req: Request) {
     const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('email', email)
-      .eq('password', password)
+      .eq('account', email)
+      .eq('password_hash', password)
       .single();
 
     if (error || !user) {
@@ -28,9 +28,9 @@ export async function POST(req: Request) {
     // Create a simple session cookie
     const sessionData = {
       id: user.id,
-      email: user.email,
+      email: user.account || user.email, 
       role: user.role,
-      name: user.name || user.email.split('@')[0]
+      name: user.name || (user.account || user.email || 'Admin').split('@')[0]
     };
 
     // Store session as a base64 encoded string for simplicity in the middleware

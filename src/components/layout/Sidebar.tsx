@@ -14,9 +14,9 @@ import {
   HelpCircle,
   Settings,
   LogOut,
-  X,
   Package,
-  FileText
+  ChevronRight,
+  UserCircle
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { clsx, type ClassValue } from 'clsx';
@@ -39,54 +39,53 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   {
-    name: 'Quản lý Kinh doanh', href: '/orders', icon: Users, roles: ['Admin', 'Sales'], children: [
+    name: 'Kinh doanh', href: '/orders', icon: Users, roles: ['Admin', 'Sales'], children: [
       { name: 'Khách hàng', href: '/customers' },
-      { name: 'Danh sách đơn hàng', href: '/orders' },
+      { name: 'Đơn hàng', href: '/orders' },
     ]
   },
   {
-    name: 'Quản lý Sản xuất', href: '/production', icon: ClipboardCheck, roles: ['Admin', 'Production'], children: [
-      { name: 'Danh mục Sản phẩm', href: '/production/products' },
+    name: 'Sản xuất', href: '/production', icon: ClipboardCheck, roles: ['Admin', 'Production'], children: [
+      { name: 'Sản phẩm', href: '/production/products' },
       { name: 'Lệnh sản xuất', href: '/production' },
-      { name: 'Gia công ngoài', href: '/outsourcing' },
-      { name: 'Báo cáo Tổ đội', href: '/production/team-log' },
-      { name: 'Logs XS', href: '/production/work-log' },
+      { name: 'Gia công', href: '/outsourcing' },
+      { name: 'Báo cáo tổ', href: '/production/team-log' },
+      { name: 'Nhật ký XS', href: '/production/work-log' },
     ]
   },
   {
-    name: 'Danh mục & Vật tư', href: '/production/products', icon: Package, roles: ['Admin', 'Warehouse', 'Production'], children: [
-      { name: 'Danh mục SP', href: '/production/products' },
+    name: 'Vật tư', href: '/production/products', icon: Package, roles: ['Admin', 'Warehouse', 'Production'], children: [
       { name: 'Vật tư NVL', href: '/logistics/materials' },
     ]
   },
   {
-    name: 'Điều phối kho vận', href: '/logistics/inventory', icon: Archive, roles: ['Admin', 'Warehouse'], children: [
-      { name: 'Đơn mua hàng', href: '/logistics/purchase' },
-      { name: 'Tồn kho thực tế', href: '/logistics/inventory' },
+    name: 'Kho vận', href: '/logistics/inventory', icon: Archive, roles: ['Admin', 'Warehouse'], children: [
+      { name: 'Mua hàng', href: '/logistics/purchase' },
+      { name: 'Tồn kho', href: '/logistics/inventory' },
       { name: 'Nhập kho', href: '/logistics/inward' },
       { name: 'Đóng gói', href: '/logistics/packing' },
     ]
   },
   {
-    name: 'Quản trị Nhân sự', href: '/hr/employees', icon: Users, roles: ['Admin', 'Supervisor', 'User'], children: [
-      { name: 'Chi tiết nhân viên', href: '/hr/employees' },
-      { name: 'Hiệu suất (KPI)', href: '/production/performance' },
-      { name: 'Quản trị tài khoản', href: '/hr/users' },
+    name: 'Nhân sự', href: '/hr/employees', icon: UserCircle, roles: ['Admin', 'Supervisor', 'User'], children: [
+      { name: 'Nhân viên', href: '/hr/employees' },
+      { name: 'KPI', href: '/production/performance' },
+      { name: 'Tài khoản', href: '/hr/users' },
     ]
   },
   {
-    name: 'Cài đặt hệ thống', href: '/settings', icon: Settings, roles: ['Admin'], children: [
-      { name: 'Cấu hình chung', href: '/settings' },
+    name: 'Cài đặt', href: '/settings', icon: Settings, roles: ['Admin'], children: [
+      { name: 'Cấu hình', href: '/settings' },
     ]
   },
-  { name: 'Hướng dẫn sử dụng', href: '/guide', icon: HelpCircle },
+  { name: 'Hướng dẫn', href: '/guide', icon: HelpCircle },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { profile, signOut } = useAuth();
   const [openMenus, setOpenMenus] = useState<string[]>([]);
-  
+
   const currentRole = (profile?.role as Role) || 'User';
 
   useEffect(() => {
@@ -106,148 +105,121 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex fixed lg:sticky top-0 left-0 h-screen w-80 bg-retro-paper border-r border-retro-sepia/10 flex-col z-[101] overflow-y-auto shadow-2xl">
-      <div className="p-8 pb-32 lg:pb-8">
-        {/* Header (Simplified for Desktop Only) */}
-        <div className="flex items-center justify-between gap-3 mb-10 px-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-retro-sepia rounded-full flex items-center justify-center text-retro-mustard shadow-xl ring-2 ring-retro-mustard/20 shrink-0">
-              <Box size={24} strokeWidth={1.5} />
+    <aside className="hidden lg:flex fixed lg:sticky top-0 left-0 h-screen w-72 bg-slate-50 border-r border-slate-200 flex-col z-[101] overflow-y-auto font-sans">
+      <div className="flex flex-col h-full">
+        {/* Brand Header */}
+        <div className="p-8">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary/20">
+              <Box size={24} strokeWidth={2} />
             </div>
-            <span className="font-typewriter font-black text-xl tracking-tighter text-retro-sepia uppercase">
-              Paper Art <span className="text-retro-brick underline decoration-double underline-offset-4">ERP</span>
-            </span>
-          </div>
+            <div className="flex flex-col">
+              <span className="font-black text-xl tracking-tighter text-slate-900 leading-none">
+                PAPER ART
+              </span>
+              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mt-1">
+                ERP SYSTEM
+              </span>
+            </div>
+          </Link>
         </div>
 
-        <nav className="space-y-4">
+        <nav className="flex-1 px-4 space-y-1">
           {navigation.map((item) => {
             const hasChildren = !!item.children;
             const isOpenMenu = openMenus.includes(item.name);
             const isActive = pathname === item.href || item.children?.some(c => pathname === c.href);
-            
+
             return (
-              <div key={item.name} className="space-y-2">
+              <div key={item.name} className="space-y-1">
                 {hasChildren ? (
-                  <div className="relative group">
+                  <div>
                     <button
                       onClick={(e) => toggleMenu(e, item.name)}
                       className={cn(
-                        "w-full flex items-center justify-between px-4 py-3 border-b-2 transition-all min-h-[48px]",
-                        isActive 
-                          ? "text-retro-brick border-retro-brick bg-retro-paper" 
-                          : "text-retro-sepia border-transparent hover:border-retro-sepia/20 hover:bg-white/30"
+                        "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all",
+                        isActive ? "text-primary bg-white shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
                       )}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 text-sm font-bold">
                         <item.icon
-                          size={18}
-                          strokeWidth={isActive ? 2 : 1.2}
-                          className={cn(
-                            "flex-shrink-0",
-                            isActive ? "text-retro-brick" : "text-retro-sepia/60 group-hover:text-retro-sepia"
-                          )}
+                          size={20}
+                          className={cn(isActive ? "text-primary" : "text-slate-400 opacity-70")}
+                          strokeWidth={isActive ? 2.5 : 2}
                         />
-                        <span className="font-typewriter uppercase tracking-tighter text-xs font-black">
-                          {item.name}
-                        </span>
+                        <span>{item.name}</span>
                       </div>
                       <ChevronDown
                         size={14}
                         className={cn(
-                          "transition-transform duration-300",
-                          isOpenMenu ? "rotate-180 text-retro-brick" : "text-retro-sepia/40"
+                          "transition-transform duration-300 opacity-40",
+                          isOpenMenu ? "rotate-180" : ""
                         )}
                       />
                     </button>
-                    
+
+                    {isOpenMenu && (
+                      <div className="mt-1 ml-6 pl-4 border-l-2 border-slate-200 space-y-1">
+                        {item.children?.map((child) => (
+                          <Link
+                            key={child.name}
+                            href={child.href}
+                            className={cn(
+                              "flex items-center justify-between px-3 py-2.5 text-xs font-bold rounded-xl transition-all",
+                              pathname === child.href ? "text-primary bg-blue-50" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"
+                            )}
+                          >
+                            {child.name}
+                            {pathname === child.href && <ChevronRight size={12} />}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <Link
                     href={item.href!}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 transition-all min-h-[48px] border-b-2",
-                      pathname === item.href
-                        ? "bg-retro-sepia text-retro-mustard border-retro-mustard shadow-inner"
-                        : "text-retro-sepia border-transparent hover:border-retro-sepia/20 hover:bg-white/30"
+                      "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all",
+                      pathname === item.href ? "text-primary bg-white shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
                     )}
                   >
                     <item.icon
-                      size={18}
-                      strokeWidth={pathname === item.href ? 2 : 1.2}
-                      className={cn(
-                        "flex-shrink-0",
-                        pathname === item.href ? "text-retro-mustard" : "text-retro-sepia/60 group-hover:text-retro-sepia"
-                      )}
+                      size={20}
+                      className={cn(pathname === item.href ? "text-primary" : "text-slate-400 opacity-70")}
+                      strokeWidth={pathname === item.href ? 2.5 : 2}
                     />
-                    <span className="font-typewriter uppercase tracking-tighter text-xs font-black">
-                      {item.name}
-                    </span>
+                    <span>{item.name}</span>
                   </Link>
                 )}
-
-                {/* Sub-menu with handwritten style */}
-                <div className={cn(
-                  "overflow-hidden transition-all duration-300 ease-in-out pl-8 space-y-1",
-                  hasChildren && isOpenMenu ? "max-h-[800px] py-2 opacity-100" : "max-h-0 py-0 opacity-0"
-                )}>
-                  {item.children?.map((child) => {
-                    const isChildActive = pathname === child.href;
-                    return (
-                      <Link
-                        key={child.name}
-                        href={child.href}
-                        className={cn(
-                          "flex items-center gap-3 px-4 py-2 text-[11px] font-handwriting transition-all min-h-[36px]",
-                          isChildActive
-                            ? "text-retro-brick border-l-2 border-retro-brick translate-x-1"
-                            : "text-retro-earth hover:text-retro-sepia hover:translate-x-1"
-                        )}
-                      >
-                         <Circle
-                          size={4}
-                          className={cn(
-                            "flex-shrink-0 fill-current",
-                            isChildActive ? "text-retro-brick" : "text-retro-earth/30"
-                          )}
-                        />
-                        <span>{child.name}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
               </div>
             );
           })}
         </nav>
-      </div>
 
-      <div className="mt-auto p-8 border-t border-retro-sepia/10 bg-retro-paper sticky bottom-0">
-        <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-retro-beige border-2 border-retro-sepia/20 flex items-center justify-center text-retro-sepia font-typewriter text-xs shadow-inner shrink-0 overflow-hidden">
-               {profile?.name?.substring(0, 2).toUpperCase() || 'PA'}
+        {/* User Profile Info */}
+        <div className="p-6 border-t border-slate-200 mt-auto bg-white/50">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-primary font-black shrink-0 shadow-inner">
+              {profile?.name?.substring(0, 2).toUpperCase() || 'PA'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-typewriter text-xs font-black text-retro-sepia truncate uppercase tracking-tighter leading-none">
-                {profile?.name || 'User'}
+              <p className="text-sm font-black text-slate-900 truncate tracking-tight">
+                {profile?.name || 'User Account'}
               </p>
-              <p className="font-handwriting text-xs text-retro-earth truncate mt-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
                 {currentRole}
               </p>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => signOut()}
-            className="retro-btn w-full bg-retro-sepia text-retro-mustard border-none shadow-md hover:bg-retro-brick hover:text-white"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-slate-900/10 active:scale-95"
           >
-             <LogOut size={14} className="mr-2" />
-             Rời trạm
+            <LogOut size={16} />
+            Đăng xuất
           </button>
-        </div>
-        <div className="mt-6 text-center">
-           <p className="font-handwriting text-[10px] text-retro-earth/60 italic">© 2026 Paper Art Việt</p>
         </div>
       </div>
     </aside>

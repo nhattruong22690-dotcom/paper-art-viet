@@ -8,7 +8,7 @@ export async function getEmployees() {
     .from('Employees')
     .select(`
       *,
-      users(id, email, role, is_active)
+      users(id, account, role, is_active)
     `)
     .order('full_name', { ascending: true });
 
@@ -41,7 +41,7 @@ export async function getEmployeeById(id: string) {
     .from('Employees')
     .select(`
       *,
-      users(id, email, role, is_active)
+      users(id, account, role, is_active)
     `)
     .eq('id', id)
     .single();
@@ -207,19 +207,48 @@ export async function getJobHistory(employeeId: string) {
 /**
  * Quản lý tài khoản (users).
  */
+/**
+ * Quản lý tài khoản (users).
+ * Phiên bản mới hỗ trợ đồng bộ Auth và sử dụng cột 'account'.
+ */
 export async function grantUserAccount(employeeId: string, email: string, role: string) {
+  // 1. Tạo tài khoản đăng nhập trong Supabase Auth (Nếu chưa có)
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email: email,
+    password: 'PaperArt@2025', // Mật khẩu tạm thời
+    email_confirm: true,
+    user_metadata: { employee_id: employeeId },
+    app_metadata: { role: role.toLowerCase(), permissions: {} }
+  });
+
+  // Nếu lỗi do User đã tồn tại cũng không sao, chúng ta sẽ lấy ID cũ
+  let userId = authData?.user?.id;
+  if (authError) {
+    console.warn('Auth user might already exist or error:', authError.message);
+    // Thử tìm user xem có không để lấy ID
+    const { data: usersFound } = await supabase.auth.admin.listUsers();
+    const existing = usersFound?.users.find(u => u.email === email);
+    if (existing) userId = existing.id;
+    else throw authError;
+  }
+
+  // 2. Chèn vào bảng public.users (Đã đổi tên sang account)
   const { data, error } = await supabase
     .from('users')
-    .insert({
+    .upsert({
+      id: userId, // Dùng đúng ID từ Auth
       employee_id: employeeId,
-      email: email,
-      role: role,
+      account: email, // Cột đã đổi tên
+      role: role.toLowerCase(),
       is_active: true
-    })
+    }, { onConflict: 'id' })
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Database Error in grantUserAccount:', error.message);
+    throw error;
+  }
   return data;
 }
 

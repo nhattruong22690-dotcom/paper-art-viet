@@ -2,479 +2,261 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  User, 
+  Users, 
+  UserPlus, 
   Search, 
   Filter, 
-  Plus, 
-  Loader2, 
-  Lock, 
-  ShieldCheck, 
-  X, 
-  CreditCard, 
-  MapPin, 
+  Mail, 
   Phone, 
-  Mail,
+  MapPin, 
   MoreVertical,
   ChevronRight,
-  MoveLeft,
-  Pin
+  ShieldCheck,
+  X,
+  CreditCard,
+  Briefcase,
+  Building2,
+  Calendar,
+  Loader2,
+  Trash2,
+  UserCog,
+  ArrowRight
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { getEmployees, deleteEmployee } from '@/services/employee.service';
 import { useNotification } from '@/context/NotificationContext';
-import Link from 'next/link';
+
+interface Employee {
+  id: string;
+  employeeCode: string;
+  name: string;
+  email: string;
+  phone: string;
+  department: string;
+  position: string;
+  status: string;
+  joinDate: string;
+  salaryType: string;
+  baseSalary: number;
+  hasAccount: boolean;
+  account?: any;
+}
 
 export default function EmployeesPage() {
-  const router = useRouter();
   const { showToast } = useNotification();
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  // Add Employee Modal State
+  const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newEmployeeData, setNewEmployeeData] = useState({
-    name: '',
-    employeeCode: '',
-    phone: '',
-    email: '',
-    idCard: '',
-    address: '',
-    department: 'Sản xuất',
-    position: 'Công nhân',
-    joinDate: new Date().toISOString().split('T')[0],
-    salaryType: 'monthly',
-    baseSalary: 0
-  });
-  const [adding, setAdding] = useState(false);
-
-  // Account Granting Modal State
   const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
-  const [selectedEmp, setSelectedEmp] = useState<any>(null);
-  const [grantData, setGrantData] = useState({
-    email: '',
-    role: 'Production'
-  });
-  const [granting, setGranting] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-  const fetchEmployees = async () => {
-    setLoading(true);
+  useEffect(() => {
+    loadEmployees();
+  }, []);
+
+  const loadEmployees = async () => {
     try {
       const res = await fetch('/api/hr/employees');
       const data = await res.json();
-      setEmployees(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load employees:', err);
-      showToast('error', 'Không thể tải danh sách nhân viên');
+      if (data.error) throw new Error(data.error);
+      setEmployees(data);
+    } catch (error: any) {
+      console.error('Failed to load employees:', error);
+      showToast('error', 'Không thể tải danh sách nhân sự');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  const handleAddEmployee = async () => {
-    if (!newEmployeeData.name || !newEmployeeData.employeeCode) {
-      showToast('error', 'Vui lòng điền Tên và Mã nhân viên');
-      return;
-    }
-
-    setAdding(true);
-    try {
-      const res = await fetch('/api/hr/employees', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEmployeeData)
-      });
-      
-      if (res.ok) {
-        showToast('success', 'Đã thêm nhân viên mới');
-        setIsAddModalOpen(false);
-        fetchEmployees();
-      } else {
-        const err = await res.json();
-        showToast('error', err.error || 'Lỗi khi thêm');
-      }
-    } catch (err) {
-      showToast('error', 'Lỗi hệ thống');
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const handleGrantAccount = async () => {
-    if (!grantData.email) return;
-
-    setGranting(true);
-    try {
-      const res = await fetch('/api/hr/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employeeId: selectedEmp.id,
-          email: grantData.email,
-          role: grantData.role
-        })
-      });
-
-      if (res.ok) {
-        showToast('success', 'Đã cấp tài khoản thành công');
-        setIsGrantModalOpen(false);
-        fetchEmployees();
-      } else {
-        const err = await res.json();
-        showToast('error', err.error || 'Cấp tài khoản thất bại');
-      }
-    } catch (err) {
-      showToast('error', 'Lỗi khi cấp tài khoản');
-    } finally {
-      setGranting(false);
-    }
-  };
-
   const filteredEmployees = employees.filter(emp => 
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    emp.employeeCode.toLowerCase().includes(searchTerm.toLowerCase())
+    emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) return;
+    try {
+      const res = await fetch(`/api/hr/employees/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Xóa thất bại');
+      }
+      setEmployees(prev => prev.filter(e => e.id !== id));
+      showToast('success', 'Đã xóa nhân viên thành công');
+    } catch (error: any) {
+      showToast('error', error.message || 'Hành động thất bại');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-slate-400 animate-in fade-in">
+        <Loader2 className="w-12 h-12 animate-spin text-primary opacity-50" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Đang đồng bộ hồ sơ nhân sự...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-32 md:pb-20 px-4 animate-in fade-in duration-700 pt-4">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 text-left relative">
-        <div className="flex items-center gap-6">
-          <Link 
-            href="/mobile-menu/hr"
-            className="lg:hidden w-12 h-14 bg-white border-2 border-retro-sepia flex items-center justify-center text-retro-sepia shadow-md active:scale-95 transition-all relative overflow-hidden group"
-          >
-            <div className="absolute top-0 left-0 w-full h-2 bg-retro-brick/40" />
-            <MoveLeft size={24} strokeWidth={2} className="group-hover:-translate-x-1 transition-transform" />
-          </Link>
-          <div>
-            <nav className="flex items-center gap-2 font-typewriter text-[10px] font-black text-retro-brick uppercase mb-2">
-              <span>PAV ERP</span>
-              <span className="text-retro-sepia/20">/</span>
-              <span className="text-retro-sepia underline underline-offset-4 decoration-dotted">Hồ sơ nhân viên</span>
-            </nav>
-            <h1 className="text-3xl md:text-5xl font-typewriter font-black text-retro-sepia tracking-tighter uppercase italic">
-              Danh sách <span className="text-retro-brick">Nhân viên</span>
-            </h1>
-            <div className="font-handwriting text-[11px] text-retro-earth uppercase tracking-widest mt-2 flex items-center gap-2">
-               <span className="w-8 h-px bg-retro-earth/30" />
-               Personnel Directory & Registry
-            </div>
-          </div>
+    <div className="space-y-8 animate-in fade-in duration-700">
+      
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div>
+          <nav className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+            <Users size={12} />
+            <span>Nhân sự</span>
+            <ChevronRight size={10} />
+            <span className="text-primary italic">Employee Directory</span>
+          </nav>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
+            Danh bạ <span className="text-primary italic">Nhân sự</span>
+          </h1>
+          <p className="text-slate-500 text-sm mt-1 font-medium italic">
+             Quản lý hồ sơ, cấp quyền và theo dõi trạng thái nhân sự toàn hệ thống.
+          </p>
         </div>
+        
         <button 
           onClick={() => setIsAddModalOpen(true)}
-          className="retro-btn w-full md:w-auto bg-retro-sepia text-retro-mustard flex items-center gap-2"
+          className="btn-primary gap-3 shadow-vibrant"
         >
-          <Plus size={18} strokeWidth={2} />
-          Ghi nhận hồ sơ mới
+          <UserPlus size={20} strokeWidth={2.5} />
+          <span>Thêm nhân viên mới</span>
         </button>
-      </header>
+      </div>
 
-      {/* SEARCH/FILTER with Washi Tape Effect */}
-      <div className="flex flex-col md:flex-row gap-4 px-1 md:px-0 relative">
-        <div className="flex-1 relative washi-tape-top shadow-xl">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-retro-sepia/40" size={18} />
+      {/* Filter / Search Bar */}
+      <div className="card !p-5 flex flex-col md:flex-row gap-5 border border-slate-50 shadow-soft">
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
           <input 
             type="text" 
-            placeholder="Tra cứu tên hoặc mã nhân viên..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border-2 border-retro-sepia/10 rounded-none py-4 md:py-6 pl-14 pr-8 text-sm outline-none focus:border-retro-sepia transition-all font-typewriter font-bold uppercase tracking-tight"
+            placeholder="Tìm theo tên, email hoặc phòng ban..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="form-input pl-12 h-12 bg-slate-50/50 border-slate-100 rounded-xl"
           />
         </div>
+        <button className="btn-secondary gap-3 whitespace-nowrap px-8">
+          <Filter size={18} strokeWidth={2.5} /> 
+          <span>Bộ lọc nâng cao</span>
+        </button>
       </div>
 
-      <div className="bg-white border-2 border-retro-sepia/10 shadow-[0_20px_40px_rgba(0,0,0,0.1)] overflow-hidden min-h-[500px] relative">
-        {/* Decorative Paper Clip */}
-        <div className="paper-clip" />
-
-        {loading ? (
-          <div className="py-24 flex flex-col items-center gap-4 text-retro-earth italic">
-             <Loader2 size={40} className="animate-spin text-retro-brick" />
-             <p className="font-typewriter text-[11px] font-black uppercase tracking-widest text-retro-earth">Đang quét hồ sơ...</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            {/* Desktop Table View */}
-            <table className="hidden md:table w-full text-left">
-              <thead>
-                <tr className="bg-retro-paper border-b border-retro-sepia/20">
-                  <th className="p-8 font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest">Họ tên nhân viên</th>
-                  <th className="p-8 font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest">Tổ đội / Chức vụ</th>
-                  <th className="p-8 font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest">Trạng thái hệ thống</th>
-                  <th className="p-8 font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest text-right">Chi tiết</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-retro-sepia/5 text-sm">
-                {filteredEmployees.map(emp => (
-                  <tr key={emp.id} className="hover:bg-retro-paper/50 transition-all group">
-                    <td 
-                      className="p-8 flex items-center gap-5 cursor-pointer group/link" 
-                      onClick={() => emp.id && router.push(`/hr/employees/${emp.id}`)}
-                    >
-                       <div className="w-12 h-12 rounded-full bg-retro-beige border-2 border-retro-sepia/10 flex items-center justify-center text-retro-sepia/60 group-hover/link:bg-retro-sepia group-hover/link:text-retro-mustard transition-all shadow-inner">
-                          <User size={20} strokeWidth={1.5} />
+      {/* Employee Table */}
+      <div className="card !p-0 border border-slate-50 shadow-soft overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="!mt-0">
+            <thead>
+              <tr>
+                <th className="px-8">Nhân viên</th>
+                <th className="px-8">Phòng ban & Chức vụ</th>
+                <th className="px-8">Thông tin liên hệ</th>
+                <th className="px-8">Quản trị hệ thống</th>
+                <th className="w-24 px-8"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEmployees.map((emp) => (
+                <tr key={emp.id} className="group transition-all">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 text-primary flex items-center justify-center font-black text-sm shrink-0 uppercase shadow-inner group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                        {emp.name.substring(0, 2)}
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-900 tracking-tight text-base group-hover:text-primary transition-colors">{emp.name}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{emp.employeeCode}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="space-y-1.5">
+                      <p className="font-bold text-slate-900 text-sm tracking-tight">{emp.department}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-lg">{emp.position}</span>
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm",
+                          emp.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100 opacity-60'
+                        )}>
+                          {emp.status === 'active' ? 'Active' : 'Disabled'}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-900 tracking-tight">
+                        <Mail size={12} className="text-primary opacity-50" strokeWidth={3} />
+                        {emp.email}
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <Phone size={12} className="text-slate-300" strokeWidth={3} />
+                        {emp.phone}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="space-y-1.5">
+                       <div className="flex items-center gap-2 text-xs font-bold text-slate-900 tracking-tight">
+                         <Calendar size={14} className="text-slate-300" />
+                         {emp.joinDate || '---'}
                        </div>
-                       <div className="flex flex-col">
-                          <span className="font-typewriter text-[13px] font-black text-retro-sepia tracking-tighter group-hover/link:text-retro-brick transition-all">
-                            {emp.name}
-                          </span>
-                          <span className="font-handwriting text-[10px] text-retro-earth mt-1 leading-none">
-                            ID: {emp.employeeCode}
-                          </span>
+                       <div className={cn(
+                         "inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
+                         emp.account?.role ? "bg-blue-50 text-primary border border-blue-100" : "bg-slate-50 text-slate-300 border border-slate-100"
+                       )}>
+                          <ShieldCheck size={10} strokeWidth={3} />
+                          {emp.account?.role || 'No Account'}
                        </div>
-                    </td>
-                    <td className="p-8">
-                       <div className="flex flex-col">
-                          <span className="font-typewriter text-[11px] font-black text-retro-sepia uppercase tracking-tighter">{emp.department}</span>
-                          <span className="font-handwriting text-[10px] text-retro-earth mt-1 italic leading-none">{emp.position}</span>
-                       </div>
-                    </td>
-                    <td className="p-8">
-                       {emp.hasAccount ? (
-                         <div className="flex items-center gap-3">
-                           <div className="flex items-center gap-1.5 px-3 py-1 bg-retro-sepia text-retro-mustard text-[9px] font-typewriter font-black uppercase tracking-widest shadow-sm">
-                             <ShieldCheck size={12} /> {emp.account?.role}
-                           </div>
-                           {emp.account?.is_active ? 
-                             <div className="flex items-center gap-1">
-                               <span className="w-2 h-2 rounded-full bg-retro-moss shadow-[0_0_8px_rgba(85,107,47,0.5)] animate-pulse" />
-                               <span className="text-[8px] font-black text-retro-moss font-typewriter uppercase">Online</span>
-                             </div> :
-                             <Lock size={12} className="text-retro-brick" />
-                           }
-                         </div>
-                       ) : (
-                         <button 
-                           onClick={() => {
-                             setSelectedEmp(emp);
-                             setGrantData({...grantData, email: emp.email || ''});
-                             setIsGrantModalOpen(true);
-                           }}
-                           className="flex items-center gap-1 font-handwriting text-xs text-retro-earth hover:text-retro-brick underline underline-offset-4 decoration-retro-brick/20"
-                         >
-                            <Plus size={12} /> Cấp quyền truy cập
-                         </button>
-                       )}
-                    </td>
-                    <td className="p-8 text-right">
+                    </div>
+                  </td>
+                  <td className="px-8 py-6 text-right">
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 justify-end translate-x-4 group-hover:translate-x-0">
                        <button 
-                         onClick={() => emp.id && router.push(`/hr/employees/${emp.id}`)}
-                         className="p-3 bg-retro-paper text-retro-sepia border border-retro-sepia/10 hover:bg-retro-sepia hover:text-white transition-all active:scale-90"
+                         onClick={() => {
+                           setSelectedEmployee(emp);
+                           setIsGrantModalOpen(true);
+                         }}
+                         className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-blue-50 hover:border-blue-100 border border-transparent rounded-xl transition-all"
+                         title="Cấp tài khoản"
                        >
-                          <ChevronRight size={18} />
+                          <UserCog size={18} strokeWidth={2.5} />
                        </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Mobile Card View */}
-            <div className="md:hidden divide-y divide-retro-sepia/5">
-              {filteredEmployees.map(emp => (
-                <div key={emp.id} className="p-6 space-y-4 active:bg-retro-paper transition-all relative">
-                  <div className="flex items-start justify-between">
-                    <div 
-                      className="flex items-center gap-4 flex-1 cursor-pointer"
-                      onClick={() => emp.id && router.push(`/hr/employees/${emp.id}`)}
-                    >
-                       <div className="w-12 h-12 rounded-full bg-retro-beige border-2 border-retro-sepia/10 flex items-center justify-center text-retro-sepia/60">
-                        <User size={20} strokeWidth={1.5} />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-typewriter text-sm font-black text-retro-sepia tracking-tighter uppercase truncate">{emp.name}</span>
-                        <span className="font-handwriting text-[10px] text-retro-earth mt-1">ID: {emp.employeeCode}</span>
-                      </div>
+                       <button 
+                         onClick={() => handleDelete(emp.id)}
+                         className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 border border-transparent rounded-xl transition-all"
+                         title="Xóa hồ sơ"
+                       >
+                          <Trash2 size={18} strokeWidth={2.5} />
+                       </button>
                     </div>
-                    <button 
-                      onClick={() => emp.id && router.push(`/hr/employees/${emp.id}`)}
-                      className="w-11 h-11 flex items-center justify-center bg-retro-paper border border-retro-sepia/10 text-retro-sepia active:bg-retro-sepia active:text-white transition-all"
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pl-16">
-                    <div className="flex flex-col">
-                      <span className="font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-tighter">{emp.department}</span>
-                      <span className="font-handwriting text-[9px] text-retro-earth italic mt-0.5">{emp.position}</span>
-                    </div>
-                    
-                    <div className="shrink-0 scale-90 origin-right">
-                       {emp.hasAccount ? (
-                         <div className="flex items-center gap-2">
-                           <div className="flex items-center gap-1.5 px-3 py-1 bg-retro-sepia text-retro-mustard text-[8px] font-typewriter font-black uppercase">
-                             <ShieldCheck size={10} /> {emp.account?.role}
-                           </div>
-                         </div>
-                       ) : (
-                         <button 
-                           onClick={() => {
-                             setSelectedEmp(emp);
-                             setGrantData({...grantData, email: emp.email || ''});
-                             setIsGrantModalOpen(true);
-                           }}
-                           className="font-handwriting text-[10px] text-retro-earth underline decoration-dotted"
-                         >
-                            Cấp quyền
-                         </button>
-                       )}
-                    </div>
-                  </div>
-                </div>
+                  </td>
+                </tr>
               ))}
-            </div>
-
-            {filteredEmployees.length === 0 && (
-              <div className="py-32 text-center text-retro-sepia/20 italic uppercase font-typewriter text-[10px] tracking-[0.2em] opacity-30">
-                 Hồ sơ trống - Không tìm thấy bản ghi
-              </div>
-            )}
-          </div>
-        )}
+              {filteredEmployees.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-32 text-center text-slate-200">
+                     <Users size={64} strokeWidth={1} className="mx-auto mb-6 opacity-10" />
+                     <p className="text-xs font-black uppercase tracking-[0.3em]">Không tìm thấy hồ sơ phù hợp</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* ADD EMPLOYEE MODAL using Antique Folder style */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-8 bg-retro-sepia/80 backdrop-blur-sm animate-in fade-in duration-300">
-           <div className="bg-white border-4 border-retro-earth w-full max-w-2xl overflow-y-auto max-h-[90vh] md:max-h-none shadow-2xl relative animate-in slide-in-from-bottom-8">
-              {/* Folder Tab Effect */}
-              <div className="absolute top-0 right-10 -translate-y-full w-24 h-10 bg-retro-earth rounded-t-xl" />
-              
-              <button 
-                onClick={() => setIsAddModalOpen(false)}
-                className="absolute top-6 right-6 p-2 text-retro-sepia hover:text-retro-brick transition-all z-10"
-              >
-                <X size={24} />
-              </button>
-
-              <div className="p-8 md:p-12 space-y-10">
-                 <header className="relative">
-                    <Pin className="absolute -top-4 -left-4 text-retro-brick rotate-45" size={24} />
-                    <span className="font-handwriting text-xs text-retro-brick uppercase tracking-widest mb-2 block">New Registry Record</span>
-                    <h2 className="text-3xl font-typewriter font-black uppercase text-retro-sepia">Hành chính <span className="text-retro-brick">Nhân sự</span></h2>
-                    <div className="w-full h-1 bg-retro-sepia/10 mt-4" />
-                 </header>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                       <label className="font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest ml-1 opacity-60">Họ và Tên (Type here)</label>
-                       <input 
-                         type="text"
-                         value={newEmployeeData.name}
-                         onChange={(e) => setNewEmployeeData({...newEmployeeData, name: e.target.value})}
-                         placeholder="VD: Nguyen Van A"
-                         className="w-full bg-retro-paper/20 border-b-2 border-retro-sepia/20 py-4 px-2 text-sm font-typewriter font-bold focus:border-retro-sepia outline-none transition-all uppercase"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest ml-1 opacity-60">Mã định danh (PAV-ID)</label>
-                       <input 
-                         type="text"
-                         value={newEmployeeData.employeeCode}
-                         onChange={(e) => setNewEmployeeData({...newEmployeeData, employeeCode: e.target.value})}
-                         placeholder="VD: PAV-001"
-                         className="w-full bg-retro-paper/20 border-b-2 border-retro-sepia/20 py-4 px-2 text-sm font-typewriter font-black focus:border-retro-sepia outline-none uppercase tracking-widest"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest ml-1 opacity-60">Số máy liên lạc</label>
-                       <input 
-                         type="text"
-                         value={newEmployeeData.phone}
-                         onChange={(e) => setNewEmployeeData({...newEmployeeData, phone: e.target.value})}
-                         className="w-full bg-retro-paper/20 border-b-2 border-retro-sepia/20 py-4 px-2 text-sm font-typewriter font-bold"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest ml-1 opacity-60">Tổ làm việc (Registry Dept)</label>
-                       <select 
-                         value={newEmployeeData.department}
-                         onChange={(e) => setNewEmployeeData({...newEmployeeData, department: e.target.value})}
-                         className="w-full bg-retro-paper/20 border-b-2 border-retro-sepia/20 py-4 px-2 text-sm font-typewriter font-black uppercase appearance-none cursor-pointer"
-                       >
-                          <option value="Sản xuất">Sản xuất</option>
-                          <option value="Kho vận">Kho vận</option>
-                          <option value="Hành chính">Hành chính</option>
-                          <option value="Kinh doanh">Kinh doanh</option>
-                       </select>
-                    </div>
-                 </div>
-
-                 <button 
-                   onClick={handleAddEmployee}
-                   disabled={adding}
-                   className="retro-btn w-full py-5 bg-retro-sepia text-retro-mustard flex items-center justify-center gap-3 disabled:opacity-50"
-                 >
-                    {adding ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} strokeWidth={2} />}
-                    Xác nhận đóng dấu hồ sơ
-                 </button>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* GRANT ACCOUNT MODAL */}
-      {isGrantModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-8 bg-retro-sepia/90 backdrop-blur-sm animate-in fade-in duration-300">
-           <div className="bg-white border-2 border-retro-sepia w-full max-w-md overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300">
-              <button 
-                onClick={() => setIsGrantModalOpen(false)}
-                className="absolute top-6 right-6 p-2 text-retro-sepia hover:text-retro-brick transition-all z-10"
-              >
-                <X size={20} />
-              </button>
-
-              <div className="p-8 md:p-10 space-y-8">
-                 <header className="text-center">
-                    <div className="w-16 h-16 bg-retro-paper rounded-full border-2 border-dotted border-retro-sepia flex items-center justify-center text-retro-sepia mx-auto mb-4">
-                       <ShieldCheck size={32} strokeWidth={1} />
-                    </div>
-                    <h2 className="text-2xl font-typewriter font-black uppercase text-retro-sepia tracking-tighter">Cấp quyền <span className="text-retro-brick">Truy cập</span></h2>
-                    <p className="font-handwriting text-xs text-retro-earth mt-3">Định danh cho: {selectedEmp?.name}</p>
-                 </header>
-
-                 <div className="space-y-6">
-                    <div className="space-y-2">
-                       <label className="font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest ml-1 opacity-60">Địa chỉ tín thư (Email)</label>
-                       <input 
-                         type="email"
-                         value={grantData.email}
-                         onChange={(e) => setGrantData({...grantData, email: e.target.value})}
-                         className="w-full bg-retro-paper/20 border-b-2 border-retro-sepia/20 py-4 px-2 text-sm font-typewriter font-bold outline-none focus:border-retro-sepia transition-all"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="font-typewriter text-[10px] font-black text-retro-sepia uppercase tracking-widest ml-1 opacity-60">Vai trò quản trị (Role)</label>
-                       <select 
-                         value={grantData.role}
-                         onChange={(e) => setGrantData({...grantData, role: e.target.value})}
-                         className="w-full bg-retro-paper/20 border-b-2 border-retro-sepia/20 py-4 px-2 text-sm font-typewriter font-black uppercase outline-none"
-                       >
-                          <option value="Admin">Admin</option>
-                          <option value="Production">Sản xuất</option>
-                          <option value="Warehouse">Kho vận</option>
-                          <option value="Sales">Kinh doanh</option>
-                       </select>
-                    </div>
-                 </div>
-
-                 <button 
-                   onClick={handleGrantAccount}
-                   disabled={granting}
-                   className="retro-btn w-full py-5 bg-retro-brick text-white border-none flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
-                 >
-                    {granting ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} strokeWidth={2} />}
-                    Xác nhận cấp định danh
-                 </button>
-              </div>
-           </div>
-        </div>
-      )}
+      {/* Footer Meta */}
+      <div className="pt-8 border-t border-slate-100 flex justify-between items-center text-[9px] font-black text-slate-300 uppercase tracking-widest">
+         <span>Human Capital v3.1</span>
+         <span className="flex items-center gap-2 pl-4 border-l border-slate-100">
+            <span className="w-1.5 h-1.5 bg-primary rounded-full" />
+            Database Synchronized
+         </span>
+      </div>
     </div>
   );
 }

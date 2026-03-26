@@ -71,117 +71,91 @@ export default function PerformancePage() {
   }, [employees]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 pb-24 px-6 md:px-12 animate-in fade-in duration-1000 font-typewriter">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10 bg-retro-paper p-10 border-b-2 border-retro-sepia/10 relative overflow-hidden shadow-[0_15px_40px_-10px_rgba(62,39,35,0.1)]">
-        <div className="washi-tape-top" />
-        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-           <Target size={240} strokeWidth={0.5} className="text-retro-sepia" />
+    <div className="space-y-6 animate-in fade-in duration-500 pb-24">
+      {/* Header Section */}
+      <div className="card !flex-col md:!flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <nav className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
+            <ClipboardList size={12} />
+            <span>Sản xuất</span>
+            <ChevronRight size={10} />
+            <span className="text-primary">Báo cáo hiệu suất</span>
+          </nav>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            Hiệu suất & Tổ đội
+          </h1>
         </div>
         
-        <div className="relative z-10">
-          <nav className="flex items-center gap-3 text-[10px] font-black text-retro-earth uppercase tracking-[0.2em] mb-6 opacity-60">
-            <ClipboardList size={14} strokeWidth={1.5} />
-            <span>Quản trị Nhân sự</span>
-            <ChevronRight size={12} strokeWidth={1.5} />
-            <span className="text-retro-sepia">Sổ Hiệu suất</span>
-          </nav>
-          <h1 className="text-3xl md:text-4xl font-black text-retro-sepia uppercase tracking-tighter italic">
-            Báo cáo <span className="text-retro-brick underline decoration-double decoration-retro-brick/30 underline-offset-8">Hiệu suất</span>
-          </h1>
-          <div className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] italic mt-4 opacity-60 flex items-center gap-2">
-            <div className="w-2 h-2 bg-retro-mustard rotate-45" />
-            Năng suất & Chất lượng nhân sự thực địa — 1984
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-4 relative z-10 w-full md:w-auto">
-           <button className="flex-1 md:flex-none px-8 py-4 bg-white border-2 border-retro-sepia/10 text-[11px] font-black uppercase tracking-[0.2em] text-retro-earth hover:text-retro-sepia hover:border-retro-sepia transition-all shadow-sm italic flex items-center justify-center gap-3">
-             <Filter size={18} strokeWidth={1.5} /> Lọc theo Tổ Đội
+        <div className="flex items-center gap-3 w-full md:w-auto">
+           <button className="btn-secondary gap-2 w-full md:w-auto justify-center">
+             <Filter size={18} />
+             Lọc Tổ Đội
            </button>
-           <button className="flex-1 md:flex-none px-10 py-4 bg-retro-brick text-white shadow-[4px_4px_0px_#3E272333] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-retro-sepia transition-all active:scale-95 italic flex items-center justify-center gap-4">
-             Tháng {new Date().getMonth() + 1}/2024 <ArrowRight size={18} strokeWidth={2.5} />
+           <button className="btn-primary gap-2 w-full md:w-auto justify-center whitespace-nowrap">
+             Tháng {new Date().getMonth() + 1}/2024
+             <ArrowRight size={18} />
            </button>
         </div>
       </div>
 
-      {/* QUICK STATS Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-10 border-2 border-retro-sepia/5 hover:border-retro-sepia/20 shadow-sm hover:shadow-2xl transition-all group flex items-center gap-8 relative overflow-hidden rotate-1 hover:rotate-0">
-             <div className={cn(
-               "w-16 h-16 flex items-center justify-center shadow-xl rotate-6 group-hover:rotate-0 transition-all",
-               stat.bg, stat.color
-             )}>
-                <stat.icon size={28} strokeWidth={2.5} />
-             </div>
-             <div className="relative z-10">
-                <p className="text-[10px] font-black text-retro-earth/40 uppercase tracking-[0.2em] mb-2 italic">{stat.label}</p>
-                <p className="text-3xl font-black text-retro-sepia tabular-nums italic underline decoration-retro-mustard/20 decoration-dashed underline-offset-4">{stat.value}</p>
-             </div>
-             
-             {/* Layout décor */}
-             <div className="absolute -bottom-8 -right-8 opacity-[0.03] group-hover:opacity-[0.08] transition-all">
-                <stat.icon size={120} strokeWidth={1} />
-             </div>
+          <div key={i} className="card !p-6 flex items-center justify-between group hover:border-primary/30 transition-all">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{stat.label}</p>
+              <p className="text-3xl font-black text-foreground">{stat.value}</p>
+            </div>
+            <div className={cn("p-4 rounded-xl bg-gray-50 transition-colors group-hover:bg-primary/5", stat.color)}>
+              <stat.icon size={24} />
+            </div>
           </div>
         ))}
       </div>
 
-      {/* PERFORMANCE TABLE SECTION */}
-      <div className="space-y-8">
-         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-2">
-            <h2 className="text-[12px] font-black text-retro-sepia uppercase tracking-[0.3em] flex items-center gap-4 italic opacity-80 underline decoration-retro-brick/20 decoration-double underline-offset-8">
-              <div className="w-3 h-3 bg-retro-brick rotate-45 shadow-sm" />
-              Bảng xếp hạng Năng suất Diễn võ
+      {/* Table Section */}
+      <div className="space-y-4">
+         <div className="flex items-center justify-between px-2">
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+              <TrendingUp size={18} className="text-primary" />
+              Bảng xếp hạng Năng suất
             </h2>
-            <p className="text-[9px] font-black text-retro-earth/30 uppercase tracking-[0.2em] italic">Thời khắc truy báo: THỜI GIAN THỰC</p>
          </div>
-         <div className="retro-card !p-0 border-2 overflow-hidden shadow-2xl">
+         <div className="card !p-0 overflow-hidden shadow-sm">
             <PerformanceTable initialData={employees} loading={loading} onSelect={setSelectedEmployee} />
          </div>
       </div>
 
-      {/* DETAIL MODAL WITH CHART */}
+      {/* Detail Modal */}
       {selectedEmployee && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 md:p-16 animate-in fade-in duration-500 overflow-hidden font-typewriter">
-           <div 
-             className="absolute inset-0 bg-retro-sepia/40 backdrop-blur-md"
-             onClick={() => setSelectedEmployee(null)}
-           />
-           <div className="relative bg-retro-paper w-full max-w-2xl retro-card !p-0 shadow-[0_30px_60px_-15px_rgba(62,39,35,0.5)] flex flex-col animate-in zoom-in-95 duration-500 overflow-hidden border-2">
-              <div className="washi-tape-top" />
-              
-              <div className="p-10 md:p-14 flex justify-between items-start bg-retro-paper/40 border-b-2 border-retro-sepia/10 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-                    <TrendingUp size={240} strokeWidth={0.5} className="text-retro-sepia" />
-                 </div>
-                 
-                 <div className="relative z-10">
-                    <h2 className="text-2xl font-black text-retro-sepia uppercase tracking-tighter italic">Chi lục <span className="text-retro-brick underline decoration-double decoration-retro-brick/30 underline-offset-4">Hiệu năng</span></h2>
-                    <p className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] mt-3 italic opacity-60">Hồ sơ cá nhân & Thụy đồ biến thiên</p>
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300 backdrop-blur-sm bg-black/40">
+           <div className="relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden border border-border">
+              <div className="p-6 md:p-8 flex justify-between items-center bg-gray-50 border-b border-border">
+                 <div>
+                    <h2 className="text-xl font-bold text-foreground">Chi tiết Hiệu năng</h2>
+                    <p className="text-xs text-muted-foreground font-medium mt-1">Hồ sơ cá nhân & Biến thiên sản lượng</p>
                  </div>
                  <button 
                    onClick={() => setSelectedEmployee(null)}
-                   className="p-4 bg-retro-paper border-2 border-retro-sepia/10 hover:bg-retro-brick/10 hover:text-retro-brick transition-all rotate-3 hover:rotate-0 shadow-sm relative z-10"
+                   className="p-2 hover:bg-gray-200 rounded-full transition-colors text-muted-foreground hover:text-foreground"
                  >
-                   <X size={24} strokeWidth={2} />
+                   <X size={20} />
                  </button>
               </div>
               
-              <div className="p-10 md:p-14 bg-white max-h-[70vh] overflow-y-auto scrollbar-hide">
+              <div className="p-6 md:p-8 overflow-y-auto max-h-[70vh] bg-white">
                  <PerformanceChart employee={selectedEmployee} />
               </div>
               
-              <div className="p-10 md:p-14 pt-0 bg-white flex flex-col sm:flex-row gap-6 relative z-10">
-                 <button className="flex-1 py-5 bg-retro-sepia text-white shadow-[4px_4px_0px_#3E272333] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-retro-brick transition-all active:scale-95 italic">
-                   Truy xuất Nhật ký Chi tiết
+              <div className="p-6 md:p-8 pt-0 bg-white flex flex-col sm:flex-row gap-4 border-t border-border mt-auto">
+                 <button className="btn-primary flex-1 py-3 justify-center">
+                   Xuất báo cáo chi tiết
                  </button>
                  <button 
                   onClick={() => setSelectedEmployee(null)}
-                  className="px-12 py-5 bg-retro-paper border-2 border-retro-sepia/10 text-retro-earth text-[11px] font-black uppercase tracking-[0.2em] hover:text-retro-sepia hover:border-retro-sepia transition-all italic"
+                  className="btn-secondary px-8 py-3 justify-center"
                  >
-                   Hoàn nguyên
+                   Đóng cửa sổ
                  </button>
               </div>
            </div>

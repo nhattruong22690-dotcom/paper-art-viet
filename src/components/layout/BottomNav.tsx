@@ -3,7 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Pin } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Package, 
+  Archive, 
+  UserCircle 
+} from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -13,36 +18,37 @@ function cn(...inputs: ClassValue[]) {
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const isActive = pathname === '/mobile-menu';
+
+  const navItems = [
+    { icon: LayoutDashboard, label: 'Trang chủ', href: '/' },
+    { icon: Package, label: 'Sản xuất', href: '/mobile-menu/production' },
+    { icon: Archive, label: 'Kho', href: '/mobile-menu/logistics' },
+    { icon: UserCircle, label: 'Cá nhân', href: '/mobile-menu/hr' },
+  ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-retro-sepia h-20 shadow-[-20px_0_30px_rgba(0,0,0,0.4)] torn-paper-top">
-      <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center group pointer-events-auto">
-        <Link
-          href="/mobile-menu"
-          className={cn(
-            "w-20 h-24 bg-white p-2 pb-6 polaroid-shimmer border-2 border-white shadow-2xl transition-all duration-500 active:scale-90 flex flex-col items-center justify-between",
-            isActive ? "rotate-0 scale-110 -translate-y-2" : "rotate-3 hover:rotate-0"
-          )}
-        >
-          {/* Wooden Clip decoration */}
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-8 bg-retro-earth border border-retro-sepia/20 z-20 shadow-sm" />
-          
-          <div className={cn(
-            "w-full h-full flex items-center justify-center text-white",
-            isActive ? "bg-retro-brick" : "bg-retro-sepia"
-          )}>
-            <LayoutGrid size={32} strokeWidth={1.5} />
-          </div>
-          
-          <span className="font-handwriting text-[8px] text-retro-sepia font-bold">MENU</span>
-        </Link>
-      </div>
-
-      <div className="flex justify-around items-center h-full px-12 pt-4">
-         <span className="font-typewriter text-[9px] text-white/40 uppercase tracking-widest italic">Paper Art Việt</span>
-         <span className="font-typewriter text-[9px] text-white/40 uppercase tracking-widest italic">EST. 2012</span>
-      </div>
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-4 h-20 flex items-center justify-around shadow-[0_-8px_30px_rgba(15,23,42,0.08)] rounded-t-[32px]">
+      {navItems.map((item) => {
+        const isActive = pathname === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "flex flex-col items-center gap-1.5 transition-all duration-300 px-5 py-2 rounded-2xl",
+              isActive ? "text-primary bg-blue-50/50 shadow-sm" : "text-slate-400 active:text-primary active:bg-blue-50/30"
+            )}
+          >
+            <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} className={cn("transition-transform", isActive && "scale-110")} />
+            <span className={cn(
+              "text-[10px] font-bold uppercase tracking-widest",
+              isActive ? "text-primary opacity-100" : "text-slate-400 opacity-60"
+            )}>
+              {item.label}
+            </span>
+          </Link>
+        );
+      })}
     </nav>
   );
 }

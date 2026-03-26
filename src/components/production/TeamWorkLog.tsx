@@ -14,11 +14,14 @@ import {
   CheckCircle2,
   Package,
   Layers,
-  MapPin,
   QrCode,
   Loader2,
   ChevronDown,
-  User
+  User,
+  History,
+  ArrowRight,
+  X,
+  ChevronRight
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -99,7 +102,6 @@ export default function TeamWorkLog() {
         setOrders(Array.isArray(ordersData) ? ordersData : []);
         setWorkers(Array.isArray(workersData) ? workersData : []);
         
-        // Initial empty entry
         if (entries.length === 0) {
           handleAddRow();
         }
@@ -131,7 +133,7 @@ export default function TeamWorkLog() {
           unit: item.material.unit,
           requiredPerUnit: Number(item.quantity),
           availableBatches: batches,
-          selectedBatchId: batches[0]?.id || '' // Default to FIFO first batch
+          selectedBatchId: batches[0]?.id || '' 
         };
       }));
       setBomItems(mappedBOM);
@@ -160,14 +162,15 @@ export default function TeamWorkLog() {
     const newEntry: LogEntry = {
       ...entryToCopy,
       id: Math.random().toString(36).substr(2, 9),
-      userId: '', // Don't copy the user
+      userId: '', 
     };
     const newEntries = [...entries];
     newEntries.splice(index + 1, 0, newEntry);
     setEntries(newEntries);
   };
 
-  const handleRemoveRow = (id: string) => {
+  const handleRemoveRow = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (entries.length > 1) {
       setEntries(entries.filter(e => e.id !== id));
     }
@@ -204,24 +207,22 @@ export default function TeamWorkLog() {
           quantity: totalBatchQty * item.requiredPerUnit
         }));
 
-      const validEntries = entries
-        .filter(e => e.userId && (e.quantityProduced > 0 || e.technicalErrorCount > 0 || e.materialErrorCount > 0))
-        .map(e => ({
-          productionOrderId: selectedOrderId,
-          employeeId: e.userId,
-          staffName: workers.find(w => w.id === e.userId)?.name,
-          quantityProduced: e.quantityProduced,
-          technicalErrorCount: e.technicalErrorCount,
-          materialErrorCount: e.materialErrorCount,
-          errorNote: e.errorNote,
-          startTime: new Date(workDate),
-          endTime: new Date(workDate)
-        }));
+      const payload = validEntries.map(e => ({
+        productionOrderId: selectedOrderId,
+        employeeId: e.userId,
+        staffName: workers.find(w => w.id === e.userId)?.name,
+        quantityProduced: e.quantityProduced,
+        technicalErrorCount: e.technicalErrorCount,
+        materialErrorCount: e.materialErrorCount,
+        errorNote: e.errorNote,
+        startTime: new Date(workDate),
+        endTime: new Date(workDate)
+      }));
 
-      await createBatchWorkLogs(validEntries, batchesUsed);
+      await createBatchWorkLogs(payload, batchesUsed);
       showToast('success', `Đã lưu thành công ${validEntries.length} bản ghi báo cáo!`);
-      setEntries([entries[0]]); // Reset
-      loadBOM(selectedOrderId); // Refresh stock
+      setEntries([entries[0]]); 
+      loadBOM(selectedOrderId); 
     } catch (error) {
       console.error("Save failed:", error);
       showModal('error', 'Lỗi khi lưu báo cáo', String(error));
@@ -233,7 +234,6 @@ export default function TeamWorkLog() {
   const totalBatchQty = entries.reduce((sum, e) => sum + e.quantityProduced + e.technicalErrorCount + e.materialErrorCount, 0);
   const currentOrder = orders.find(o => o.id === selectedOrderId);
   
-  // Thông tin hiển thị cho worker
   const orderDisplayInfo = currentOrder ? {
     contractCode: currentOrder.order?.contractCode || currentOrder.sku,
     customerName: currentOrder.order?.customer?.name || 'Vãng lai'
@@ -242,266 +242,220 @@ export default function TeamWorkLog() {
   const isOverLimit = currentOrder ? (totalBatchQty + currentOrder.quantityCompleted > currentOrder.quantityTarget * 1.05) : false;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-1000">
-      {/* HEADER SECTION */}
-      <div className="retro-card !p-0 !bg-white overflow-hidden shadow-2xl relative border-2">
-        <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-           <Users size={300} strokeWidth={0.5} className="text-retro-sepia" />
+    <div className="space-y-6 animate-in fade-in duration-500 pb-24 px-4 md:px-0">
+      {/* Header Section */}
+      <div className="card !flex-col md:!flex-row justify-between items-start md:items-center gap-6">
+        <div className="flex items-center gap-4">
+           <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg">
+              <ClipboardList size={24} />
+           </div>
+           <div>
+              <nav className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                <Users size={12} />
+                <span>Sản xuất</span>
+                <ChevronRight size={10} />
+                <span className="text-primary">Báo cáo tổ trưởng</span>
+              </nav>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                Khai báo Sản lượng hàng loạt
+              </h1>
+           </div>
         </div>
-        <div className="washi-tape-top" />
-        
-        <div className="p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
-          <div className="flex items-center gap-6">
-             <div className="w-16 h-16 bg-retro-sepia flex items-center justify-center text-retro-paper rotate-3 hover:rotate-0 transition-transform shadow-xl">
-                <Users size={32} strokeWidth={1.5} />
-             </div>
-             <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl md:text-3xl font-black text-retro-sepia uppercase tracking-tighter italic font-typewriter underline decoration-double decoration-retro-mustard/30 underline-offset-4">
-                    Khai báo <span className="text-retro-brick">Sản lượng Tổ đội</span>
-                  </h1>
-                  <HelpIcon />
-                </div>
-                <p className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] italic opacity-60 font-typewriter">Hồ sơ sản xuất & Đối chiếu tiêu hao — MCMLXXXIV</p>
-             </div>
-          </div>
 
-          <div className="flex flex-wrap items-end gap-6 w-full md:w-auto">
-             {orderDisplayInfo && (
-                <div className="bg-retro-brick text-white px-6 py-4 shadow-[4px_4px_0px_#3E272333] flex flex-col justify-center animate-in slide-in-from-right-10 duration-500 font-typewriter">
-                   <p className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-1">Đang xử lý:</p>
-                   <p className="text-xs font-black uppercase tracking-tight italic truncate max-w-[240px]">
-                     {orderDisplayInfo.customerName} — {orderDisplayInfo.contractCode}
-                   </p>
-                </div>
-             )}
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+           <div className="flex-1 md:w-64">
+              <div className="relative">
+                <select 
+                  value={selectedOrderId}
+                  onChange={(e) => setSelectedOrderId(e.target.value)}
+                  className="form-input pl-3 pr-10 !py-2.5 text-sm font-bold appearance-none bg-gray-50/50"
+                >
+                  <option value="">-- Chọn lệnh sản xuất --</option>
+                  {orders.map(o => (
+                    <option key={o.id} value={o.id}>
+                      [{o.order?.contractCode || 'NO-ID'}] {o.productName}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              </div>
+           </div>
+           
+           <div className="w-full md:w-40 relative">
+              <input 
+                type="date"
+                value={workDate}
+                onChange={(e) => setWorkDate(e.target.value)}
+                className="form-input !py-2.5 pl-10 text-xs font-bold bg-gray-50/50"
+              />
+              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground p-px" />
+           </div>
 
-             <div className="flex-1 md:flex-none">
-                <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 mb-2 block font-typewriter opacity-60">Lệnh Sản Xuất</label>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <select 
-                      value={selectedOrderId}
-                      onChange={(e) => setSelectedOrderId(e.target.value)}
-                      className="w-full md:w-64 bg-retro-paper/50 border-2 border-retro-sepia/10 px-4 py-3.5 text-xs font-black uppercase text-retro-sepia focus:bg-white focus:border-retro-sepia transition-all outline-none font-typewriter appearance-none shadow-inner"
-                    >
-                      <option value="">-- Chọn lệnh --</option>
-                      {orders.map(o => (
-                        <option key={o.id} value={o.id}>
-                          [{o.order?.contractCode || 'NO-ID'}] {o.productName}
-                        </option>
-                      ))}
-                    </select>
-                    <Search size={14} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-retro-sepia/30 pointer-events-none" />
-                  </div>
-                  <button 
-                    onClick={() => setIsScanning(true)}
-                    className="p-3.5 bg-retro-paper border-2 border-retro-sepia/10 text-retro-sepia hover:bg-retro-sepia hover:text-retro-paper transition-all shadow-sm rotate-2 hover:rotate-0"
-                    title="Quét mã QR"
-                  >
-                    <QrCode size={18} strokeWidth={1.5} />
-                  </button>
-                </div>
-             </div>
-             
-             <div className="flex-1 md:flex-none">
-                <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 mb-2 block font-typewriter opacity-60">Ngày Làm Việc</label>
-                <div className="relative">
-                  <input 
-                    type="date"
-                    value={workDate}
-                    onChange={(e) => setWorkDate(e.target.value)}
-                    className="w-full md:w-44 bg-retro-paper/50 border-2 border-retro-sepia/10 px-4 py-3.5 text-xs font-black text-retro-sepia outline-none focus:bg-white focus:border-retro-sepia transition-all font-typewriter shadow-inner"
-                  />
-                  <Calendar size={14} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-retro-sepia/30 pointer-events-none" />
-                </div>
-             </div>
-          </div>
+           <button 
+             onClick={() => setIsScanning(true)}
+             className="btn-secondary h-11 px-3 flex items-center justify-center shrink-0"
+             title="Quét mã QR"
+           >
+             <QrCode size={20} />
+           </button>
         </div>
       </div>
-      {/* BATCH SELECTION SECTION */}
+
+      {orderDisplayInfo && (
+        <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 flex items-center justify-between animate-in slide-in-from-top-2">
+           <div className="flex items-center gap-3 text-sm font-bold text-primary">
+              <History size={16} />
+              <span>Đang báo cáo cho: <span className="text-foreground">{orderDisplayInfo.customerName}</span> (HĐ: {orderDisplayInfo.contractCode})</span>
+           </div>
+           <button onClick={() => setSelectedOrderId('')} className="p-1 hover:bg-primary/10 rounded-full text-primary transition-colors">
+              <X size={16} />
+           </button>
+        </div>
+      )}
+
+      {/* BOM Section */}
       {selectedOrderId && (
-        <div className="retro-card !bg-white border-2 shadow-2xl relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-10">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-retro-mustard flex items-center justify-center text-retro-sepia shadow-xl rotate-6">
-                    <QrCode size={24} strokeWidth={1.5} />
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex items-center justify-between px-2">
+             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                <Package size={18} className="text-primary/60" />
+                Vật tư tiêu hao (BOM)
+             </h3>
+             {fetchingBOM && <Loader2 size={16} className="animate-spin text-primary" />}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+             {bomItems.map((item, idx) => (
+               <div key={item.materialId} className="card !p-5 border-border hover:border-primary/20 transition-all flex flex-col gap-4">
+                  <div className="flex justify-between items-start">
+                     <div className="min-w-0 pr-2">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 truncate">{item.sku}</p>
+                        <h4 className="font-bold text-foreground text-sm truncate uppercase tracking-tight">{item.name}</h4>
+                     </div>
+                     <span className="text-[9px] font-bold bg-gray-100 px-1.5 py-0.5 rounded text-muted-foreground uppercase">
+                        {item.unit}
+                     </span>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-black text-retro-sepia uppercase tracking-tighter italic font-typewriter underline decoration-retro-mustard/30 underline-offset-4">Nguyên liệu tiêu thụ</h3>
-                    <p className="text-[10px] text-retro-earth font-black uppercase tracking-[0.2em] italic opacity-60 font-typewriter">Định danh Lô hàng & Trừ kho vật tư</p>
+
+                  <div className="space-y-3">
+                     <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest ml-0.5">Lô sản xuất</label>
+                        <div className="relative">
+                          <select 
+                            value={item.selectedBatchId}
+                            onChange={(e) => {
+                               const newBOM = [...bomItems];
+                               newBOM[idx].selectedBatchId = e.target.value;
+                               setBomItems(newBOM);
+                            }}
+                            className="form-input !py-2 !text-xs bg-gray-50/50 appearance-none pr-8"
+                          >
+                            <option value="">-- Chọn vật tư --</option>
+                            {item.availableBatches?.map((b: any) => (
+                              <option key={b.id} value={b.id}>
+                                {b.batchCode} (Tồn: {Number(b.remainQuantity)})
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        </div>
+                     </div>
+
+                     <div className="flex justify-between items-end pt-1">
+                        <div>
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Dự tính sử dụng</p>
+                          <p className="text-lg font-black text-foreground tabular-nums">
+                             {(totalBatchQty * item.requiredPerUnit).toFixed(2)} <span className="text-[10px] font-medium text-muted-foreground uppercase">{item.unit}</span>
+                          </p>
+                        </div>
+                        {item.selectedBatchId && <CheckCircle2 size={18} className="text-emerald-500" />}
+                     </div>
                   </div>
                </div>
-               
-               {fetchingBOM && (
-                 <div className="flex items-center gap-3 text-retro-mustard animate-pulse font-typewriter">
-                    <Loader2 size={16} className="animate-spin" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Đang tải BOM...</span>
-                 </div>
-               )}
-            </div>
+             ))}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-               {bomItems.map((item, idx) => (
-                 <div key={item.materialId} className="bg-retro-paper/30 p-8 border-2 border-retro-sepia/5 hover:border-retro-mustard/40 transition-all rotate-1 hover:rotate-0 group relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-2 opacity-5">
-                       <Package size={60} strokeWidth={0.5} />
-                    </div>
-                    
-                    <div className="flex justify-between items-start mb-6 border-b-2 border-dashed border-retro-sepia/10 pb-4">
-                       <div className="flex-1 min-w-0 pr-4">
-                          <p className="text-[9px] font-black text-retro-earth uppercase tracking-widest mb-1 italic font-typewriter opacity-60">{item.sku}</p>
-                          <h4 className="text-sm font-black text-retro-sepia uppercase leading-none font-typewriter truncate">{item.name}</h4>
-                       </div>
-                       <div className="px-3 py-1.5 bg-retro-paper border-2 border-retro-sepia/10 text-[10px] font-black text-retro-sepia font-typewriter shrink-0">
-                          {item.unit}
-                       </div>
-                    </div>
-
-                    <div className="space-y-6">
-                       <div>
-                          <label className="text-[10px] font-black text-retro-earth uppercase tracking-widest ml-1 mb-2 block font-typewriter opacity-60">Xác định Lô tiêu thụ</label>
-                          <div className="relative">
-                            <select 
-                              value={item.selectedBatchId}
-                              onChange={(e) => {
-                                 const newBOM = [...bomItems];
-                                 newBOM[idx].selectedBatchId = e.target.value;
-                                 setBomItems(newBOM);
-                              }}
-                              className="w-full bg-white border-2 border-retro-sepia/10 px-4 py-3 text-xs font-black uppercase text-retro-sepia focus:border-retro-mustard transition-all outline-none font-typewriter appearance-none shadow-inner"
-                            >
-                              <option value="">-- Chọn hoặc Quét Lô --</option>
-                              {item.availableBatches?.map((b: any) => (
-                                <option key={b.id} value={b.id}>
-                                  {b.batchCode} (Tồn: {Number(b.remainQuantity)} {item.unit})
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-retro-sepia/30 pointer-events-none" />
-                          </div>
-                       </div>
-
-                       <div className="flex justify-between items-end pt-2 border-t border-retro-sepia/5">
-                          <div>
-                            <p className="text-[9px] font-black text-retro-earth uppercase tracking-widest mb-1 opacity-60 font-typewriter">Dự toán tiêu thụ</p>
-                            <p className="text-lg font-black text-retro-brick italic font-typewriter">
-                               {(totalBatchQty * item.requiredPerUnit).toFixed(2)} <span className="text-[10px]">{item.unit}</span>
-                            </p>
-                          </div>
-                          {item.selectedBatchId && (
-                             <div className="flex items-center gap-2 text-retro-moss mb-1">
-                                <CheckCircle2 size={16} strokeWidth={2} />
-                                <span className="text-[10px] font-black uppercase font-typewriter">Đã định danh</span>
-                             </div>
-                          )}
-                       </div>
-                    </div>
-                 </div>
-               ))}
-
-               {bomItems.length === 0 && !fetchingBOM && (
-                 <div className="col-span-full py-16 bg-retro-paper/10 border-4 border-dashed border-retro-sepia/10 flex flex-col items-center justify-center text-retro-earth/40 italic font-typewriter">
-                    <Package size={40} className="mb-4 opacity-20" strokeWidth={1} />
-                    <p className="text-xs font-black uppercase tracking-[0.3em]">Hồ sơ nguyên liệu chưa được thiết lập</p>
-                 </div>
-               )}
-            </div>
-          </div>
-          
-          {/* Decoration */}
-          <div className="absolute -right-16 -top-16 text-retro-sepia/5 pointer-events-none">
-             <Layers size={300} strokeWidth={0.5} />
+             {bomItems.length === 0 && !fetchingBOM && (
+               <div className="col-span-full card border-dashed !p-12 flex flex-col items-center justify-center text-muted-foreground opacity-50">
+                  <Package size={32} className="mb-2" />
+                  <p className="text-xs font-bold uppercase tracking-widest">Không có dữ liệu BOM cho lệnh này</p>
+               </div>
+             )}
           </div>
         </div>
       )}
-      {/* EDITABLE TABLE SECTION */}
-      <div className="retro-card !p-0 !bg-white border-2 shadow-2xl relative overflow-hidden">
-        <div className="overflow-x-auto relative z-10">
-          <table className="w-full text-left border-collapse font-serif italic">
+
+      {/* Main Table */}
+      <div className="card !p-0 overflow-hidden shadow-sm border border-border">
+        <div className="overflow-x-auto">
+          <table className="w-full !mt-0 text-left">
             <thead>
-              <tr className="bg-retro-sepia text-retro-paper text-[10px] font-black uppercase tracking-[0.2em] font-typewriter">
-                <th className="px-6 py-6 text-center w-16 !italic-normal ring-1 ring-white/5">HẠNG</th>
-                <th className="px-6 py-6 !italic-normal ring-1 ring-white/5">NHÂN VIÊN (THỢ)</th>
-                <th className="px-6 py-6 text-center w-36 !italic-normal ring-1 ring-white/5">SẢN LƯỢNG ĐẠT</th>
-                <th className="px-6 py-6 text-center w-32 !italic-normal ring-1 ring-white/5 text-retro-brick">LỖI KỸ THUẬT</th>
-                <th className="px-6 py-6 text-center w-32 !italic-normal ring-1 ring-white/5">LỖI VẬT TƯ</th>
-                <th className="px-6 py-6 !italic-normal ring-1 ring-white/5 text-retro-mustard">GHI CHÚ HỒ SƠ</th>
-                <th className="px-6 py-6 text-center w-28 !italic-normal ring-1 ring-white/5">MỤC LỤC</th>
+              <tr className="bg-gray-900 text-white">
+                <th className="px-6 py-4 w-12 text-center text-[10px] font-bold uppercase tracking-widest">#</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest">Đối tượng Nhân sự</th>
+                <th className="px-4 py-4 w-32 text-center text-[10px] font-bold uppercase tracking-widest">Sản lượng</th>
+                <th className="px-4 py-4 w-32 text-center text-[10px] font-bold uppercase tracking-widest text-red-300">Lỗi Thợ</th>
+                <th className="px-4 py-4 w-32 text-center text-[10px] font-bold uppercase tracking-widest">Lỗi Vật tư</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest">Ký lục / Ghi chú</th>
+                <th className="px-6 py-4 w-24 text-center text-[10px] font-bold uppercase tracking-widest">Control</th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-retro-sepia/5">
+            <tbody className="divide-y divide-border">
               {entries.map((entry, index) => (
-                <tr key={entry.id} className="hover:bg-retro-paper/20 transition-all group">
-                  <td className="px-6 py-6 text-center text-xs font-black text-retro-earth/40 not-italic font-typewriter">{index + 1}</td>
-                  <td className="px-6 py-6">
-                    <div className="relative group/field min-w-[200px]">
+                <tr key={entry.id} className="hover:bg-gray-50/80 transition-all group">
+                  <td className="px-6 py-5 text-center text-xs font-bold text-muted-foreground opacity-50">{index + 1}</td>
+                  <td className="px-6 py-5 min-w-[200px]">
+                    <div className="relative">
                       <select 
                         value={entry.userId}
                         onChange={(e) => updateEntry(entry.id, 'userId', e.target.value)}
-                        className="w-full bg-transparent border-b-2 border-retro-sepia/10 focus:border-retro-sepia py-2 outline-none text-sm font-black text-retro-sepia transition-all font-typewriter uppercase tracking-tight appearance-none"
+                        className="w-full bg-transparent border-b border-border focus:border-primary py-1.5 outline-none text-sm font-bold text-foreground transition-all appearance-none"
                       >
-                        <option value="">-- Chọn danh tính --</option>
-                        {workers.map(w => (
-                          <option key={w.id} value={w.id}>{w.name}</option>
-                        ))}
+                        <option value="">-- Chọn công nhân --</option>
+                        {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                       </select>
-                      <User size={14} strokeWidth={1.5} className="absolute right-0 top-1/2 -translate-y-1/2 text-retro-sepia/20 pointer-events-none" />
+                      <User size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground/30 pointer-events-none" />
                     </div>
                   </td>
-                  <td className="px-6 py-6">
+                  <td className="px-4 py-5">
                     <input 
                       type="number"
                       value={entry.quantityProduced || ''}
                       onChange={(e) => updateEntry(entry.id, 'quantityProduced', parseInt(e.target.value) || 0)}
-                      className="w-full bg-retro-paper/30 border-2 border-retro-moss/10 px-4 py-2.5 text-center text-sm font-black text-retro-moss outline-none focus:bg-white focus:border-retro-moss transition-all font-typewriter shadow-inner"
-                      placeholder="000"
+                      className="w-full bg-gray-50 border border-border rounded-lg py-2 text-center text-sm font-bold focus:bg-white focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                      placeholder="0"
                     />
                   </td>
-                  <td className="px-6 py-6">
+                  <td className="px-4 py-5">
                     <input 
                       type="number"
                       value={entry.technicalErrorCount || ''}
                       onChange={(e) => updateEntry(entry.id, 'technicalErrorCount', parseInt(e.target.value) || 0)}
-                      className="w-full bg-retro-paper/30 border-2 border-retro-brick/10 px-4 py-2.5 text-center text-sm font-black text-retro-brick outline-none focus:bg-white focus:border-retro-brick transition-all font-typewriter shadow-inner"
-                      placeholder="00"
+                      className="w-full bg-red-50/50 border border-red-100 rounded-lg py-2 text-center text-sm font-bold text-red-700 focus:bg-white focus:ring-1 focus:ring-red-200 outline-none transition-all"
+                      placeholder="0"
                     />
                   </td>
-                  <td className="px-6 py-6">
+                  <td className="px-4 py-5">
                     <input 
                       type="number"
                       value={entry.materialErrorCount || ''}
                       onChange={(e) => updateEntry(entry.id, 'materialErrorCount', parseInt(e.target.value) || 0)}
-                      className="w-full bg-retro-paper/30 border-2 border-retro-sepia/10 px-4 py-2.5 text-center text-sm font-black text-retro-earth outline-none focus:bg-white focus:border-retro-sepia transition-all font-typewriter shadow-inner"
-                      placeholder="00"
+                      className="w-full bg-gray-50 border border-border rounded-lg py-2 text-center text-sm font-bold focus:bg-white focus:ring-1 focus:ring-primary/20 outline-none transition-all"
+                      placeholder="0"
                     />
                   </td>
-                  <td className="px-6 py-6">
+                  <td className="px-6 py-5">
                     <input 
                       type="text"
                       value={entry.errorNote}
                       onChange={(e) => updateEntry(entry.id, 'errorNote', e.target.value)}
-                      className="w-full bg-transparent border-b-2 border-dashed border-retro-sepia/10 focus:border-retro-mustard py-2.5 outline-none text-xs text-retro-earth font-handwriting font-bold placeholder:text-retro-earth/20 transition-all italic"
-                      placeholder="Kê khai sai biệt (nếu có)..."
+                      className="w-full bg-transparent border-b border-border py-2 text-xs text-muted-foreground focus:border-primary focus:text-foreground transition-all outline-none italic placeholder:opacity-40"
+                      placeholder="Nhập ghi chú nhanh..."
                     />
                   </td>
-                  <td className="px-6 py-6">
-                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                       <button 
-                        onClick={() => handleCopyRow(index)}
-                        className="p-2.5 bg-retro-paper border-2 border-retro-sepia/10 text-retro-sepia hover:bg-retro-sepia hover:text-retro-paper transition-all shadow-sm rotate-3 hover:rotate-0"
-                        title="Sao chép dòng"
-                       >
-                          <Copy size={14} strokeWidth={1.5} />
-                       </button>
-                       <button 
-                        onClick={() => handleRemoveRow(entry.id)}
-                        className="p-2.5 bg-retro-paper border-2 border-retro-brick/10 text-retro-brick hover:bg-retro-brick hover:text-white transition-all shadow-sm -rotate-3 hover:rotate-0"
-                        title="Xóa dòng"
-                       >
-                          <Trash2 size={14} strokeWidth={1.5} />
-                       </button>
+                  <td className="px-6 py-5">
+                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                       <button onClick={() => handleCopyRow(index)} className="p-1.5 hover:bg-primary/10 rounded-lg text-primary transition-all"><Copy size={16} /></button>
+                       <button onClick={() => handleRemoveRow(entry.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 transition-all"><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>
@@ -510,89 +464,77 @@ export default function TeamWorkLog() {
           </table>
         </div>
 
-        {/* TABLE FOOTER / ACTIONS */}
-        <div className="p-10 bg-retro-paper/20 border-t-2 border-retro-sepia/10 flex flex-col sm:flex-row justify-between items-center gap-8 relative z-10">
+        <div className="p-6 bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-6">
            <button 
-            onClick={handleAddRow}
-            className="flex items-center gap-3 px-8 py-4 bg-white border-2 border-dashed border-retro-sepia/20 text-[11px] font-black uppercase tracking-[0.2em] text-retro-earth/60 hover:border-retro-sepia hover:text-retro-sepia transition-all shadow-sm font-typewriter"
+             onClick={handleAddRow}
+             className="btn-secondary h-11 px-8 rounded-full shadow-sm text-xs font-bold gap-2 whitespace-nowrap"
            >
-              <Plus size={18} strokeWidth={1.5} /> Thêm nhân hiệu mới
+              <Plus size={18} /> Thêm nhân sự báo cáo
            </button>
 
-           <div className="flex flex-col items-end gap-3 font-typewriter">
-              <div className="flex items-center gap-12">
-                 <div className="text-right">
-                    <p className="text-[9px] font-black text-retro-earth uppercase tracking-widest mb-1 opacity-60">Tổng cộng Kê khai</p>
-                    <p className={cn("text-2xl font-black italic tracking-tighter underline decoration-retro-mustard underline-offset-4", isOverLimit ? "text-retro-brick" : "text-retro-sepia")}>
-                      {totalBatchQty} <span className="text-[10px] uppercase font-bold not-italic">Hàn hóa</span>
-                    </p>
-                 </div>
-                 <button 
-                  onClick={handleSaveAll}
-                  disabled={isSaving || isOverLimit}
-                  className="retro-btn bg-retro-brick text-white hover:bg-retro-sepia px-12 py-6 shadow-[4px_4px_0px_#3E272333] flex items-center gap-3"
-                 >
-                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <><Save size={20} strokeWidth={1.5} /> Ký duyệt & Lưu trữ</>}
-                 </button>
+           <div className="flex items-center gap-8 w-full md:w-auto">
+              <div className="text-right flex flex-col items-end shrink-0">
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Tổng kê khai tạm tính</p>
+                 <p className={cn("text-2xl font-black tabular-nums transition-colors", isOverLimit ? "text-red-600" : "text-foreground")}>
+                   {totalBatchQty.toLocaleString()} <span className="text-xs font-bold text-muted-foreground uppercase ml-1">đơn vị</span>
+                 </p>
               </div>
-              {isOverLimit && (
-                <div className="flex items-center gap-2 text-retro-brick animate-bounce italic mr-2">
-                   <AlertTriangle size={16} strokeWidth={2} />
-                   <span className="text-[10px] font-black uppercase tracking-tight">Kê khai vượt định mức vật tư hệ thống!</span>
-                </div>
-              )}
+              <button 
+               onClick={handleSaveAll}
+               disabled={isSaving || isOverLimit}
+               className="btn-primary h-12 px-10 rounded-xl shadow-xl shadow-primary/20 flex-1 md:flex-none justify-center gap-2 min-w-[180px]"
+              >
+                 {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                 {isSaving ? 'Đang lưu...' : 'Xác nhận Hồ sơ'}
+              </button>
            </div>
         </div>
       </div>
 
-
-      {/* QUICK STATS HELPERS */}
       {currentOrder && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-           <div className="retro-card !bg-white border-2 shadow-xl flex items-center gap-6 p-8 relative overflow-hidden">
-              <div className="w-14 h-14 bg-retro-paper border-2 border-retro-sepia flex items-center justify-center text-retro-sepia shadow-inner rotate-3">
-                 <Package size={28} strokeWidth={1.5} />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-in slide-in-from-bottom-2">
+            <div className="card !p-5 flex items-center gap-4">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-muted-foreground">
+                 <Package size={20} />
               </div>
-              <div className="relative z-10">
-                 <p className="text-[10px] font-black text-retro-earth uppercase tracking-widest mb-1 font-typewriter opacity-60">Mục tiêu bưu</p>
-                 <p className="text-xl font-black text-retro-sepia font-typewriter underline decoration-retro-mustard/30 underline-offset-2">{currentOrder.quantityTarget} <span className="text-[10px]">PCS</span></p>
+              <div>
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Định mức Lệnh</p>
+                 <p className="text-lg font-black text-foreground">{currentOrder.quantityTarget.toLocaleString()}</p>
               </div>
-           </div>
-           <div className="retro-card !bg-white border-2 shadow-xl flex items-center gap-6 p-8 relative overflow-hidden">
-              <div className="w-14 h-14 bg-retro-paper border-2 border-retro-moss flex items-center justify-center text-retro-moss shadow-inner -rotate-3">
-                 <CheckCircle2 size={28} strokeWidth={1.5} />
+            </div>
+            
+            <div className={cn(
+                "card !p-5 flex items-center gap-4 border-l-4",
+                isOverLimit ? "border-l-red-500" : (currentOrder.quantityCompleted + totalBatchQty >= currentOrder.quantityTarget ? "border-l-emerald-500" : "border-l-primary")
+            )}>
+              <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary">
+                 <History size={20} />
               </div>
-              <div className="relative z-10">
-                 <p className="text-[10px] font-black text-retro-earth uppercase tracking-widest mb-1 font-typewriter opacity-60">Ghi nhận cũ</p>
-                 <p className="text-xl font-black text-retro-moss font-typewriter underline decoration-retro-mustard/30 underline-offset-2">{currentOrder.quantityCompleted} <span className="text-[10px]">PCS</span></p>
-              </div>
-           </div>
-           
-           <div className="retro-card !bg-white border-2 shadow-xl col-span-1 md:col-span-2 p-8 relative overflow-hidden">
               <div className="flex-1">
-                 <div className="flex justify-between items-end mb-4">
-                    <div className="flex flex-col">
-                       <p className="text-[10px] font-black text-retro-earth uppercase tracking-widest mb-1 italic font-typewriter opacity-60">Tiến độ đối chiếu thực địa</p>
-                       <p className="text-sm font-black text-retro-brick uppercase font-typewriter italic">Lệnh: {currentOrder.sku || 'N/A'}</p>
-                    </div>
-                    <p className="text-2xl font-black text-retro-sepia font-typewriter tracking-tighter italic">
-                      {Math.round(((currentOrder.quantityCompleted + totalBatchQty) / currentOrder.quantityTarget) * 100)}%
-                    </p>
+                 <div className="flex justify-between items-baseline">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Tổng thực hiện</p>
+                    <span className="text-xs font-black text-foreground">{Math.round(((currentOrder.quantityCompleted + totalBatchQty) / currentOrder.quantityTarget) * 100)}%</span>
                  </div>
-                 <div className="h-5 bg-retro-paper border-2 border-retro-sepia/20 shadow-inner relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,transparent_10%,rgba(62,39,35,0.05)_10.5%,rgba(62,39,35,0.05)_11%,transparent_11.5%)] bg-[length:20px_100%]" />
-                    <div 
-                      className={cn(
-                        "h-full transition-all duration-1000 shadow-[2px_0px_10px_rgba(0,0,0,0.1)] relative",
-                        isOverLimit ? "bg-retro-brick" : "bg-retro-moss"
-                      )}
-                      style={{ width: `${Math.min(100, Math.round(((currentOrder.quantityCompleted + totalBatchQty) / currentOrder.quantityTarget) * 100))}%` }}
-                    >
-                       <div className="absolute inset-0 bg-white/10" />
-                    </div>
-                 </div>
+                 <p className="text-lg font-black text-foreground">{(currentOrder.quantityCompleted + totalBatchQty).toLocaleString()}</p>
               </div>
-           </div>
+            </div>
+
+            <div className="md:col-span-2 card !p-5 flex flex-col justify-center">
+               <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                        "h-full transition-all duration-1000",
+                        isOverLimit ? "bg-red-500" : (currentOrder.quantityCompleted + totalBatchQty >= currentOrder.quantityTarget ? "bg-emerald-500" : "bg-primary")
+                    )}
+                    style={{ width: `${Math.min(100, ((currentOrder.quantityCompleted + totalBatchQty) / currentOrder.quantityTarget) * 100)}%` }}
+                  />
+               </div>
+               {isOverLimit && (
+                 <p className="text-[10px] font-bold text-red-600 uppercase tracking-tight mt-2 flex items-center gap-1">
+                    <AlertTriangle size={12} /> Cảnh báo: Kê khai vượt định mức vật tư (+5%)
+                 </p>
+               )}
+            </div>
         </div>
       )}
 
@@ -600,11 +542,9 @@ export default function TeamWorkLog() {
         <QRScanner 
           onScan={(data) => {
             const matched = orders.find(o => o.id === data || o.sku === data);
-            if (matched) {
-              setSelectedOrderId(matched.id);
-            } else {
-              alert("Không tìm thấy Lệnh sản xuất nào khớp với mã: " + data);
-            }
+            if (matched) setSelectedOrderId(matched.id);
+            else showToast('error', "Không tìm thấy Lệnh sản xuất");
+            setIsScanning(false);
           }}
           onClose={() => setIsScanning(false)}
           title="Quét mã Lệnh Sản Xuất"

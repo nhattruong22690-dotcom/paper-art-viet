@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getProductionOrders, addProductionOrderToOrder } from '@/services/order.service';
+import { getProductionOrders, updateProductionStatus } from '@/services/production.service';
 
 export async function GET() {
   try {
@@ -11,20 +11,16 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function PATCH(request: Request) {
   try {
-    const data = await request.json();
-    const { orderId, productId, quantityTarget } = data;
-    
-    if (!orderId || !productId || !quantityTarget) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const { id, status } = await request.json();
+    if (!id || !status) {
+      return NextResponse.json({ error: 'Missing id or status' }, { status: 400 });
     }
-
-    const newPO = await addProductionOrderToOrder(orderId, productId, quantityTarget);
-    
-    return NextResponse.json(newPO);
+    await updateProductionStatus(id, status);
+    return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Create Production Order API Error:', error);
+    console.error('Update Production Status API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
