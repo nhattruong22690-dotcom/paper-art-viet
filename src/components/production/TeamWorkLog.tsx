@@ -268,7 +268,7 @@ export default function TeamWorkLog() {
                 <select 
                   value={selectedOrderId}
                   onChange={(e) => setSelectedOrderId(e.target.value)}
-                  className="w-full pl-4 pr-12 py-3 bg-background border-2 border-dashed border-foreground/20 rounded-2xl text-sm font-semibold text-foreground outline-none appearance-none cursor-pointer focus:border-primary/30 transition-all uppercase tracking-tight"
+                  className="w-full pl-4 pr-12 py-3 bg-background border-2 border-black/10 rounded-2xl text-sm font-semibold text-foreground outline-none appearance-none cursor-pointer focus:border-primary/30 transition-all uppercase tracking-tight"
                 >
                   <option value="">-- Chọn lệnh sản xuất --</option>
                   {orders.map(o => (
@@ -286,7 +286,7 @@ export default function TeamWorkLog() {
                 type="date"
                 value={workDate}
                 onChange={(e) => setWorkDate(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-background border-2 border-dashed border-foreground/20 rounded-2xl text-xs font-semibold text-foreground outline-none focus:border-primary/30 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-background border-2 border-black/10 rounded-2xl text-xs font-semibold text-foreground outline-none focus:border-primary/30 transition-all"
               />
               <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 pointer-events-none group-focus-within:text-primary transition-colors" />
            </div>
@@ -348,7 +348,7 @@ export default function TeamWorkLog() {
                                newBOM[idx].selectedBatchId = e.target.value;
                                setBomItems(newBOM);
                             }}
-                            className="w-full pl-4 pr-10 py-2.5 bg-background border-2 border-dashed border-foreground/10 rounded-2xl text-[11px] font-semibold text-foreground outline-none appearance-none cursor-pointer focus:border-primary/30 transition-all uppercase tracking-tight"
+                            className="w-full pl-4 pr-10 py-2.5 bg-background border-2 border-black/5 rounded-2xl text-[11px] font-semibold text-foreground outline-none appearance-none cursor-pointer focus:border-primary/30 transition-all uppercase tracking-tight"
                           >
                             <option value="">-- Chọn lô vật tư --</option>
                             {item.availableBatches?.map((b: any) => (
@@ -379,7 +379,7 @@ export default function TeamWorkLog() {
              ))}
 
              {bomItems.length === 0 && !fetchingBOM && (
-               <div className="col-span-full bg-card border-2 border-dashed border-border/10 rounded-[3rem] p-16 flex flex-col items-center justify-center text-muted-foreground/20">
+               <div className="col-span-full bg-card border-2 border-2 border-black/10 rounded-[3rem] p-16 flex flex-col items-center justify-center text-muted-foreground/20">
                   <Package size={48} className="mb-4 opacity-10" />
                   <p className="text-[10px] font-semibold uppercase tracking-widest italic">Không có dữ liệu BOM cho lệnh này</p>
                </div>
@@ -412,7 +412,7 @@ export default function TeamWorkLog() {
                       <select 
                         value={entry.userId}
                         onChange={(e) => updateEntry(entry.id, 'userId', e.target.value)}
-                        className="w-full bg-transparent border-b-2 border-dashed border-border/10 focus:border-primary py-2 outline-none text-sm font-semibold text-foreground transition-all appearance-none uppercase tracking-tight"
+                        className="w-full bg-transparent border-b-2 border-2 border-black/10 focus:border-primary py-2 outline-none text-sm font-semibold text-foreground transition-all appearance-none uppercase tracking-tight"
                       >
                         <option value="">-- Chọn công nhân --</option>
                         {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -471,7 +471,7 @@ export default function TeamWorkLog() {
         <div className="p-8 bg-background/50 border-t border-border/10 flex flex-col lg:flex-row justify-between items-center gap-8 mt-auto">
            <button 
              onClick={handleAddRow}
-             className="px-8 py-4 bg-card border-2 border-dashed border-border/10 rounded-[2rem] text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] shadow-sm hover:text-primary hover:border-primary/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98] w-full lg:w-auto"
+             className="px-8 py-4 bg-card border-2 border-2 border-black/10 rounded-[2rem] text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] shadow-sm hover:text-primary hover:border-primary/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98] w-full lg:w-auto"
            >
               <Plus size={18} /> Thêm nhân sự báo cáo
            </button>

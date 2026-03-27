@@ -25,6 +25,7 @@ import { getPurchaseOrders, updatePOStatus } from '@/services/purchase.service';
 import SupplierManagementModal from './SupplierManagementModal';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { formatNumber } from '@/utils/format';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -200,7 +201,7 @@ export default function PurchaseOrderList({ onAddNew }: { onAddNew: () => void }
                     </td>
                     <td className="px-8 py-6 text-right">
                        <span className="font-black text-black tabular-nums tracking-tighter text-lg italic">
-                        {Number(po.totalAmount).toLocaleString()} <span className="text-[10px] text-black/40">đ</span>
+                        {formatNumber(po.totalAmount)} <span className="text-[10px] text-black/40">đ</span>
                        </span>
                     </td>
                     <td className="px-8 py-6">

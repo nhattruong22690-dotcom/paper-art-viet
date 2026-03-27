@@ -5,53 +5,36 @@ import { supabaseAdmin as supabase } from '@/lib/supabase';
  */
 export async function getAllProducts() {
   const { data: products, error } = await supabase
-    .from('Product')
+    .from('products')
     .select(`
       *,
-      bomItems:BOMItem(
-        *,
-        material:Material(*)
+      bom (
+        id,
+        version,
+        is_active
       )
     `)
     .order('name', { ascending: true });
 
   if (error) throw error;
 
-  // Normalize and transform to camelCase
+  // Transform to camelCase and include version count
   const mapped = (products || []).map(p => {
-    const bomItems = (p.bomItems || []).map((bi: any) => {
-      let refPrice = Number(bi.material?.reference_price || 0);
-      if (refPrice === 0 && bi.material?.purchase_price && bi.material?.purchase_quantity && Number(bi.material?.purchase_quantity) > 0) {
-        refPrice = Number(bi.material.purchase_price) / Number(bi.material.purchase_quantity);
-      }
-      return {
-        id: bi.id,
-        productId: bi.product_id,
-        materialId: bi.material_id,
-        quantity: Number(bi.quantity || 0),
-        material: bi.material ? {
-          id: bi.material.id,
-          sku: bi.material.sku,
-          name: bi.material.name,
-          unit: bi.material.unit,
-          referencePrice: refPrice,
-          unitPrice: Number(bi.material.unit_price || 0),
-          stockQuantity: Number(bi.material.stock_quantity || 0)
-        } : null
-      };
-    });
-
+    const activeBom = (p.bom || []).find((b: any) => b.is_active) || p.bom?.[0];
+    
     return {
       id: p.id,
-      sku: p.sku,
+      sku: p.code,
       name: p.name,
+      unit: p.unit,
       basePrice: Number(p.base_price || 0),
       costPrice: Number(p.cost_price || 0),
       wholesalePrice: Number(p.wholesale_price || 0),
       exportPrice: Number(p.export_price || 0),
       productionTimeStd: p.production_time_std,
       cogsConfig: p.cogs_config,
-      bomItems
+      versionCount: (p.bom || []).length,
+      activeBomId: activeBom?.id
     };
   });
 
@@ -59,148 +42,198 @@ export async function getAllProducts() {
 }
 
 /**
- * Lấy chi tiết sản phẩm kèm BOM.
+ * Lấy chi tiết sản phẩm kèm các phiên bản BOM.
  */
 export async function getProductDetail(id: string) {
   const { data: product, error } = await supabase
-    .from('Product')
+    .from('products')
     .select(`
       *,
-      bomItems:BOMItem(
-        *,
-        material:Material(*)
-      )
+      bom (*)
     `)
     .eq('id', id)
     .single();
 
   if (error) {
-    if (error.code === 'PGRST116') return null; // Not found
+    if (error.code === 'PGRST116') return null;
     throw error;
   }
 
-  // Normalize materials in BOM and product prices
-  const bomItems = (product.bomItems || []).map((bi: any) => {
-    let refPrice = Number(bi.material?.reference_price || 0);
-    if (refPrice === 0 && bi.material?.purchase_price && bi.material?.purchase_quantity && Number(bi.material?.purchase_quantity) > 0) {
-      refPrice = Number(bi.material.purchase_price) / Number(bi.material.purchase_quantity);
+  // Lấy thêm BOM detail cho version active (hoặc version mới nhất)
+  const activeBom = (product.bom || []).find((b: any) => b.is_active) || product.bom?.[0];
+  let bomDetails = null;
+  let bomOperations = [];
+
+  if (activeBom) {
+    const { data: details } = await supabase
+      .from('bom')
+      .select(`
+        *,
+        bom_materials (*, materials (*)),
+        bom_operations (*, operations (*))
+      `)
+      .eq('id', activeBom.id)
+      .single();
+    
+    if (details) {
+      bomOperations = details.bom_operations || [];
+      // Ánh xạ về format cũ để không làm gãy UI ngay lập tức
+      bomDetails = (details.bom_materials || []).map((bm: any) => ({
+        id: bm.id,
+        materialId: bm.material_id,
+        quantity: Number(bm.qty),
+        material: bm.materials ? {
+          id: bm.materials.id,
+          sku: bm.materials.type,
+          name: bm.materials.specification,
+          unit: bm.materials.unit,
+          referencePrice: Number(bm.materials.price || 0),
+          unitPrice: Number(bm.materials.price || 0)
+        } : null
+      }));
     }
-    return {
-      id: bi.id,
-      productId: bi.product_id,
-      materialId: bi.material_id,
-      quantity: Number(bi.quantity || 0),
-      material: bi.material ? {
-        id: bi.material.id,
-        sku: bi.material.sku,
-        name: bi.material.name,
-        unit: bi.material.unit,
-        referencePrice: refPrice,
-        unitPrice: Number(bi.material.unit_price || 0)
-      } : null
-    };
-  });
+  }
 
   return {
     id: product.id,
-    sku: product.sku,
+    sku: product.code,
     name: product.name,
+    unit: product.unit,
     basePrice: Number(product.base_price || 0),
     costPrice: Number(product.cost_price || 0),
     wholesalePrice: Number(product.wholesale_price || 0),
     exportPrice: Number(product.export_price || 0),
     productionTimeStd: product.production_time_std,
     cogsConfig: product.cogs_config,
-    bomItems
+    bomVersions: product.bom || [],
+    bomItems: bomDetails, // compatibility mapping
+    bomOperations: bomOperations
   };
 }
 
 /**
- * Tính toán lại giá vốn từ BOM và cập nhật vào bảng Product.
+ * Tính toán lại giá vốn từ BOM và cập nhật vào bảng products.
  */
 export async function recalculateProductCostPrice(productId: string) {
-  const product = await getProductDetail(productId);
-  if (!product) return null;
-
-  let totalCost = 0;
-  product.bomItems.forEach((item: any) => {
-    const price = Number(item.material?.unitPrice || item.material?.referencePrice || 0);
-    totalCost += price * Number(item.quantity);
-  });
-
-  const oldPrice = Number(product.costPrice || 0);
+  const { data: activeBom } = await supabase
+    .from('bom')
+    .select('id')
+    .eq('product_id', productId)
+    .eq('is_active', true)
+    .single();
   
+  if (!activeBom) return null;
+
+  const { calculateBOMCost } = await import('./bom.service');
+  const costData = await calculateBOMCost(activeBom.id);
+
   const { error: updateError } = await supabase
-    .from('Product')
-    .update({ cost_price: totalCost })
+    .from('products')
+    .update({ 
+      cost_price: costData.totalCost,
+      base_price: costData.totalCost,
+      wholesale_price: costData.totalCost * 1.3,
+      export_price: costData.totalCost * 2.4
+    })
     .eq('id', productId);
 
   if (updateError) throw updateError;
 
-  const updatedProduct = await getProductDetail(productId);
-
-  return {
-    oldPrice,
-    newPrice: totalCost,
-    product: updatedProduct
-  };
+  return await getProductDetail(productId);
 }
 
 /**
- * Cập nhật BOM cho sản phẩm.
+ * Cập nhật BOM cho sản phẩm (sẽ tạo một phiên bản BOM mới hoặc cập nhật bản hiện tại).
  */
 export async function updateProductBOM(
   productId: string, 
-  items: { materialId: string, quantity: number }[]
+  items: { materialId: string, quantity: number }[],
+  operations: { operationId: string, sequence: number }[] = []
 ) {
-  // 1. Xóa BOM cũ
-  const { error: deleteError } = await supabase
-    .from('BOMItem')
-    .delete()
-    .eq('product_id', productId);
+  // Tìm BOM đang active
+  let { data: activeBom } = await supabase
+    .from('bom')
+    .select('*')
+    .eq('product_id', productId)
+    .eq('is_active', true)
+    .single();
 
-  if (deleteError) throw deleteError;
-
-  // 2. Thêm BOM mới
-  if (items.length > 0) {
-    const { error: insertError } = await supabase
-      .from('BOMItem')
-      .insert(items.map(item => ({
-        product_id: productId,
-        material_id: item.materialId,
-        quantity: item.quantity
-      })));
-    
-    if (insertError) throw insertError;
+  if (!activeBom) {
+    // Tạo mới nếu chưa có
+    const { data: newBom, error: createError } = await supabase
+      .from('bom')
+      .insert({ product_id: productId, version: 1, is_active: true, note: 'Initial BOM' })
+      .select()
+      .single();
+    if (createError) throw createError;
+    activeBom = newBom;
   }
 
-  // 3. Tự động tính lại giá vốn
+  // Sử dụng upsertBOM từ bom.service để xử lý đồng bộ
+  const { upsertBOM } = await import('./bom.service');
+  
+  await upsertBOM(
+    { id: activeBom.id, product_id: productId },
+    items.map(m => ({ material_id: m.materialId, qty: m.quantity, scrap_rate: 0.05 })),
+    operations.map(o => ({ operation_id: o.operationId, sequence: o.sequence }))
+  );
+
+  // Tự động tính lại giá
   await recalculateProductCostPrice(productId);
 
   return await getProductDetail(productId);
 }
 
 /**
- * Cập nhật cấu hình COGS của sản phẩm.
+ * Tạo một phiên bản BOM mới cho sản phẩm.
  */
-export async function updateProductCOGS(
+export async function createNewBOMVersion(
   productId: string, 
-  cogsConfig: any
+  items: { materialId: string, quantity: number }[],
+  operations: { operationId: string, sequence: number }[] = []
 ) {
-  const { data, error } = await supabase
-    .from('Product')
-    .update({ cogs_config: cogsConfig })
-    .eq('id', productId)
+  // 1. Lấy phiên bản lớn nhất hiện tại
+  const { data: boms } = await supabase
+    .from('bom')
+    .select('version')
+    .eq('product_id', productId)
+    .order('version', { ascending: false })
+    .limit(1);
+    
+  const nextVersion = (boms && boms.length > 0) ? (Number(boms[0].version) + 1) : 1;
+
+  // 2. Set tất cả BOM cũ thành inactive
+  await supabase
+    .from('bom')
+    .update({ is_active: false })
+    .eq('product_id', productId);
+
+  // 3. Tạo BOM mới
+  const { data: newBom, error: createError } = await supabase
+    .from('bom')
+    .insert({ 
+      product_id: productId, 
+      version: nextVersion, 
+      is_active: true, 
+      note: `Version ${nextVersion} created on ${new Date().toLocaleDateString()}` 
+    })
     .select()
     .single();
 
-  if (error) throw error;
-  
-  return {
-    ...data,
-    id: data.id,
-    cogsConfig: data.cogs_config
-  };
+  if (createError) throw createError;
+
+  // 4. Thêm vật tư và công đoạn vào BOM mới
+  const { upsertBOM } = await import('./bom.service');
+  await upsertBOM(
+    { id: newBom.id, product_id: productId },
+    items.map(m => ({ material_id: m.materialId, qty: m.quantity, scrap_rate: 0.05 })),
+    operations.map(o => ({ operation_id: o.operationId, sequence: o.sequence }))
+  );
+
+  // 5. Tự động tính lại giá
+  await recalculateProductCostPrice(productId);
+
+  return await getProductDetail(productId);
 }
 
 /**
@@ -209,10 +242,10 @@ export async function updateProductCOGS(
 export async function upsertProduct(data: any) {
   const { id, ...updateData } = data;
   
-  // Transform to snake_case for DB
   const dbData: any = {};
-  if ('sku' in updateData) dbData.sku = updateData.sku;
+  if ('sku' in updateData) dbData.code = updateData.sku;
   if ('name' in updateData) dbData.name = updateData.name;
+  if ('unit' in updateData) dbData.unit = updateData.unit;
   if ('basePrice' in updateData) dbData.base_price = updateData.basePrice;
   if ('wholesalePrice' in updateData) dbData.wholesale_price = updateData.wholesalePrice;
   if ('exportPrice' in updateData) dbData.export_price = updateData.exportPrice;
@@ -223,27 +256,26 @@ export async function upsertProduct(data: any) {
   let result;
   if (id) {
     const { data: updated, error } = await supabase
-      .from('Product')
+      .from('products')
       .update(dbData)
       .eq('id', id)
       .select()
       .single();
-    
     if (error) throw error;
     result = updated;
   } else {
     const { data: created, error } = await supabase
-      .from('Product')
+      .from('products')
       .insert(dbData)
       .select()
       .single();
-    
     if (error) throw error;
     result = created;
   }
 
   return {
     ...result,
+    sku: result.code,
     basePrice: Number(result.base_price || 0),
     costPrice: Number(result.cost_price || 0),
     wholesalePrice: Number(result.wholesale_price || 0),

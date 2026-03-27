@@ -52,6 +52,16 @@ export default function ProductionPipeline() {
   const loadOrders = async () => {
     try {
       const res = await fetch('/api/production/orders');
+      
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}: ${res.statusText}`);
+      }
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server did not return JSON. Check if the API route is valid.");
+      }
+
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setOrders(data);
@@ -69,6 +79,16 @@ export default function ProductionPipeline() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: newStatus })
       });
+      
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}: ${res.statusText}`);
+      }
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server did not return JSON. Check if the API route is valid.");
+      }
+
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       
@@ -141,7 +161,7 @@ export default function ProductionPipeline() {
             </div>
           ))}
           {filteredOrders.length === 0 && (
-            <div className="py-12 text-center border-2 border-dashed border-gray-100 rounded-lg opacity-40 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <div className="py-12 text-center border-2 border-black/5 rounded-lg opacity-40 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                Trống
             </div>
           )}

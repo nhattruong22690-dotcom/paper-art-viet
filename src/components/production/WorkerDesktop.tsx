@@ -238,7 +238,7 @@ export default function WorkerDesktop() {
 
                    {matErrors > 0 && (
                      <div className="space-y-3">
-                        <button className="w-full py-4 border-2 border-dashed border-gray-200 rounded-[24px] text-gray-400 flex flex-col items-center justify-center gap-2 hover:border-primary-200 hover:text-primary-600 transition-all">
+                        <button className="w-full py-4 border-2 border-gray-100 rounded-[24px] text-gray-400 flex flex-col items-center justify-center gap-2 hover:border-primary-200 hover:text-accent transition-all">
                            <Camera size={24} />
                            <span className="text-[10px] font-black uppercase tracking-widest">Chụp ảnh minh chứng (Lỗi giấy)</span>
                         </button>

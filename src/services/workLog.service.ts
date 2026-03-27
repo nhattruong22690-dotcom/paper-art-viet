@@ -64,7 +64,7 @@ export async function submitWorkSession(data: {
       *,
       productionOrder:ProductionOrder(
         *,
-        product:Product(*)
+        product:products(*)
       )
     `)
     .single();
@@ -167,7 +167,7 @@ export async function getPersonalWorkHistory(employeeId: string) {
       *,
       productionOrder:ProductionOrder(
         *,
-        product:Product(*)
+        product:products(*)
       )
     `)
     .eq('employee_id', employeeId)
@@ -193,7 +193,7 @@ export async function getPersonalWorkHistory(employeeId: string) {
       product: log.productionOrder.product ? {
         id: log.productionOrder.product.id,
         name: log.productionOrder.product.name,
-        sku: log.productionOrder.product.sku
+        sku: log.productionOrder.product.code
       } : null
     } : null
   }));
@@ -311,9 +311,9 @@ export async function createBatchWorkLogs(
       }
 
       // Deduct from Material total
-      const { data: material } = await supabase.from('Material').select('stock_quantity').eq('id', consumption.materialId).single();
+      const { data: material } = await supabase.from('materials').select('stock_quantity').eq('id', consumption.materialId).single();
       if (material) {
-        await supabase.from('Material').update({ stock_quantity: (material.stock_quantity || 0) - consumption.quantity }).eq('id', consumption.materialId);
+        await supabase.from('materials').update({ stock_quantity: (material.stock_quantity || 0) - consumption.quantity }).eq('id', consumption.materialId);
       }
 
       // Log Transaction
@@ -377,10 +377,13 @@ export async function getPOMaterialNeeds(productionOrderId: string) {
   const { data: po, error } = await supabase
     .from('ProductionOrder')
     .select(`
-      product:Product(
-        bomItems:BOMItem(
+      product:products(
+        bom(
           *,
-          material:Material(*)
+          bom_materials(
+            *,
+            materials(*)
+          )
         )
       )
     `)
@@ -390,13 +393,15 @@ export async function getPOMaterialNeeds(productionOrderId: string) {
   if (error || !po) return [];
 
   const product: any = Array.isArray(po.product) ? po.product[0] : po.product;
-  return (product?.bomItems || []).map((bi: any) => ({
+  const activeBom = (product?.bom || []).find((b: any) => b.is_active) || product?.bom?.[0];
+  
+  return (activeBom?.bom_materials || []).map((bi: any) => ({
     ...bi,
     materialId: bi.material_id,
-    material: bi.material ? {
-      ...bi.material,
-      referencePrice: bi.material.reference_price,
-      unitPrice: bi.material.unit_price
+    material: bi.materials ? {
+      ...bi.materials,
+      referencePrice: bi.materials.price,
+      unitPrice: bi.materials.price
     } : null
   }));
 }

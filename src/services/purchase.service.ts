@@ -58,7 +58,7 @@ export async function getPOWithItems(id: string) {
       supplier:Supplier(*),
       purchaseOrderItems:PurchaseOrderItem(
         *,
-        material:Material(*)
+        material:materials(*)
       )
     `)
     .eq('id', id)

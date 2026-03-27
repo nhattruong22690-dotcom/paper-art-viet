@@ -5,12 +5,15 @@ import { supabaseAdmin as supabase } from '@/lib/supabase';
  */
 export async function calculateProductCOGS(productId: string) {
   const { data: product, error } = await supabase
-    .from('Product')
+    .from('products')
     .select(`
       *,
-      bomItems:BOMItem(
+      bom (
         *,
-        material:Material(*)
+        bom_materials (
+          *,
+          materials (*)
+        )
       )
     `)
     .eq('id', productId)
@@ -19,17 +22,12 @@ export async function calculateProductCOGS(productId: string) {
   if (error || !product) return 0;
 
   // Sử dụng referencePrice hoặc purchasePrice từ Material
-  const totalCOGS = (product.bomItems || []).reduce((acc: number, item: any) => {
-    const rawPrice = item.material?.unit_price || item.material?.reference_price || 0;
+  const activeBom = (product.bom || []).find((b: any) => b.is_active) || product.bom?.[0];
+  const totalCOGS = (activeBom?.bom_materials || []).reduce((acc: number, item: any) => {
+    const rawPrice = item.materials?.price || 0;
     let price = Number(rawPrice);
     
-    if (price === 0 && item.material?.purchase_price && item.material?.purchase_quantity) {
-      const pPrice = Number(item.material.purchase_price);
-      const pQty = Number(item.material.purchase_quantity);
-      if (pQty > 0) price = pPrice / pQty;
-    }
-
-    const quantity = Number(item.quantity || 0);
+    const quantity = Number(item.qty || 0);
     return acc + (price * quantity);
   }, 0);
 
@@ -117,7 +115,7 @@ export async function getOrders() {
       customer:Customer(*),
       orderItems:OrderItem(
         *,
-        product:Product(*)
+        product:products(*)
       ),
       productionOrders:ProductionOrder(*),
       packages:Package(*)
@@ -152,7 +150,7 @@ export async function getOrders() {
         product: oi.product ? {
           id: oi.product.id,
           name: oi.product.name,
-          sku: oi.product.sku
+          sku: oi.product.code
         } : null
       })),
       productionOrders: (order.productionOrders || []).map((po: any) => ({
@@ -176,7 +174,7 @@ export async function getProductionOrders() {
     .from('ProductionOrder')
     .select(`
       *,
-      product:Product(*),
+      product:products(*),
       order:Order(
         *,
         customer:Customer(*)
@@ -198,7 +196,7 @@ export async function getProductionOrders() {
     product: po.product ? {
       id: po.product.id,
       name: po.product.name,
-      sku: po.product.sku
+      sku: po.product.code
     } : null,
     order: po.order ? {
       id: po.order.id,
@@ -221,17 +219,17 @@ export async function getOrderById(id: string) {
       customer:Customer(*),
       orderItems:OrderItem(
         *,
-        product:Product(*)
+        product:products(*)
       ),
       productionOrders:ProductionOrder(
         *,
-        product:Product(*)
+        product:products(*)
       ),
       packages:Package(
         *,
         packingListDetails:PackingListDetail(
           *,
-          product:Product(*)
+          product:products(*)
         )
       )
     `)

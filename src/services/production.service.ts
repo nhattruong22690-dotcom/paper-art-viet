@@ -5,7 +5,7 @@ export async function getProductionOrdersWithDeadline() {
     .from('ProductionOrder')
     .select(`
       *,
-      product:Product(*),
+      product:products(*),
       order:Order(*)
     `)
     .order('deadline_production', { ascending: true });
@@ -33,7 +33,7 @@ export async function getProductionOrdersWithDeadline() {
       product: po.product ? {
         id: po.product.id,
         name: po.product.name,
-        sku: po.product.sku
+        sku: po.product.code
       } : null,
       order: po.order ? {
         id: po.order.id,
@@ -55,7 +55,7 @@ export async function getWorkLogs(params: { date?: string; skip?: number; take?:
       *,
       productionOrder:ProductionOrder(
         *,
-        product:Product(*)
+        product:products(*)
       ),
       employee:Employees(*)
     `)
@@ -97,7 +97,7 @@ export async function getWorkLogs(params: { date?: string; skip?: number; take?:
       product: log.productionOrder.product ? {
         id: log.productionOrder.product.id,
         name: log.productionOrder.product.name,
-        sku: log.productionOrder.product.sku
+        sku: log.productionOrder.product.code
       } : null
     } : null,
     employee: log.employee
@@ -258,7 +258,7 @@ export async function getProductionOrders() {
     .from('ProductionOrder')
     .select(`
       *,
-      product:Product(sku, name),
+      product:products(code, name),
       order:Order(
         contract_code,
         customer:Customer(name)
@@ -270,7 +270,7 @@ export async function getProductionOrders() {
 
   return (data || []).map(po => ({
     id: po.id,
-    sku: po.product?.sku || 'N/A',
+    sku: po.product?.code || 'N/A',
     title: po.product?.name || 'Sản phẩm không tên',
     customer: po.order?.customer?.name || 'Khách lẻ',
     quantity: po.quantity_target,

@@ -241,7 +241,7 @@ export default function QuickWorkLogModal({
 
             <button
               onClick={handleAddRow}
-              className="w-full py-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-all group"
+              className="w-full py-6 bg-slate-50 border-2 border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-all group"
             >
               <Plus size={24} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
               <span className="text-[10px] font-bold uppercase tracking-widest">Thêm dòng báo cáo</span>

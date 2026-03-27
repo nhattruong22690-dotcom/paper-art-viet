@@ -240,7 +240,7 @@ export default function PerformanceTable({
       )}
 
       {/* FOOTER */}
-      <div className="p-10 border-t-2 border-black border-dashed flex flex-col sm:flex-row justify-between items-center gap-8 text-[10px] font-black text-black/20 uppercase tracking-[0.4em] mt-auto italic bg-black/5">
+      <div className="p-10 border-t-2 border-black/10 flex flex-col sm:flex-row justify-between items-center gap-8 text-[10px] font-black text-black/20 uppercase tracking-[0.4em] mt-auto italic bg-black/5">
          <div className="flex items-center gap-4">
             <Award size={20} strokeWidth={3} className="text-black/40" />
             <span>Registry Size: {sortedEmployees.length} Principals</span>

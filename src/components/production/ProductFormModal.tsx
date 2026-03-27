@@ -22,7 +22,12 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { getMaterials } from '@/services/material.service';
+import { getAllMaterials } from '@/services/material.service';
+import { getAllOperations } from '@/services/operation.service';
+import { useNotification } from "@/context/NotificationContext";
+import { Cpu, Info, History } from 'lucide-react';
+import { formatNumber, parseNumber } from '@/utils/format';
+import { NumericInput } from '@/components/ui/NumericInput';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -31,10 +36,12 @@ function cn(...inputs: ClassValue[]) {
 interface BOMItem {
   materialId: string;
   material: {
-    name: string;
+    specification: string;
+    type: string;
     unit: string;
     unitPrice: number;
     referencePrice: number;
+    name?: string;
     sku?: string | null;
   };
   quantity: number;
@@ -49,6 +56,7 @@ interface Product {
   wholesalePrice: any;
   exportPrice: any;
   productionTimeStd: number | null;
+  unit: string | null;
   cogsConfig?: any;
   bomItems?: any[];
 }
@@ -58,9 +66,115 @@ interface ProductFormModalProps {
   onClose: () => void;
   onSubmit: (data: any) => void;
   initialData?: Product | null;
+  mode?: 'create' | 'edit' | 'new_version';
 }
 
-export default function ProductFormModal({ isOpen, onClose, onSubmit, initialData }: ProductFormModalProps) {
+// Internal SearchableSelect Component
+function SearchableSelect({ 
+  options, 
+  onSelect, 
+  placeholder, 
+  icon: Icon,
+  disabledIds = []
+}: { 
+  options: any[], 
+  onSelect: (opt: any) => void, 
+  placeholder: string,
+  icon: any,
+  disabledIds?: string[]
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = options.filter(opt => {
+    const text = (opt.specification || opt.name || "").toLowerCase();
+    const type = (opt.type || "").toLowerCase();
+    return text.includes(search.toLowerCase()) || type.includes(search.toLowerCase());
+  });
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full h-16 pl-16 pr-12 bg-white border-[2.5px] border-black rounded-xl appearance-none cursor-pointer font-black text-black tracking-tight shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all uppercase text-left flex items-center"
+      >
+        <Icon className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20" size={24} />
+        <span className={cn(search ? "text-black" : "text-black/40")}>
+          {placeholder}
+        </span>
+        <ChevronDown size={24} strokeWidth={3} className="absolute right-6 top-1/2 -translate-y-1/2 text-black" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 z-[300] bg-white border-[2.5px] border-black rounded-xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col max-h-[400px]">
+          <div className="p-4 border-b-2 border-black bg-neo-purple/5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" size={16} />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Tìm kiếm nhanh..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white border-2 border-black rounded-lg text-sm font-bold focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto flex-1">
+            {filtered.length > 0 ? (
+              filtered.map((opt) => {
+                const isDisabled = disabledIds.includes(opt.id);
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => {
+                      onSelect(opt);
+                      setIsOpen(false);
+                      setSearch("");
+                    }}
+                    className={cn(
+                      "w-full px-6 py-4 text-left border-b border-black/5 hover:bg-black/5 transition-all flex flex-col",
+                      isDisabled && "opacity-40 cursor-not-allowed grayscale"
+                    )}
+                  >
+                    <span className="font-black text-xs uppercase italic">{opt.specification || opt.name}</span>
+                    <div className="flex justify-between items-center mt-1">
+                       <span className="text-[9px] font-black text-black/40 uppercase tracking-tighter">
+                         {opt.type || 'Standard'} • {opt.unit || 'Lần'}
+                       </span>
+                       <span className="text-[10px] font-black text-purple-600">{(opt.price || 0).toLocaleString()}đ</span>
+                    </div>
+                  </button>
+                );
+              })
+            ) : (
+              <div className="p-8 text-center text-[10px] font-black uppercase text-black/20 italic tracking-widest">
+                Không tìm thấy kết quả
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+export default function ProductFormModal({ isOpen, onClose, onSubmit, initialData, mode = 'create' }: ProductFormModalProps) {
   const [activeTab, setActiveTab] = useState<'general' | 'bom' | 'cogs'>('general');
   const [loading, setLoading] = useState(false);
   const [materials, setMaterials] = useState<any[]>([]);
@@ -73,19 +187,21 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
     wholesalePrice: 0,
     exportPrice: 0,
     productionTimeStd: 0,
+    unit: 'Sản phẩm'
   });
 
   const [bomItems, setBomItems] = useState<BOMItem[]>([]);
+  const [bomOperations, setBomOperations] = useState<any[]>([]);
+  const [allOperations, setAllOperations] = useState<any[]>([]);
   const [wasteRatio, setWasteRatio] = useState<number>(0.05);
-  const [customCosts, setCustomCosts] = useState<any[]>([
-    { id: '1', name: 'Nhân công', details: 'Lắp ráp & đóng gói', amount: 0 },
-    { id: '2', name: 'Máy móc/Điện', details: 'Khấu hao & vận hành', amount: 0 }
-  ]);
+  const [customCosts, setCustomCosts] = useState<any[]>([]);
   const [productionNotes, setProductionNotes] = useState<string[]>([]);
+  const { showToast } = useNotification();
 
   useEffect(() => {
     if (isOpen) {
       loadMaterials();
+      loadOperations();
       if (initialData) {
         setFormData({
           ...initialData,
@@ -98,11 +214,13 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
             setBomItems(initialData.bomItems.map(item => ({
                 materialId: item.materialId,
                 material: {
-                    name: item.material.name,
+                    specification: item.material.specification || item.material.name,
+                    type: item.material.type || item.material.sku,
                     unit: item.material.unit,
-                    unitPrice: Number(item.material.unitPrice || item.material.referencePrice || 0),
-                    referencePrice: Number(item.material.referencePrice || 0),
-                    sku: item.material.sku
+                    unitPrice: Number(item.material.price || item.material.unitPrice || item.material.referencePrice || 0),
+                    referencePrice: Number(item.material.price || item.material.referencePrice || 0),
+                    name: item.material.specification || item.material.name,
+                    sku: item.material.type || item.material.sku
                 },
                 quantity: Number(item.quantity)
             })));
@@ -112,13 +230,32 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
             setCustomCosts(initialData.cogsConfig.customCosts || []);
             setProductionNotes(initialData.cogsConfig.productionNotes || []);
         }
+      } else {
+        // Default custom costs for new product
+        setCustomCosts([
+          { id: '1', name: 'Lắp ráp', details: 'Nhân công lắp ráp/đóng gói', amount: 0 },
+          { id: '2', name: 'Laser/Điện', details: 'Vận hành máy móc', amount: 0 }
+        ]);
+        setProductionNotes([
+          "Kiểm tra chất lượng keo dán.",
+          "Đóng gói theo tiêu chuẩn xuất khẩu."
+        ]);
       }
     }
   }, [initialData, isOpen]);
 
+  const loadOperations = async () => {
+    try {
+      const data = await getAllOperations();
+      setAllOperations(data);
+    } catch (error) {
+      console.error('Failed to load operations:', error);
+    }
+  };
+
   const loadMaterials = async () => {
     try {
-      const data = await getMaterials({});
+      const data = await getAllMaterials();
       setMaterials(data);
     } catch (error) {
       console.error('Failed to load materials:', error);
@@ -132,11 +269,11 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
       {
         materialId: material.id,
         material: {
-          name: material.name,
+          specification: material.specification,
+          type: material.type,
           unit: material.unit,
-          unitPrice: Number(material.unitPrice || material.referencePrice || 0),
-          referencePrice: Number(material.referencePrice || 0),
-          sku: material.sku
+          unitPrice: Number(material.price || material.unitPrice || material.referencePrice || 0),
+          referencePrice: Number(material.price || material.referencePrice || 0)
         },
         quantity: 1
       }
@@ -153,14 +290,35 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
     setBomItems(bomItems.filter(item => item.materialId !== materialId));
   };
 
+  const handleAddOperation = (op: any) => {
+    if (bomOperations.some(item => item.operationId === op.id)) return;
+    setBomOperations([
+      ...bomOperations,
+      {
+        id: `new-${Date.now()}`,
+        operationId: op.id,
+        sequence: bomOperations.length + 1,
+        operation: op
+      }
+    ]);
+  };
+
+  const handleRemoveOperation = (id: string) => {
+    setBomOperations(bomOperations.filter(op => op.id !== id));
+  };
+
   const totalMaterialCost = bomItems.reduce((acc, item) => {
     const price = item.material.unitPrice || item.material.referencePrice || 0;
     return acc + (price * item.quantity);
   }, 0);
 
-  const wasteCost = totalMaterialCost * wasteRatio;
+  const totalOperationCost = bomOperations.reduce((acc, op) => {
+    return acc + (Number(op.operation.price || 0));
+  }, 0);
+
+  const wasteCost = (totalMaterialCost || 0) * (wasteRatio || 0);
   const customTotal = customCosts.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
-  const totalCOGS = totalMaterialCost + wasteCost + customTotal;
+  const totalCOGS = (totalMaterialCost || 0) + (totalOperationCost || 0) + wasteCost + customTotal;
 
   const updateCustomCost = (id: string, field: string, value: any) => {
     setCustomCosts(customCosts.map(c => c.id === id ? { ...c, [field]: value } : c));
@@ -200,9 +358,14 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                 materialId: item.materialId,
                 quantity: item.quantity
             })),
+            bomOperations: bomOperations.map(op => ({
+                operationId: op.operationId,
+                sequence: op.sequence
+            })),
             costPrice: totalCOGS
         };
         await onSubmit(payload);
+        showToast('success', initialData ? 'Đã cập nhật sản phẩm' : 'Đã tạo sản phẩm mới');
     } finally {
         setLoading(false);
     }
@@ -212,9 +375,9 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
 
   const tabs = [
     { id: 'general', label: 'Thông tin chung', icon: Settings },
-    { id: 'bom', label: 'Định mức Vật tư', icon: Layers },
-    { id: 'cogs', label: 'Tính toán Giá thành', icon: DollarSign }
-  ];
+    { id: 'bom', label: 'Định mức Vật tư', icon: Layers, hidden: mode === 'edit' },
+    { id: 'cogs', label: 'Tính toán Giá thành', icon: DollarSign, hidden: mode === 'edit' }
+  ].filter(t => !t.hidden);
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
@@ -230,10 +393,10 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
             </div>
             <div>
               <h3 className="text-xl font-black text-black tracking-tight uppercase italic">
-                 {initialData ? 'Hiệu đính Sản phẩm' : 'Khai báo Sản phẩm'}
+                 {mode === 'new_version' ? 'Tạo Phiên bản mới' : initialData ? 'Hiệu đính Sản phẩm' : 'Khai báo Sản phẩm'}
               </h3>
               <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1">
-                 Danh mục Master & Thông số Kỹ thuật
+                 {mode === 'edit' ? 'Cập nhật thông tin Master' : 'Danh mục Master & Thông số Kỹ thuật'}
               </p>
             </div>
           </div>
@@ -268,225 +431,302 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
           
           {/* TAB 1: GENERAL */}
           {activeTab === 'general' && (
-            <div className="space-y-8 animate-in fade-in duration-500 pb-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Tên Sản phẩm</label>
-                  <div className="relative group/field">
-                    <input 
-                      required
-                      type="text" 
-                      value={formData.name || ''}
-                      onChange={e => setFormData({...formData, name: e.target.value})}
-                      className="form-input pl-12"
-                      placeholder="Nhập tên chính thức..."
-                    />
-                    <Tag size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
+            <div className="space-y-10 animate-in fade-in duration-500 pb-10">
+              <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-10 items-start">
+                
+                {/* Left Column: Pricing & Time Metrics */}
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
+                    Chính sách giá & Vận hành
+                  </div>
+
+                  {/* Price Cards Stack */}
+                  <div className="space-y-6">
+                    {/* BASE PRICE */}
+                    <div className="w-full p-6 rounded-xl bg-[#D8B4FE] border-[2.5px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                      <p className="text-[10px] font-black text-black uppercase tracking-widest mb-4 italic">Giá vốn Niêm yết</p>
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-white border-[2.5px] border-black rounded-xl flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                          <Calculator size={24} strokeWidth={3} className="text-black" />
+                        </div>
+                        <div className="flex-1">
+                          <NumericInput 
+                            value={formData.basePrice} 
+                            onChange={val => setFormData({...formData, basePrice: val})}
+                            className="bg-transparent border-none shadow-none text-4xl p-0 h-auto font-black italic tracking-tighter"
+                            placeholder="0"
+                          />
+                          <span className="text-[10px] text-black uppercase font-black tracking-widest italic block mt-1">VNĐ / ĐƠN VỊ</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* WHOLESALE PRICE */}
+                    <div className="w-full p-6 rounded-xl bg-[#FEF3C7] border-[2.5px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                      <p className="text-[10px] font-black text-black uppercase tracking-widest mb-4 italic">Giá bán sỉ (B2B)</p>
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-white border-[2.5px] border-black rounded-xl flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                          <Store size={24} strokeWidth={3} className="text-black" />
+                        </div>
+                        <div className="flex-1">
+                          <NumericInput 
+                            value={formData.wholesalePrice} 
+                            onChange={val => setFormData({...formData, wholesalePrice: val})}
+                            className="bg-transparent border-none shadow-none text-4xl p-0 h-auto font-black italic tracking-tighter"
+                            placeholder="0"
+                          />
+                          <span className="text-[10px] text-black uppercase font-black tracking-widest italic block mt-1">GIÁ BÁN BUÔN</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* EXPORT PRICE */}
+                    <div className="w-full p-6 rounded-xl bg-[#D1FAE5] border-[2.5px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                      <p className="text-[10px] font-black text-black uppercase tracking-widest mb-4 italic">Giá xuất khẩu (INT)</p>
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-white border-[2.5px] border-black rounded-xl flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                          <Globe size={24} strokeWidth={3} className="text-black" />
+                        </div>
+                        <div className="flex-1">
+                          <NumericInput 
+                            value={formData.exportPrice} 
+                            onChange={val => setFormData({...formData, exportPrice: val})}
+                            className="bg-transparent border-none shadow-none text-4xl p-0 h-auto font-black italic tracking-tighter"
+                            placeholder="0"
+                          />
+                          <span className="text-[10px] text-black uppercase font-black tracking-widest italic block mt-1">USD/EUR MAPPING</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* PRODUCTION TIME */}
+                    <div className="w-full p-6 rounded-xl bg-white border-[2.5px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                      <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-4 italic">Sản xuất (Lead time)</p>
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-black text-white rounded-xl flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                          <Clock size={24} strokeWidth={3} />
+                        </div>
+                        <div className="flex-1 border-b-[2.5px] border-black/10 focus-within:border-black transition-colors">
+                          <input 
+                            type="number" 
+                            value={formData.productionTimeStd || ''}
+                            onChange={e => setFormData({...formData, productionTimeStd: Number(e.target.value)})}
+                            className="w-full text-4xl font-black text-black bg-transparent outline-none tabular-nums tracking-tighter italic"
+                            placeholder="0"
+                          />
+                          <span className="text-[10px] text-black/40 font-black uppercase tracking-widest block mt-1 italic">Phút / SKU</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Mã SKU (Định danh)</label>
-                  <div className="relative group/field">
-                    <input 
-                      required
-                      type="text" 
-                      value={formData.sku || ''}
-                      onChange={e => setFormData({...formData, sku: e.target.value.toUpperCase()})}
-                      className="form-input pl-12 border-solid !bg-neo-purple/10 text-black font-black tracking-widest text-center"
-                      placeholder="MÃ-SP-001"
-                    />
-                    <Layers size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
+                {/* Right Column: Identification & Preview */}
+                <div className="space-y-10">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
+                       Định danh & Nhận diện
+                    </div>
+                    
+                    <div className="bg-white border-[2.5px] border-black rounded-2xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Tên Sản phẩm</label>
+                          <div className="relative group/field">
+                            <Tag size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
+                            <input 
+                              required
+                              type="text" 
+                              value={formData.name || ''}
+                              onChange={e => setFormData({...formData, name: e.target.value})}
+                              className="form-input pl-12 h-14 bg-[#FAF7F2] focus:bg-white transition-colors"
+                              placeholder="Nhập tên SP..."
+                            />
+                          </div>
+                       </div>
+
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Mã SKU</label>
+                          <div className="relative group/field">
+                            <Layers size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
+                            <input 
+                              required
+                              type="text" 
+                              value={formData.sku || ''}
+                              onChange={e => setFormData({...formData, sku: e.target.value.toUpperCase()})}
+                              className="form-input pl-12 h-14 bg-neo-purple/10 border-solid text-black font-black tracking-widest text-center"
+                              placeholder="MÃ-SP-001"
+                            />
+                          </div>
+                       </div>
+
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Đơn vị (Unit)</label>
+                          <div className="relative group/field">
+                            <Package size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
+                            <input 
+                              required
+                              type="text" 
+                              value={formData.unit || ''}
+                              onChange={e => setFormData({...formData, unit: e.target.value})}
+                              className="form-input pl-12 h-14 bg-[#F0FDF4] focus:bg-white transition-colors text-center font-black"
+                              placeholder="Cái/Bộ..."
+                            />
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
+                       Mô phỏng Nhận diện
+                    </div>
+                    
+                    <div className="aspect-video bg-white border-[2.5px] border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden relative group">
+                       <div className="absolute inset-0 bg-black/5 flex items-center justify-center group-hover:bg-transparent transition-all">
+                          <Package size={80} strokeWidth={1} className="text-black opacity-10" />
+                       </div>
+                       <div className="text-center group-hover:scale-105 transition-transform duration-500">
+                          <p className="text-[10px] font-black uppercase text-black/20 tracking-[0.5em] mb-2 italic">Image Placeholder</p>
+                          <p className="text-[8px] font-bold text-black/10 uppercase tracking-widest">Master Studio Preview (Soon)</p>
+                       </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Đơn giá niêm yết</label>
-                  <div className="relative group/field">
-                    <input 
-                      type="number" 
-                      value={formData.basePrice || ''}
-                      onChange={e => setFormData({...formData, basePrice: Number(e.target.value)})}
-                      className="form-input pl-12 pr-12 font-black tabular-nums"
-                      placeholder="0"
-                    />
-                    <DollarSign size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-black/40 uppercase">VNĐ</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Giá sỉ (Wholesale)</label>
-                  <div className="relative group/field">
-                    <input 
-                      type="number" 
-                      value={formData.wholesalePrice || ''}
-                      onChange={e => setFormData({...formData, wholesalePrice: Number(e.target.value)})}
-                      className="form-input pl-12 pr-12 font-black tabular-nums"
-                      placeholder="0"
-                    />
-                    <Store size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-black/40 uppercase">SỈ</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Giá xuất khẩu</label>
-                  <div className="relative group/field">
-                    <input 
-                      type="number" 
-                      value={formData.exportPrice || ''}
-                      onChange={e => setFormData({...formData, exportPrice: Number(e.target.value)})}
-                      className="form-input pl-12 pr-12 font-black tabular-nums"
-                      placeholder="0"
-                    />
-                    <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-black/40 uppercase">INT</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Thời gian sản xuất (Phút)</label>
-                <div className="relative group/field">
-                  <input 
-                    type="number" 
-                    value={formData.productionTimeStd || ''}
-                    onChange={e => setFormData({...formData, productionTimeStd: Number(e.target.value)})}
-                    className="form-input pl-12 pr-12 font-black tabular-nums"
-                    placeholder="0"
-                  />
-                  <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-black/40 uppercase">Phút</span>
-                </div>
               </div>
             </div>
           )}
 
           {/* TAB 2: BOM */}
           {activeTab === 'bom' && (
-            <div className="space-y-8 animate-in fade-in duration-500 flex flex-col h-full min-h-[400px] pb-10">
-               <div className="relative group/field shrink-0">
-                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" size={24} />
-                  <select
-                    onChange={(e) => {
-                      const mat = materials.find(m => m.id === e.target.value);
-                      if (mat) handleAddMaterial(mat);
-                      e.target.value = "";
-                    }}
-                    className="form-input pl-16 pr-12 h-16 bg-white border-2 border-black rounded-xl appearance-none cursor-pointer font-black text-black uppercase tracking-tight shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                  >
-                    <option value="" className="text-black/20">-- Tìm kiếm & Thêm Vật tư vào BOM --</option>
-                    {materials.map(m => (
-                      <option key={m.id} value={m.id} disabled={bomItems.some(bi => bi.materialId === m.id)}>
-                        {m.name} [{m.sku || 'No-SKU'}] — {Number(m.referencePrice || m.unitPrice || 0).toLocaleString()} đ/{m.unit}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={20} className="absolute right-6 top-1/2 -translate-y-1/2 text-black pointer-events-none" />
+            <div className="space-y-8 animate-in fade-in duration-500 h-full flex flex-col pb-10">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-[50]">
+                  <SearchableSelect 
+                    options={materials}
+                    onSelect={handleAddMaterial}
+                    placeholder="-- Phân bổ Vật tư --"
+                    icon={Search}
+                    disabledIds={bomItems.map(bi => bi.materialId)}
+                  />
+
+                  <SearchableSelect 
+                    options={allOperations}
+                    onSelect={handleAddOperation}
+                    placeholder="-- Thêm Công đoạn --"
+                    icon={Cpu}
+                    disabledIds={bomOperations.map(bo => bo.operationId)}
+                  />
                </div>
 
-               <div className="neo-card !p-0 overflow-hidden flex flex-col flex-1">
-                  <div className="overflow-x-auto flex-1">
-                    <table className="w-full !mt-0 text-left">
-                       <thead>
-                          <tr className="bg-neo-purple/10">
-                             <th className="px-8 py-5 border-b-neo border-black text-[10px] font-black uppercase tracking-widest">Vật tư</th>
-                             <th className="px-8 py-5 text-center w-40 border-b-neo border-black text-[10px] font-black uppercase tracking-widest">Định mức</th>
-                             <th className="px-8 py-5 text-right border-b-neo border-black text-[10px] font-black uppercase tracking-widest">Đơn giá</th>
-                             <th className="px-8 py-5 text-right w-16 border-b-neo border-black"></th>
-                          </tr>
-                       </thead>
-                       <tbody className="divide-y divide-black/5">
-                           {/* Row: Direct Materials (BOM) */}
-                           <tr className="bg-neo-purple/5">
-                              <td className="px-8 py-4">
-                                 <span className="font-black text-black italic text-sm">Định mức vật tư (BOM)</span>
-                              </td>
-                              <td className="px-8 py-4">
-                                 <span className="text-black/60 font-medium text-xs">Theo định mức nguyên vật liệu BOM</span>
-                              </td>
-                              <td className="px-8 py-4 text-right">
-                                 <div className="relative group/input max-w-[180px] ml-auto">
-                                    <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-10 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
-                                       {totalMaterialCost.toLocaleString()}
-                                    </div>
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black/20 uppercase pointer-events-none">VNĐ</span>
-                                 </div>
-                              </td>
-                              <td className="px-8 py-4"></td>
-                           </tr>
-
-                           {/* Row: Waste Contingency */}
-                           <tr className="bg-neo-yellow/5">
-                              <td className="px-8 py-4">
-                                 <span className="font-black text-black italic text-sm">Hao hụt & Dự phòng</span>
-                              </td>
-                              <td className="px-8 py-4">
-                                 <span className="text-black/60 font-medium text-xs">{Math.round(wasteRatio * 100)}% trên tổng vật tư</span>
-                              </td>
-                              <td className="px-8 py-4 text-right">
-                                 <div className="relative group/input max-w-[180px] ml-auto">
-                                    <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-10 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
-                                       {wasteCost.toLocaleString()}
-                                    </div>
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black/20 uppercase pointer-events-none">VNĐ</span>
-                                 </div>
-                              </td>
-                              <td className="px-8 py-4"></td>
-                           </tr>
-                          {bomItems.map((item) => (
-                             <tr key={item.materialId} className="group hover:bg-black/5 transition-all">
-                                <td className="px-8 py-5">
-                                   <p className="font-black text-black leading-tight italic">{item.material.name}</p>
-                                   <p className="text-[10px] text-black/40 font-black uppercase tracking-widest mt-0.5">{item.material.sku || 'N/A'}</p>
-                                </td>
-                                <td className="px-8 py-5">
-                                   <div className="flex items-center gap-2">
-                                      <input 
-                                         type="number"
-                                         value={item.quantity}
-                                         onChange={(e) => handleUpdateQuantity(item.materialId, Number(e.target.value))}
-                                         className="w-full h-10 px-3 bg-white border-2 border-black rounded-xl text-center font-black text-black outline-none focus:bg-neo-purple/5 tabular-nums"
-                                      />
-                                      <span className="text-[10px] font-black text-black/40 uppercase w-10">{item.material.unit}</span>
-                                   </div>
-                                </td>
-                                <td className="px-8 py-5 text-right tabular-nums">
-                                   <p className="font-black text-black">{(item.material.unitPrice * item.quantity).toLocaleString()}</p>
-                                   <p className="text-[9px] text-black/40 uppercase font-black">@ {item.material.unitPrice.toLocaleString()}</p>
-                                </td>
-                                <td className="px-8 py-5 text-right">
-                                   <button onClick={() => handleRemoveMaterial(item.materialId)} className="w-8 h-8 flex items-center justify-center text-black/20 hover:text-neo-red hover:bg-neo-red/10 rounded-lg transition-all">
-                                      <Trash2 size={16} />
-                                   </button>
-                                </td>
-                             </tr>
-                          ))}
-                       </tbody>
-                    </table>
-                    {bomItems.length === 0 && (
-                        <div className="py-24 text-center">
-                          <Layers size={48} strokeWidth={1} className="text-black/10 mx-auto mb-4" />
-                          <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.3em]">Chưa có cấu thành vật tư</p>
-                        </div>
-                    )}
+               <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 overflow-hidden min-h-0">
+                  {/* MATERIALS TABLE */}
+                  <div className="overflow-hidden flex flex-col border-[2.5px] border-black rounded-xl bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                     <div className="px-6 py-4 bg-[#F8FAFC] border-b-[2px] border-black flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-widest italic">Vật tư (Materials)</span>
+                        <span className="badge-primary text-[10px] px-2 py-0.5">{bomItems.length} items</span>
+                     </div>
+                     <div className="flex-1 overflow-y-auto">
+                        <table className="w-full text-left border-collapse">
+                           <thead className="sticky top-0 z-10 bg-white border-b-[2px] border-black/5">
+                              <tr className="text-[10px] font-black text-black/40 uppercase tracking-widest">
+                                 <th className="px-6 py-4">Tên vật tư</th>
+                                 <th className="px-6 py-4 text-center">Số lượng</th>
+                                 <th className="px-6 py-4 text-right">Đơn giá</th>
+                                 <th className="px-6 py-4 w-12"></th>
+                              </tr>
+                           </thead>
+                           <tbody className="divide-y divide-black/5">
+                              {bomItems.map((item) => (
+                                 <tr key={item.materialId} className="group hover:bg-neo-purple/5">
+                                    <td className="px-6 py-4">
+                                       <p className="font-black text-black text-xs uppercase italic">{item.material.specification || item.material.name}</p>
+                                       <p className="text-[9px] text-black/40 font-black uppercase tracking-tighter mt-0.5">{item.material.type || item.material.sku || 'N/A'}</p>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                       <div className="flex items-center gap-2 bg-white border border-black/20 rounded px-2 py-1">
+                                          <input
+                                             type="text"
+                                             value={formatNumber(item.quantity)}
+                                             onChange={(e) => {
+                                                const val = parseNumber(e.target.value);
+                                                handleUpdateQuantity(item.materialId, val);
+                                             }}
+                                             className="w-16 bg-transparent text-center font-black text-black outline-none tabular-nums text-xs"
+                                          />
+                                          <span className="text-[9px] font-black text-black/30 uppercase">{item.material.unit}</span>
+                                       </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right tabular-nums text-black/40 font-black italic text-xs">{formatNumber(item.material.unitPrice || 0)}</td>
+                                    <td className="px-6 py-4">
+                                       <button onClick={() => handleRemoveMaterial(item.materialId)} className="text-black/20 hover:text-rose-500 transition-colors">
+                                          <Trash2 size={16} strokeWidth={3} />
+                                       </button>
+                                    </td>
+                                 </tr>
+                              ))}
+                           </tbody>
+                        </table>
+                     </div>
                   </div>
-                  
-                  <div className="p-8 bg-black/5 border-t-neo border-black flex justify-between items-center shrink-0">
-                      <div>
-                         <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Tổng chi phí định mức (Material Cost)</p>
-                         <p className="text-3xl font-black text-black tabular-nums italic">
-                            {totalMaterialCost.toLocaleString()} <span className="text-xs font-medium text-black/40">VNĐ</span>
-                         </p>
-                      </div>
-                      <div className="badge-success flex items-center gap-2 px-4 py-2">
-                         <Calculator size={14} strokeWidth={2.5} />
-                         Tự động tính toán
-                      </div>
-                   </div>
+
+                  {/* OPERATIONS LIST */}
+                  <div className="overflow-hidden flex flex-col border-[2.5px] border-black rounded-xl bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                     <div className="px-6 py-4 bg-[#F8FAFC] border-b-[2px] border-black flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-widest italic">Công đoạn (Operations)</span>
+                     </div>
+                     <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        {bomOperations.map((op, idx) => (
+                           <div key={op.id} className="p-4 bg-[#FAF7F2] border-[2px] border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3">
+                              <div className="flex justify-between items-start">
+                                 <div className="flex items-center gap-3">
+                                    <div className="w-6 h-6 bg-black text-white text-[10px] font-black rounded flex items-center justify-center italic">#{idx + 1}</div>
+                                    <p className="font-black text-black text-xs uppercase italic">{op.operation.name}</p>
+                                 </div>
+                                 <button onClick={() => handleRemoveOperation(op.id)} className="text-black/20 hover:text-rose-500 transition-colors">
+                                    <Trash2 size={14} strokeWidth={3} />
+                                 </button>
+                              </div>
+                              <div className="flex justify-between items-center bg-white border border-black/10 rounded-lg p-3">
+                                  <div className="flex flex-col">
+                                     <span className="text-[8px] font-black text-black/40 uppercase italic">Chi phí/SP</span>
+                                     <span className="text-xs font-black text-black italic">{formatNumber(op.operation.price || 0)} VNĐ</span>
+                                  </div>
+                                 <div className="flex flex-col items-end text-right">
+                                    <span className="text-[8px] font-black text-black/40 uppercase italic">Thứ tự</span>
+                                    <span className="text-xs font-black text-black italic tabular-nums">{op.sequence}</span>
+                                 </div>
+                              </div>
+                           </div>
+                        ))}
+                        {bomOperations.length === 0 && (
+                           <div className="py-12 text-center opacity-20">
+                              <Cpu size={32} className="mx-auto mb-3" />
+                              <p className="text-[10px] font-black uppercase italic tracking-widest">N/A Operations</p>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+               </div>
+
+               <div className="p-8 bg-black/5 border-[2.5px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-xl flex justify-between items-center mt-auto shrink-0">
+                  <div className="flex gap-12">
+                     <div>
+                        <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Vật tư</p>
+                        <p className="text-2xl font-black text-black italic tabular-nums">{formatNumber(totalMaterialCost)} <span className="text-[10px] not-italic text-black/30">VNĐ</span></p>
+                     </div>
+                     <div className="w-px h-full bg-black/10" />
+                     <div>
+                        <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Gia công</p>
+                        <p className="text-2xl font-black text-black italic tabular-nums">{formatNumber(totalOperationCost)} <span className="text-[10px] not-italic text-black/30">VNĐ</span></p>
+                     </div>
+                  </div>
+                  <div className="badge-success flex items-center gap-2 px-6 py-4 h-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                     <Calculator size={20} strokeWidth={3} />
+                     <div className="text-left">
+                        <p className="text-[8px] font-black uppercase italic opacity-50 leading-none">Tổng BOM Sản xuất</p>
+                        <p className="text-lg font-black italic tabular-nums leading-none mt-1">{formatNumber(totalMaterialCost + totalOperationCost)} VNĐ</p>
+                     </div>
+                  </div>
                </div>
             </div>
           )}
@@ -502,17 +742,17 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                       <div className="relative z-10">
                          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-neo-purple mb-3 italic">Giá thành dự kiến (COGS)</p>
                          <h3 className="text-6xl font-black tracking-tighter tabular-nums text-[#FACC15] italic">
-                            {Math.round(totalCOGS).toLocaleString()} <span className="text-2xl font-black text-white ml-2 uppercase">VNĐ/SP</span>
+                            {formatNumber(Math.round(totalCOGS))} <span className="text-2xl font-black text-white ml-2 uppercase">VNĐ/SP</span>
                          </h3>
                       </div>
                       <div className="relative z-10 flex gap-10 pt-8 border-t-2 border-white/10">
                          <div className="flex flex-col">
                             <span className="text-[9px] font-black uppercase text-white/40 tracking-widest mb-1.5 font-space">Vật tư Trực tiếp</span>
-                            <span className="text-lg font-black text-white italic">{totalMaterialCost.toLocaleString()}</span>
+                            <span className="text-lg font-black text-white italic">{formatNumber(totalMaterialCost)}</span>
                          </div>
                          <div className="flex flex-col">
                             <span className="text-[9px] font-black uppercase text-white/40 tracking-widest mb-1.5 font-space">Vận hành & Chi phí chung</span>
-                            <span className="text-lg font-black text-white italic">{(wasteCost + customTotal).toLocaleString()}</span>
+                            <span className="text-lg font-black text-white italic">{formatNumber(wasteCost + customTotal)}</span>
                          </div>
                       </div>
                    </div>
@@ -550,82 +790,81 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                           <tr className="bg-black/5 text-[9px] font-black text-black/40 uppercase tracking-widest">
                              <th className="px-8 py-4 border-b-neo border-black">Tên mục</th>
                              <th className="px-8 py-4 border-b-neo border-black">Mô tả chi tiết</th>
-                             <th className="px-8 py-4 text-right w-40 border-b-neo border-black">Số tiền (VNĐ)</th>
-                             <th className="px-8 py-4 w-16 border-b-neo border-black"></th>
+                             <th className="px-8 py-4 text-right w-48 border-b-neo border-black">Số tiền (VNĐ)</th>
+                             <th className="px-8 py-4 w-12 border-b-neo border-black"></th>
                           </tr>
                        </thead>
                        <tbody className="divide-y divide-black/5">
                            {/* Row: Direct Materials (BOM) */}
                            <tr className="bg-neo-purple/5">
-                              <td className="px-8 py-4">
+                              <td className="px-6 py-4">
                                  <span className="font-black text-black italic text-sm">Định mức vật tư (BOM)</span>
                               </td>
-                              <td className="px-8 py-4">
+                              <td className="px-6 py-4">
                                  <span className="text-black/60 font-medium text-xs">Theo định mức nguyên vật liệu BOM</span>
                               </td>
-                              <td className="px-8 py-4 text-right">
+                              <td className="px-6 py-4 text-right">
                                  <div className="relative group/input max-w-[180px] ml-auto">
-                                    <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-10 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
-                                       {totalMaterialCost.toLocaleString()}
+                                    <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-4 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
+                                       {formatNumber(totalMaterialCost)}
                                     </div>
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black/20 uppercase pointer-events-none">VNĐ</span>
                                  </div>
                               </td>
-                              <td className="px-8 py-4"></td>
+                              <td className="px-6 py-4"></td>
                            </tr>
 
                            {/* Row: Waste Contingency */}
                            <tr className="bg-neo-yellow/5">
-                              <td className="px-8 py-4">
+                              <td className="px-6 py-4">
                                  <span className="font-black text-black italic text-sm">Hao hụt & Dự phòng</span>
                               </td>
-                              <td className="px-8 py-4">
+                              <td className="px-6 py-4">
                                  <span className="text-black/60 font-medium text-xs">{Math.round(wasteRatio * 100)}% trên tổng vật tư</span>
                               </td>
-                              <td className="px-8 py-4 text-right">
+                              <td className="px-6 py-4 text-right">
                                  <div className="relative group/input max-w-[180px] ml-auto">
-                                    <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-10 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
-                                       {wasteCost.toLocaleString()}
+                                    <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-4 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
+                                       {formatNumber(wasteCost)}
                                     </div>
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black/20 uppercase pointer-events-none">VNĐ</span>
                                  </div>
                               </td>
-                              <td className="px-8 py-4"></td>
+                              <td className="px-6 py-4"></td>
                            </tr>
-                          {customCosts.map(cost => (
-                             <tr key={cost.id} className="group hover:bg-black/5 transition-all">
-                                <td className="px-8 py-4">
-                                   <input 
-                                      value={cost.name}
-                                      onChange={(e) => updateCustomCost(cost.id, 'name', e.target.value)}
-                                      className="w-full bg-transparent font-black text-black outline-none text-sm italic"
-                                      placeholder="VD: Nhân công..."
-                                   />
-                                </td>
-                                <td className="px-8 py-4">
-                                   <input 
-                                      value={cost.details}
-                                      onChange={(e) => updateCustomCost(cost.id, 'details', e.target.value)}
-                                      className="w-full bg-transparent text-black/60 font-medium outline-none text-xs"
-                                      placeholder="Mô tả công việc..."
-                                   />
-                                </td>
-                                <td className="px-8 py-4 text-right">
-                                   <input 
-                                      type="number"
-                                      value={cost.amount || ''}
-                                      onChange={(e) => updateCustomCost(cost.id, 'amount', Number(e.target.value))}
-                                      className="w-full h-12 bg-white border-[2.5px] border-black rounded-xl px-12 text-right font-black text-[#000000] outline-none focus:border-[#D8B4FE] focus:shadow-[4px_4px_0px_0px_rgba(216,180,254,0.3)] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tabular-nums text-base italic transition-all"
-                                      placeholder="0"
-                                   />
-                                </td>
-                                <td className="px-8 py-4 text-right">
-                                   <button onClick={() => setCustomCosts(customCosts.filter(c => c.id !== cost.id))} className="w-12 h-12 flex items-center justify-center bg-[#FEE2E2] border-[2.5px] border-black rounded-xl text-black hover:bg-rose-500 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ml-auto">
-                                      <Trash2 size={16} />
-                                   </button>
-                                </td>
-                             </tr>
-                          ))}
+                           {customCosts.map(cost => (
+                              <tr key={cost.id} className="group hover:bg-black/5 transition-all">
+                                 <td className="px-6 py-4">
+                                    <input 
+                                       value={cost.name}
+                                       onChange={(e) => updateCustomCost(cost.id, 'name', e.target.value)}
+                                       className="w-full bg-transparent font-black text-black outline-none text-sm italic"
+                                       placeholder="VD: Nhân công..."
+                                    />
+                                 </td>
+                                 <td className="px-6 py-4">
+                                    <input 
+                                       value={cost.details}
+                                       onChange={(e) => updateCustomCost(cost.id, 'details', e.target.value)}
+                                       className="w-full bg-transparent text-black/60 font-medium outline-none text-xs"
+                                       placeholder="Mô tả công việc..."
+                                    />
+                                 </td>
+                                 <td className="px-6 py-4 text-right">
+                                    <NumericInput 
+                                       value={cost.amount}
+                                       onChange={val => updateCustomCost(cost.id, 'amount', val)}
+                                       className="h-12 bg-white border-[2.5px] border-black rounded-xl pl-10 pr-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:border-neo-purple"
+                                       suffix="VNĐ"
+                                    />
+                                 </td>
+                                 <td className="px-6 py-4 text-right">
+                                    <button onClick={() => setCustomCosts(customCosts.filter(c => c.id !== cost.id))} className="w-10 h-10 flex items-center justify-center bg-[#FEE2E2] border-[2.5px] border-black rounded-xl text-black hover:bg-rose-500 hover:text-white transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ml-auto">
+                                       <Trash2 size={14} />
+                                    </button>
+                                 </td>
+                              </tr>
+                           ))}
                        </tbody>
                     </table>
                    </div>

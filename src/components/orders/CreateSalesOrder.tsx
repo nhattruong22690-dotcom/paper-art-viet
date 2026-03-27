@@ -137,7 +137,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ value, onSelect, prod
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 w-full mt-2 bg-white border-2 border-black rounded-xl shadow-neo z-[70] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 min-w-[300px]">
+        <div className="absolute top-full left-0 w-full mt-2 bg-white border-2 border-black rounded-xl shadow-neo z-[999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 min-w-[300px]">
           <div className="p-4 bg-black/5 border-b-2 border-black">
             <div className="relative">
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20" />
@@ -152,7 +152,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ value, onSelect, prod
             </div>
           </div>
           
-          <div className="max-h-60 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto">
             {filteredProducts.length > 0 ? (
               filteredProducts.map(p => (
                 <button
@@ -497,7 +497,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                      </div>
 
                      {isComboboxOpen && (
-                       <div className="absolute top-full left-0 w-full mt-2 bg-white border-2 border-black rounded-xl shadow-neo z-[60] overflow-hidden">
+                       <div className="absolute top-full left-0 w-full mt-2 bg-white border-2 border-black rounded-xl shadow-neo z-[100] overflow-hidden">
                           {filteredCustomers.length > 0 ? (
                             <div className="max-h-64 overflow-y-auto">
                               {filteredCustomers.map(c => (
@@ -571,15 +571,15 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                   </button>
                </div>
 
-               <div className="overflow-hidden border-2 border-black rounded-xl hidden md:block">
+               <div className="overflow-visible border-2 border-black rounded-xl hidden md:block">
                   <table className="w-full text-left">
                      <thead>
                         <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
                            <th className="px-6 py-4">Sản phẩm</th>
-                           <th className="px-6 py-4 text-center w-28">Số lượng</th>
+                           <th className="px-6 py-4 text-center w-36">Số lượng</th>
                            <th className="px-6 py-4 text-right">Giá vốn</th>
-                           <th className="px-6 py-4 text-right w-48">Giá Deal</th>
-                           <th className="px-6 py-4 text-right w-44">Thành tiền</th>
+                           <th className="px-6 py-4 text-right w-56">Giá Deal</th>
+                           <th className="px-6 py-4 text-right w-52">Thành tiền</th>
                            <th className="px-6 py-4 w-12"></th>
                         </tr>
                      </thead>
@@ -606,7 +606,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                                   inputMode="numeric"
                                   value={item.quantity === 0 ? '' : formatNumber(item.quantity)}
                                   onChange={(e) => updateItem(item.id, 'quantity', parseNumber(e.target.value))}
-                                  className="form-input !h-10 text-center font-black tabular-nums" 
+                                  className="form-input !h-12 py-0 text-center font-black tabular-nums" 
                                  />
                               </td>
                               <td className="px-6 py-5 text-right tabular-nums text-black/40 italic font-black text-[11px]">
@@ -620,7 +620,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                                       value={item.dealPrice === 0 ? '' : formatNumber(item.dealPrice)}
                                       onChange={(e) => updateItem(item.id, 'dealPrice', parseNumber(e.target.value))}
                                       className={cn(
-                                        "form-input !h-10 text-right font-black tabular-nums",
+                                        "form-input !h-12 py-0 text-right font-black tabular-nums",
                                         isLoss ? "border-neo-red !bg-neo-red/5" : ""
                                       )}
                                     />
@@ -653,7 +653,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
 
         {/* FOOTER SUMMARY */}
         <div className={cn(
-          "shrink-0 border-t-neo border-black p-8 transition-all z-50",
+          "shrink-0 border-t-neo border-black p-8 transition-all relative z-10",
           isNegativeMargin ? "bg-neo-red/10 animate-pulse" : "bg-white"
         )}>
            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-10">

@@ -63,7 +63,7 @@ export async function createPackageFromProduction(
       *,
       packingListDetails:PackingListDetail(
         *,
-        product:Product(*)
+        product:products(*)
       ),
       order:Order(
         *,

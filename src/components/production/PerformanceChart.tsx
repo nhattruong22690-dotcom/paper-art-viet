@@ -31,7 +31,7 @@ export default function PerformanceChart({ employee }: { employee: EmployeePerfo
   return (
     <div className="space-y-12 animate-in fade-in duration-500">
       {/* EMPLOYEE HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 pb-10 border-b-2 border-black border-dashed">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 pb-10 border-b-2 border-black/10">
          <div className="flex items-center gap-6">
             <div className="w-16 h-16 bg-white border-2 border-black rounded-xl flex items-center justify-center text-black font-black text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] italic">
                {employee.name.split(' ').pop()?.substring(0, 2).toUpperCase()}
@@ -65,7 +65,7 @@ export default function PerformanceChart({ employee }: { employee: EmployeePerfo
           <div className="relative h-72 bg-white rounded-xl border-2 border-black p-10 group overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             {/* GUIDES */}
             <div className="absolute inset-x-10 top-10 border-t-2 border-black/5 h-0" />
-            <div className="absolute inset-x-10 top-1/2 border-t-2 border-black/5 h-0 border-dashed" />
+            <div className="absolute inset-x-10 top-1/2 border-t-2 border-black/5 h-0" />
             <div className="absolute inset-x-10 bottom-10 border-t-2 border-black/5 h-0" />
 
             {/* Y-AXIS LABELS */}

@@ -24,39 +24,57 @@ import {
    Info,
    History,
    Activity,
-   Cpu
+   Cpu,
+   Edit2
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { getMaterials } from '@/services/material.service';
-import { updateProductBOM, updateProductCOGS, getProductDetail, upsertProduct } from '@/services/product.service';
+import { getAllMaterials } from '@/services/material.service';
+import { updateProductBOM, getProductDetail, upsertProduct, recalculateProductCostPrice } from '@/services/product.service';
+import { useNotification } from "@/context/NotificationContext";
+import { getAllOperations } from '@/services/operation.service';
+import { formatNumber, parseNumber } from '@/utils/format';
+import { NumericInput } from '@/components/ui/NumericInput';
 
 function cn(...inputs: ClassValue[]) {
    return twMerge(clsx(inputs));
 }
 
+
 interface BOMItem {
    id?: string;
    materialId: string;
    material: {
-      name: string;
-      sku?: string | null;
+      specification: string;
+      type: string;
       unit: string;
       unitPrice: any;
       referencePrice: any;
+      name?: string;
+      sku?: string | null;
    };
    quantity: number;
+}
+
+interface BOMVersion {
+   id: string;
+   version: number;
+   note?: string;
+   is_active: boolean;
+   created_at: string;
 }
 
 interface Product {
    id: string;
    sku: string | null;
    name: string | null;
+   unit?: string | null;
    basePrice: any;
    costPrice: any;
    wholesalePrice: any;
    exportPrice: any;
    productionTimeStd: number | null;
+   bomVersions?: BOMVersion[];
    bomItems?: BOMItem[];
    cogsConfig?: any;
 }
@@ -66,9 +84,11 @@ interface ProductDetailModalProps {
    onClose: () => void;
    product: Product;
    onUpdate: () => void;
+   onEdit?: (product: Product) => void;
+   onCreateVersion?: (product: Product) => void;
 }
 
-export default function ProductDetailModal({ isOpen, onClose, product, onUpdate }: ProductDetailModalProps) {
+export default function ProductDetailModal({ isOpen, onClose, product, onUpdate, onEdit, onCreateVersion }: ProductDetailModalProps) {
    const [activeTab, setActiveTab] = useState<'general' | 'bom' | 'cogs'>('general');
    const [bomItems, setBomItems] = useState<BOMItem[]>([]);
    const [materials, setMaterials] = useState<any[]>([]);
@@ -80,18 +100,34 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
    const [productionTimeStd, setProductionTimeStd] = useState<number>(0);
    const [wholesalePrice, setWholesalePrice] = useState<number>(0);
    const [exportPrice, setExportPrice] = useState<number>(0);
+   const { showToast, showModal } = useNotification();
    const [wasteRatio, setWasteRatio] = useState<number>(0.05);
    const [customCosts, setCustomCosts] = useState<any[]>([]);
    const [productionNotes, setProductionNotes] = useState<string[]>([]);
    const [noteInput, setNoteInput] = useState<string>('');
+   
+   const [bomVersions, setBomVersions] = useState<BOMVersion[]>([]);
+   const [selectedVersionId, setSelectedVersionId] = useState<string>('');
+   const [bomOperations, setBomOperations] = useState<any[]>([]);
+   const [allOperations, setAllOperations] = useState<any[]>([]);
 
    useEffect(() => {
       if (isOpen && product.id) {
          setProductionTimeStd(product.productionTimeStd || 0);
          loadProductDetail();
          loadMaterials();
+         loadOperations();
       }
    }, [isOpen, product.id]);
+
+   const loadOperations = async () => {
+      try {
+         const ops = await getAllOperations();
+         setAllOperations(ops);
+      } catch (error) {
+         console.error('Failed to load operations:', error);
+      }
+   };
 
    const loadProductDetail = async () => {
       setIsLoadingBOM(true);
@@ -101,18 +137,15 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
             setProductionTimeStd(data.productionTimeStd || 0);
             setWholesalePrice(Number(data.wholesalePrice || 0));
             setExportPrice(Number(data.exportPrice || 0));
-         }
-
-         if (data?.bomItems) {
-            setBomItems(data.bomItems.map((item: any) => ({
-               ...item,
-               quantity: Number(item.quantity),
-               material: {
-                  ...item.material,
-                  unitPrice: Number(item.material.unitPrice || item.material.referencePrice || 0),
-                  referencePrice: Number(item.material.referencePrice || 0)
-               }
-            })) as any);
+            
+            const versions = data.bomVersions || [];
+            setBomVersions(versions);
+            
+            const active = versions.find((v: any) => v.is_active) || versions[0];
+            if (active) {
+               setSelectedVersionId(active.id);
+               await loadBOMForVersion(active.id);
+            }
          }
 
          const detail = data as any;
@@ -121,16 +154,6 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
             setWasteRatio(config.wasteRatio ?? 0.05);
             setCustomCosts(config.customCosts || []);
             setProductionNotes(config.productionNotes || []);
-         } else {
-            setWasteRatio(0.05);
-            setCustomCosts([
-               { id: '1', name: 'Nhân công', details: `${data?.productionTimeStd || product.productionTimeStd || 0} phút lắp ráp & đóng gói`, amount: (data?.productionTimeStd || product.productionTimeStd || 0) * 500 },
-               { id: '2', name: 'Máy móc/Điện', details: 'Khấu hao máy Laser & Điện', amount: (data?.productionTimeStd || product.productionTimeStd || 0) * 50 }
-            ]);
-            setProductionNotes([
-               "Sản phẩm yêu cầu độ hoàn thiện cao.",
-               "Chú ý phần keo dán mép và thời gian khô keo trước khi đóng gói."
-            ]);
          }
       } catch (error) {
          console.error('Failed to load product detail:', error);
@@ -139,14 +162,59 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
       }
    };
 
+   const loadBOMForVersion = async (versionId: string) => {
+      try {
+         const { getBOMDetail } = await import('@/services/bom.service');
+         const bom = await getBOMDetail(versionId);
+         
+         if (bom) {
+            setBomItems((bom.bom_materials || []).map((item: any) => ({
+               id: item.id,
+               materialId: item.material_id,
+               quantity: Number(item.qty),
+               material: {
+                  ...item.materials,
+                  unitPrice: Number(item.materials.price || 0),
+                  referencePrice: Number(item.materials.price || 0)
+               }
+            })) as any);
+
+            setBomOperations((bom.bom_operations || []).map((op: any) => ({
+               id: op.id,
+               operationId: op.operation_id,
+               sequence: op.sequence,
+               operation: op.operations
+            })));
+         }
+      } catch (error) {
+         console.error('Failed to load BOM version:', error);
+      }
+   };
+
 
    const loadMaterials = async () => {
       try {
-         const data = await getMaterials({});
+         const data = await getAllMaterials();
          setMaterials(data);
       } catch (error) {
          console.error('Failed to load materials:', error);
       }
+   };
+
+   const handleAddOperation = async (op: any) => {
+      setBomOperations([
+         ...bomOperations,
+         {
+            id: `new-${Date.now()}`,
+            operationId: op.id,
+            sequence: bomOperations.length + 1,
+            operation: op
+         }
+      ]);
+   };
+
+   const handleRemoveOperation = (id: string) => {
+      setBomOperations(bomOperations.filter(op => op.id !== id));
    };
 
    const handleAddMaterial = (material: any) => {
@@ -157,10 +225,11 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
          {
             materialId: material.id,
             material: {
-               name: material.name,
+               specification: material.specification,
+               type: material.type,
                unit: material.unit,
-               unitPrice: Number(material.unitPrice || material.referencePrice),
-               referencePrice: Number(material.referencePrice)
+               unitPrice: Number(material.price || material.unitPrice || material.referencePrice || 0),
+               referencePrice: Number(material.price || material.referencePrice || 0)
             },
             quantity: 1
          }
@@ -178,18 +247,39 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
    };
 
    const handleSaveBOM = async () => {
+      if (!selectedVersionId) return;
       setIsSavingBOM(true);
       try {
-         await updateProductBOM(
-            product.id,
+         const { upsertBOM } = await import('@/services/bom.service');
+         
+         // Lấy thông tin BOM hiện tại để giữ version và product_id
+         const currentVersion = bomVersions.find(v => v.id === selectedVersionId);
+         if (!currentVersion) return;
+
+         await upsertBOM(
+            { 
+               id: selectedVersionId, 
+               product_id: product.id,
+               version: currentVersion.version,
+               is_active: currentVersion.is_active
+            },
             bomItems.map(item => ({
-               materialId: item.materialId,
-               quantity: item.quantity
+               material_id: item.materialId,
+               qty: item.quantity,
+               scrap_rate: wasteRatio
+            })),
+            bomOperations.map(op => ({
+               operation_id: op.operationId,
+               sequence: op.sequence
             }))
          );
+         
+         await recalculateProductCostPrice(product.id);
          onUpdate();
+         showToast('success', `Đã cập nhật BOM v${currentVersion.version} thành công`);
       } catch (error) {
          console.error('Failed to save BOM:', error);
+         showModal('error', 'Lỗi lưu BOM', String(error));
       } finally {
          setIsSavingBOM(false);
       }
@@ -217,10 +307,11 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
             cogsConfig: {
                ...cogsConfig,
                totalCOGS: calculatedBasePrice
-            } as any
-         } as any);
+            }
+         });
 
          onUpdate();
+         showToast('success', 'Đã niêm yết giá thành công');
       } catch (error) {
          console.error('Failed to save COGS:', error);
       } finally {
@@ -280,10 +371,15 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
       return acc + (Number(price) * item.quantity);
    }, 0);
 
+   const totalOperationCost = bomOperations.reduce((acc, op) => {
+      return acc + (Number(op.operation?.price || 0));
+   }, 0);
+
    const wasteCost = totalMaterialCost * wasteRatio;
    const customTotal = customCosts.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
 
-   const totalCOGS = totalMaterialCost + wasteCost + customTotal;
+   const totalCOGS = totalMaterialCost + totalOperationCost + wasteCost + customTotal;
+
 
    useEffect(() => {
       if (totalCOGS > 0) {
@@ -319,12 +415,46 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                      <div className="flex items-center gap-3 mt-2">
                         <span className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] leading-none">{product.sku || 'N/A'}</span>
                         <span className="w-1.5 h-1.5 bg-black/10 rounded-full" />
-                        <span className="text-[10px] font-black text-neo-purple uppercase tracking-[0.2em] leading-none italic">Hồ sơ Master</span>
+                        
+                        {/* VERSION SWITCHER */}
+                        <div className="flex items-center gap-2 bg-neo-purple/5 px-2 py-1 rounded border border-black/10">
+                           <History size={10} className="text-neo-purple" />
+                           <select 
+                              value={selectedVersionId}
+                              onChange={(e) => {
+                                 const vid = e.target.value;
+                                 setSelectedVersionId(vid);
+                                 loadBOMForVersion(vid);
+                              }}
+                              className="bg-transparent text-[10px] font-black text-neo-purple uppercase outline-none cursor-pointer"
+                           >
+                              {bomVersions.map(v => (
+                                 <option key={v.id} value={v.id}>
+                                    Phiên bản v{v.version} {v.is_active ? '(Active)' : ''}
+                                 </option>
+                              ))}
+                           </select>
+                        </div>
                      </div>
                   </div>
                </div>
 
                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => onEdit?.(product)}
+                    className="h-12 px-6 bg-white border-[2px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2"
+                  >
+                     <Edit2 size={16} strokeWidth={3} />
+                     <span>Hiệu đính Master</span>
+                  </button>
+
+                  <button 
+                    onClick={() => onCreateVersion?.(product)}
+                    className="h-12 px-6 bg-[#D8B4FE] border-[2px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-purple transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2"
+                  >
+                     <Layers size={16} strokeWidth={3} />
+                     <span>Phiên bản mới</span>
+                  </button>
                   {activeTab === 'general' && (
                      <button onClick={handleSaveGeneral} disabled={isSavingGeneral} className="h-12 px-8 bg-black text-white border-[2px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-purple hover:text-black transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2">
                         {isSavingGeneral ? <Loader2 size={16} className="animate-spin text-white" /> : <Save size={16} strokeWidth={3} />}
@@ -426,7 +556,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                                     </div>
                                     <div className="flex-1">
                                        <p className="text-5xl font-black text-black tabular-nums tracking-tighter italic">
-                                          {Math.round(Number((product as any).basePrice || 0)).toLocaleString()}
+                                          {formatNumber(Math.round(Number((product as any).basePrice || 0)))}
                                        </p>
                                        <span className="text-[10px] text-black uppercase font-black tracking-widest italic block leading-none whitespace-nowrap">VNĐ / Sản phẩm</span>
                                     </div>
@@ -442,7 +572,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                                     </div>
                                     <div className="flex-1">
                                        <p className="text-5xl font-black text-black tabular-nums tracking-tighter">
-                                          {Math.round(Number((product as any).wholesalePrice || 0)).toLocaleString()}
+                                          {formatNumber(Math.round(Number((product as any).wholesalePrice || 0)))}
                                        </p>
                                        <p className="text-[10px] text-black font-black uppercase tracking-widest mt-1 italic block leading-none whitespace-nowrap">BIÊN LỢI NHUẬN ĐỀ XUẤT OK</p>
                                     </div>
@@ -458,7 +588,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                                     </div>
                                     <div className="flex-1">
                                        <p className="text-5xl font-black text-black tabular-nums tracking-tighter">
-                                          {Math.round(Number((product as any).exportPrice || 0)).toLocaleString()}
+                                          {formatNumber(Math.round(Number((product as any).exportPrice || 0)))}
                                        </p>
                                        <p className="text-[10px] text-black font-black uppercase tracking-widest mt-1 italic block leading-none whitespace-nowrap">GIÁ CHUẨN TOÀN CẦU</p>
                                     </div>
@@ -497,7 +627,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                                        onChange={(e) => setNoteInput(e.target.value)}
                                        onKeyDown={(e) => e.key === 'Enter' && addNote()}
                                        placeholder="Thêm yêu cầu kỹ thuật mới..."
-                                       className="flex-1 h-14 bg-white border-[2.5px] border-dashed border-black/30 rounded-xl px-6 text-sm font-medium placeholder:text-black/20 focus:border-black focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all italic text-black"
+                                       className="flex-1 h-14 bg-white border-[2.5px] border-solid border-black/30 rounded-xl px-6 text-sm font-medium placeholder:text-black/20 focus:border-black focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all italic text-black"
                                     />
                                     <button onClick={addNote} className="w-14 h-14 bg-black text-white hover:bg-neo-purple hover:text-black border-[2px] border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
                                        <Plus size={24} strokeWidth={4} />
@@ -533,96 +663,162 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate 
                         </div>
                      </div>
                   </div>
-               ) : activeTab === 'bom' ? (
+                              ) : activeTab === 'bom' ? (
                   <div className="space-y-10 animate-in fade-in duration-500 h-full flex flex-col pb-10">
-                     <div className="relative group/field">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" size={24} />
-                        <select
-                           onChange={(e) => {
-                              const mat = materials.find(m => m.id === e.target.value);
-                              if (mat) handleAddMaterial(mat);
-                              e.target.value = "";
-                           }}
-                           className="w-full h-16 pl-16 pr-12 bg-white border-[2.5px] border-black rounded-xl appearance-none cursor-pointer font-black text-black tracking-tight focus:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all uppercase"
-                        >
-                           <option value="">-- Tìm kiếm & Phân bổ Vật tư vào BOM Master --</option>
-                           {materials.map(m => (
-                              <option key={m.id} value={m.id} disabled={bomItems.some(bi => bi.materialId === m.id)}>
-                                 {m.name} [{m.sku || 'N/A'}] — {Number(m.referencePrice || m.unitPrice || 0).toLocaleString()} VNĐ/{m.unit}
-                              </option>
-                           ))}
-                        </select>
-                        <ChevronDown size={24} strokeWidth={3} className="absolute right-6 top-1/2 -translate-y-1/2 text-black pointer-events-none" />
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="relative group/field">
+                           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" size={24} />
+                           <select
+                              onChange={(e) => {
+                                 const mat = materials.find(m => m.id === e.target.value);
+                                 if (mat) handleAddMaterial(mat);
+                                 e.target.value = "";
+                              }}
+                              className="w-full h-16 pl-16 pr-12 bg-white border-[2.5px] border-black rounded-xl appearance-none cursor-pointer font-black text-black tracking-tight focus:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all uppercase"
+                           >
+                              <option value="">-- Phân bổ Vật tư --</option>
+                              {materials.map(m => (
+                                 <option key={m.id} value={m.id} disabled={bomItems.some(bi => bi.materialId === m.id)}>
+                                    {m.specification} [{m.type || 'N/A'}]
+                                 </option>
+                              ))}
+                           </select>
+                           <ChevronDown size={24} strokeWidth={3} className="absolute right-6 top-1/2 -translate-y-1/2 text-black pointer-events-none" />
+                        </div>
+
+                        <div className="relative group/field">
+                           <Cpu className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" size={24} />
+                           <select
+                              onChange={(e) => {
+                                 const op = allOperations.find((o: any) => o.id === e.target.value);
+                                 if (op) handleAddOperation(op);
+                                 e.target.value = "";
+                              }}
+                              className="w-full h-16 pl-16 pr-12 bg-white border-[2.5px] border-black rounded-xl appearance-none cursor-pointer font-black text-black tracking-tight focus:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all uppercase"
+                           >
+                              <option value="">-- Thêm Công đoạn --</option>
+                              {allOperations.map((o: any) => (
+                                 <option key={o.id} value={o.id} disabled={bomOperations.some(bo => bo.operationId === o.id)}>
+                                    {o.specification} [{formatNumber(o.price || 0)} VNĐ]
+                                 </option>
+                              ))}
+                           </select>
+                           <ChevronDown size={24} strokeWidth={3} className="absolute right-6 top-1/2 -translate-y-1/2 text-black pointer-events-none" />
+                        </div>
                      </div>
 
-                     <div className="flex-1 overflow-hidden flex flex-col border-[2.5px] border-black rounded-xl bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex-1 overflow-y-auto">
-                           <table className="w-full !mt-0 text-left border-collapse">
-                              <thead className="sticky top-0 z-10 bg-[#F8FAFC] border-b-[2.5px] border-black">
-                                 <tr className="text-[11px] font-black text-black uppercase tracking-[0.2em]">
-                                    <th className="px-10 py-6 italic">Thông số Vật tư</th>
-                                    <th className="px-10 py-6 text-center w-48">Số lượng Phân bổ</th>
-                                    <th className="px-10 py-6 text-right">Đơn giá</th>
-                                    <th className="px-10 py-6 text-right">Thành tiền</th>
-                                    <th className="px-10 py-6 w-20"></th>
-                                 </tr>
-                              </thead>
-                              <tbody className="divide-y-[2px] divide-black/5">
-                                 {bomItems.map((item) => {
-                                    const unitPrice = item.material.unitPrice || item.material.referencePrice || 0;
-                                    return (
-                                       <tr key={item.materialId} className="group hover:bg-neo-purple/5 transition-colors">
-                                          <td className="px-10 py-8">
-                                             <p className="font-black text-black text-base uppercase italic tracking-tighter tracking-tight leading-tight">{item.material.name}</p>
-                                             <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-2 italic">{item.material.sku || 'UNTRACKED-REF'}</p>
+                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 overflow-hidden min-h-0">
+                        {/* MATERIALS TABLE */}
+                        <div className="overflow-hidden flex flex-col border-[2.5px] border-black rounded-xl bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                           <div className="px-6 py-4 bg-[#F8FAFC] border-b-[2px] border-black flex items-center justify-between">
+                              <span className="text-[11px] font-black uppercase tracking-widest italic">Vật tư (Materials)</span>
+                              <span className="badge-primary text-[10px] px-2 py-0.5">{bomItems.length} items</span>
+                           </div>
+                           <div className="flex-1 overflow-y-auto">
+                              <table className="w-full text-left border-collapse">
+                                 <thead className="sticky top-0 z-10 bg-white border-b-[2px] border-black/5">
+                                    <tr className="text-[10px] font-black text-black/40 uppercase tracking-widest">
+                                       <th className="px-6 py-4">Tên vật tư</th>
+                                       <th className="px-6 py-4 text-center">Số lượng</th>
+                                       <th className="px-6 py-4 text-right">Đơn giá</th>
+                                       <th className="px-6 py-4 w-12"></th>
+                                    </tr>
+                                 </thead>
+                                 <tbody className="divide-y divide-black/5">
+                                    {bomItems.map((item) => (
+                                       <tr key={item.materialId} className="group hover:bg-neo-purple/5">
+                                          <td className="px-6 py-4">
+                                             <p className="font-black text-black text-xs uppercase italic">{item.material.specification}</p>
+                                             <p className="text-[9px] text-black/40 font-black uppercase tracking-tighter mt-0.5">{item.material.type || 'N/A'}</p>
                                           </td>
-                                          <td className="px-10 py-8">
-                                             <div className="flex items-center gap-4 bg-white border-[2px] border-black rounded px-3 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                          <td className="px-6 py-4">
+                                             <div className="flex items-center gap-2 bg-white border border-black/20 rounded px-2 py-1">
                                                 <input
                                                    type="number"
                                                    value={item.quantity}
                                                    onChange={(e) => handleUpdateQuantity(item.materialId, Number(e.target.value))}
-                                                   className="w-full h-10 bg-transparent text-center font-black text-black outline-none tabular-nums"
+                                                   className="w-12 bg-transparent text-center font-black text-black outline-none tabular-nums text-xs"
                                                 />
-                                                <span className="text-[10px] font-black text-black/40 uppercase">{item.material.unit}</span>
+                                                <span className="text-[9px] font-black text-black/30 uppercase">{item.material.unit}</span>
                                              </div>
                                           </td>
-                                          <td className="px-10 py-8 text-right tabular-nums text-black/40 font-black italic">{unitPrice.toLocaleString()}</td>
-                                          <td className="px-10 py-8 text-right font-black text-black tabular-nums text-lg italic">
-                                             {(unitPrice * item.quantity).toLocaleString()}
-                                          </td>
-                                          <td className="px-10 py-8 text-right">
-                                             <button onClick={() => handleRemoveMaterial(item.materialId)} className="w-10 h-10 flex items-center justify-center bg-white border-[2px] border-black rounded-lg text-black hover:bg-rose-500 hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none">
-                                                <Trash2 size={18} strokeWidth={3} />
+                                           <td className="px-6 py-4 text-right tabular-nums text-black/40 font-black italic text-xs">{formatNumber(item.material.unitPrice || 0)}</td>
+                                          <td className="px-6 py-4">
+                                             <button onClick={() => handleRemoveMaterial(item.materialId)} className="text-black/20 hover:text-rose-500 transition-colors">
+                                                <Trash2 size={16} strokeWidth={3} />
                                              </button>
                                           </td>
                                        </tr>
-                                    )
-                                 })}
-                                 {bomItems.length === 0 && (
-                                    <tr>
-                                       <td colSpan={5} className="py-32 text-center text-black/10">
-                                          <Layers size={80} strokeWidth={1} className="mx-auto mb-8 opacity-20" />
-                                          <p className="text-[14px] font-black uppercase tracking-[0.8em] italic">Chưa có Dữ liệu Master được phân bổ</p>
-                                       </td>
-                                    </tr>
-                                 )}
-                              </tbody>
-                           </table>
+                                    ))}
+                                 </tbody>
+                              </table>
+                           </div>
                         </div>
 
-                        <div className="p-12 bg-[#F1F5F9] border-t-[2.5px] border-black flex justify-between items-center mt-auto">
+                        {/* OPERATIONS LIST */}
+                        <div className="overflow-hidden flex flex-col border-[2.5px] border-black rounded-xl bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                           <div className="px-6 py-4 bg-[#F8FAFC] border-b-[2px] border-black flex items-center justify-between">
+                              <span className="text-[11px] font-black uppercase tracking-widest italic">Công đoạn (Operations)</span>
+                              <button className="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center hover:bg-neo-purple transition-colors">
+                                 <Plus size={16} strokeWidth={3} />
+                              </button>
+                           </div>
+                           <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                              {bomOperations.map((op, idx) => (
+                                 <div key={op.id} className="p-4 bg-[#FAF7F2] border-[2px] border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3">
+                                    <div className="flex justify-between items-start">
+                                       <div className="flex items-center gap-3">
+                                          <div className="w-6 h-6 bg-black text-white text-[10px] font-black rounded flex items-center justify-center italic">#{idx + 1}</div>
+                                          <p className="font-black text-black text-xs uppercase italic">{op.operation.name}</p>
+                                       </div>
+                                       <button onClick={() => handleRemoveOperation(op.id)} className="text-black/20 hover:text-rose-500 transition-colors">
+                                          <Trash2 size={14} strokeWidth={3} />
+                                       </button>
+                                    </div>
+                                    <div className="flex justify-between items-center bg-white border border-black/10 rounded-lg p-3">
+                                       <div className="flex flex-col">
+                                          <span className="text-[8px] font-black text-black/40 uppercase italic">Chi phí/SP</span>
+                                          <span className="text-xs font-black text-black italic">{(op.operation.price || 0).toLocaleString()} VNĐ</span>
+                                       </div>
+                                       <div className="w-px h-6 bg-black/5" />
+                                       <div className="flex flex-col items-end">
+                                          <span className="text-[8px] font-black text-black/40 uppercase italic">Thứ tự</span>
+                                          <span className="text-xs font-black text-black italic tabular-nums">{op.sequence}</span>
+                                       </div>
+                                    </div>
+                                 </div>
+                              ))}
+                              {bomOperations.length === 0 && (
+                                 <div className="py-12 text-center opacity-20">
+                                    <Cpu size={32} className="mx-auto mb-3" />
+                                    <p className="text-[10px] font-black uppercase italic tracking-widest">N/A Operations</p>
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="p-8 bg-[#F1F5F9] border-[2.5px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-xl flex justify-between items-center mt-auto">
+                        <div className="flex gap-12">
                            <div>
-                              <p className="text-[12px] font-black text-black/40 uppercase tracking-[0.3em] mb-3 flex items-center gap-3">
-                                 <Activity size={18} strokeWidth={3} className="text-black" /> Tổng giá trị BOM Sản xuất
-                              </p>
-                              <p className="text-5xl font-black text-black tabular-nums tracking-tighter italic">
-                                 {totalMaterialCost.toLocaleString()} <span className="text-xl font-medium text-black/20 not-italic">VNĐ</span>
+                              <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Vật tư</p>
+                              <p className="text-2xl font-black text-black italic tabular-nums">{totalMaterialCost.toLocaleString()} <span className="text-[10px] not-italic text-black/30">VNĐ</span></p>
+                           </div>
+                           <div className="w-px h-full bg-black/10" />
+                           <div>
+                              <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Gia công</p>
+                              <p className="text-2xl font-black text-black italic tabular-nums">
+                                 {bomOperations.reduce((sum, item) => sum + (item.operation.price || 0), 0).toLocaleString()} <span className="text-[10px] not-italic text-black/30">VNĐ</span>
                               </p>
                            </div>
-                           <div className="flex items-center gap-4 bg-white p-6 rounded-xl border-[2.5px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                              <Calculator size={32} strokeWidth={3} className="text-neo-purple" />
-                              <span className="text-[12px] font-black uppercase tracking-widest text-black italic">BOM Integrity: Validated</span>
+                        </div>
+                        <div className="flex items-center gap-4 bg-black text-white px-6 py-4 rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_0px_rgba(139,92,246,1)]">
+                           <Calculator size={24} strokeWidth={3} className="text-neo-yellow" />
+                           <div>
+                              <p className="text-[9px] font-black text-white/40 uppercase italic">Tổng giá trị v{bomVersions.find(v => v.id === selectedVersionId)?.version}</p>
+                              <p className="text-xl font-black text-white tabular-nums italic">
+                                 {(totalMaterialCost + bomOperations.reduce((sum, item) => sum + (item.operation.price || 0), 0)).toLocaleString()} VNĐ
+                              </p>
                            </div>
                         </div>
                      </div>

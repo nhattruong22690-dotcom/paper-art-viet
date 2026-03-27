@@ -5,7 +5,7 @@ export async function getFinishedProductionItems() {
     .from('ProductionOrder')
     .select(`
       *,
-      product:Product(*),
+      product:products(*),
       order:Order(
         *,
         customer:Customer(*)
@@ -18,7 +18,7 @@ export async function getFinishedProductionItems() {
   return (items || []).map(po => ({
     id: po.id,
     productName: po.product?.name || 'Sản phẩm',
-    sku: po.product?.sku || 'N/A',
+    sku: po.product?.code || 'N/A',
     quantityCompleted: po.quantity_completed || 0,
     quantityPacked: 0, // In a real app, we'd sum up PackingListDetail for this PO
     customerName: po.order?.customer?.name || 'Khách lẻ'
@@ -68,7 +68,7 @@ export async function createPackage(data: {
       *,
       packingListDetails:PackingListDetail(
         *,
-        product:Product(*)
+        product:products(*)
       ),
       order:Order(
         *,

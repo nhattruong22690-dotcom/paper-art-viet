@@ -154,13 +154,13 @@ export default function ProductionLogs() {
                   placeholder="Tìm theo thợ hoặc sản phẩm..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-background border-2 border-dashed border-foreground/20 rounded-2xl text-sm font-semibold text-foreground outline-none focus:border-primary/30 transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-background border-2 border-black/10 rounded-2xl text-sm font-semibold text-foreground outline-none focus:border-black transition-all"
                 />
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within:text-primary transition-colors" />
              </div>
 
              {/* Date Nav */}
-             <div className="flex items-center gap-3 bg-background border-2 border-dashed border-foreground/10 p-1.5 rounded-2xl shadow-inner">
+             <div className="flex items-center gap-3 bg-background border-2 border-black/5 p-1.5 rounded-2xl shadow-inner">
                 <button 
                   onClick={() => changeDay(-1)} 
                   className="w-10 h-10 flex items-center justify-center bg-card border border-border/10 hover:text-primary hover:border-primary/20 rounded-xl transition-all text-muted-foreground/30 active:scale-95"
@@ -273,7 +273,7 @@ export default function ProductionLogs() {
 
         {!isLoading && filteredLogs.length === 0 && (
           <div className="py-24 flex flex-col items-center text-center animate-in zoom-in duration-500">
-             <div className="w-20 h-20 bg-background border-2 border-dashed border-border/10 rounded-[2rem] flex items-center justify-center text-muted-foreground/10 mb-6 shadow-inner">
+             <div className="w-20 h-20 bg-background border-2 border-black/5 rounded-[2rem] flex items-center justify-center text-muted-foreground/10 mb-6 shadow-inner">
                 <FileText size={40} />
              </div>
              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest italic opacity-40">Sổ cái trống rỗng</h3>

@@ -51,7 +51,7 @@ export async function getRecentProductionProgress() {
     .from('ProductionOrder')
     .select(`
       *,
-      product:Product(*)
+      product:products(*)
     `)
     .limit(5)
     .order('deadline_production', { ascending: false });
@@ -59,7 +59,7 @@ export async function getRecentProductionProgress() {
   if (error) throw error;
 
   return (recentPOs || []).map(po => ({
-    sku: po.product?.sku || 'N/A',
+    sku: po.product?.code || 'N/A',
     title: po.product?.name || 'Sản phẩm mới',
     progress: po.quantity_target > 0 ? Math.round(((po.quantity_completed || 0) / po.quantity_target) * 100) : 0,
     status: po.current_status || 'pending'

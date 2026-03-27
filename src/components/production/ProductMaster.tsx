@@ -15,10 +15,10 @@ import {
   DollarSign,
   Loader2,
   ChevronRight,
-  LayoutGrid,
-  List,
   Activity,
-  Box
+  Box,
+  Database,
+  Settings as SettingsIcon
 } from 'lucide-react';
 
 import { clsx, type ClassValue } from 'clsx';
@@ -26,6 +26,8 @@ import { twMerge } from 'tailwind-merge';
 import { getAllProducts, upsertProduct, updateProductBOM } from '@/services/product.service';
 import ProductDetailModal from './ProductDetailModal';
 import ProductFormModal from './ProductFormModal';
+import MaterialManagerModal from './MaterialManagerModal';
+import OperationManagerModal from './OperationManagerModal';
 import { useNotification } from "@/context/NotificationContext";
 
 function cn(...inputs: ClassValue[]) {
@@ -41,7 +43,11 @@ interface Product {
   wholesalePrice: any;
   exportPrice: any;
   productionTimeStd: number | null;
+  unit?: string | null;
+  cogsConfig?: any;
   bomItems?: any[];
+  versionCount?: number;
+  activeBomId?: string;
 }
 
 export default function ProductMaster() {
@@ -53,6 +59,9 @@ export default function ProductMaster() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [formMode, setFormMode] = useState<'create' | 'edit' | 'new_version'>('create');
+  const [showMaterialManager, setShowMaterialManager] = useState(false);
+  const [showOperationManager, setShowOperationManager] = useState(false);
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -73,20 +82,67 @@ export default function ProductMaster() {
   const handleSaveProduct = async (payload: any) => {
     setIsLoading(true);
     try {
-      const { bomItems, ...productData } = payload;
+      const { bomItems, bomOperations, ...productData } = payload;
       
-      const savedProduct = await upsertProduct(productData);
-      
-      if (bomItems && bomItems.length > 0) {
-          await updateProductBOM(savedProduct.id, bomItems);
+      let savedProduct;
+      if (formMode === 'new_version') {
+        const { createNewBOMVersion } = await import('@/services/product.service');
+        savedProduct = await createNewBOMVersion(
+          editingProduct!.id, 
+          bomItems || [], 
+          bomOperations || []
+        );
+      } else {
+        savedProduct = await upsertProduct(productData);
+        
+        // Chỉ cập nhật BOM nếu không phải mode edit (vì mode edit đã ẩn BOM tab)
+        if (formMode !== 'edit' && ((bomItems && bomItems.length > 0) || (bomOperations && bomOperations.length > 0))) {
+            await updateProductBOM(savedProduct.id, bomItems || [], bomOperations || []);
+        }
       }
       
-      showToast('success', 'Đã lưu sản phẩm và định mức thành công');
+      showToast('success', formMode === 'new_version' ? 'Đã tạo phiên bản BOM mới thành công' : 'Đã lưu sản phẩm thành công');
       setIsFormOpen(false);
+      setEditingProduct(null);
       fetchProducts();
     } catch (error) {
-      console.error('Failed to save product:', error);
-      showModal('error', 'Không thể lưu sản phẩm', String(error));
+      console.error('Failed to save product. Raw Error:', error);
+      const errorMessage = error instanceof Error ? error.message : (typeof error === 'object' ? JSON.stringify(error) : String(error));
+      showModal('error', 'Không thể lưu sản phẩm', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditProduct = async (p: Product) => {
+    if (!p.id) return;
+    setIsLoading(true);
+    try {
+      const { getProductDetail } = await import('@/services/product.service');
+      const fullDetail = await getProductDetail(p.id);
+      setEditingProduct(fullDetail as any);
+      setFormMode('edit');
+      setIsFormOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch product details for editing:', error);
+      showToast('error', 'Không thể tải chi tiết sản phẩm để hiệu đính');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateNewVersion = async (p: Product) => {
+    if (!p.id) return;
+    setIsLoading(true);
+    try {
+      const { getProductDetail } = await import('@/services/product.service');
+      const fullDetail = await getProductDetail(p.id);
+      setEditingProduct(fullDetail as any);
+      setFormMode('new_version');
+      setIsFormOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch product details for new version:', error);
+      showToast('error', 'Không thể tải chi tiết sản phẩm để tạo phiên bản mới');
     } finally {
       setIsLoading(false);
     }
@@ -117,16 +173,33 @@ export default function ProductMaster() {
           </p>
         </div>
         
-        <button 
-          onClick={() => {
-            setEditingProduct(null);
-            setIsFormOpen(true);
-          }}
-          className="w-full md:w-auto px-10 py-5 bg-black text-white rounded-xl border-[2.5px] border-black font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-purple hover:text-black transition-all active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
-        >
-          <Plus size={22} strokeWidth={3} />
-          <span>Khai báo sản phẩm mới</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <button 
+            onClick={() => setShowMaterialManager(true)}
+            className="px-6 py-4 bg-white border-[2.5px] border-black rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+          >
+            <Database size={16} strokeWidth={3} />
+            Vật tư
+          </button>
+          <button 
+            onClick={() => setShowOperationManager(true)}
+            className="px-6 py-4 bg-white border-[2.5px] border-black rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+          >
+            <SettingsIcon size={16} strokeWidth={3} />
+            Công đoạn
+          </button>
+          <button 
+            onClick={() => {
+              setEditingProduct(null);
+              setFormMode('create');
+              setIsFormOpen(true);
+            }}
+            className="px-8 py-4 bg-black text-white rounded-xl border-[2.5px] border-black font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-purple hover:text-black transition-all active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+          >
+            <Plus size={20} strokeWidth={3} />
+            <span>Sản phẩm mới</span>
+          </button>
+        </div>
       </div>
 
       {/* FILTER / SEARCH BAR */}
@@ -154,7 +227,7 @@ export default function ProductMaster() {
            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-black/20">Đang đồng bộ dữ liệu Master...</p>
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="py-24 text-center bg-white rounded-xl border-[2.5px] border-dashed border-black/20 flex flex-col items-center animate-in fade-in">
+        <div className="py-24 text-center bg-white rounded-xl border-[2.5px] border-black/10 flex flex-col items-center animate-in fade-in">
            <div className="w-20 h-20 bg-black/5 rounded-full flex items-center justify-center mb-6">
               <Box size={40} strokeWidth={1.5} className="text-black/10" />
            </div>
@@ -205,7 +278,7 @@ export default function ProductMaster() {
                       </div>
                    </div>
                    <div className="space-y-1.5">
-                       <p className="text-[10px] font-black text-black/40 uppercase tracking-widest">Giá bán sỉ</p>
+                       <p className="text-[10px] font-black text-black/40 uppercase tracking-widest">Giá bán sỉ {p.versionCount && p.versionCount > 1 ? '(v1)' : ''}</p>
                        <div className="flex items-center gap-2">
                          <DollarSign size={16} strokeWidth={3} className="text-[#10B981]/40" />
                          <p className="font-black text-black tabular-nums text-lg italic">
@@ -219,16 +292,32 @@ export default function ProductMaster() {
                    <div className="flex items-center gap-3">
                       <div className="flex -space-x-3">
                          {[1, 2, 3].map(i => (
-                            <div key={i} className="w-10 h-10 rounded-lg border-[2.5px] border-black bg-white flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform group-hover:scale-110">
-                               {i < 3 ? <Layers size={18} className="text-black/20" /> : <p className="text-[11px] font-black text-black">+{p.bomItems?.length || 0}</p>}
+                            <div key={i} className={cn(
+                               "w-10 h-10 rounded-lg border-[2.5px] border-black bg-white flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform group-hover:scale-110",
+                               i === 3 && p.versionCount && p.versionCount > 1 ? "bg-neo-purple" : ""
+                            )}>
+                               {i < 3 ? <Layers size={18} className="text-black/20" /> : <p className="text-[11px] font-black text-black">{p.versionCount || 0}</p>}
                              </div>
                          ))}
                       </div>
-                      <span className="text-[11px] font-black text-black/30 uppercase tracking-widest ml-4">Chi tiết kỹ thuật</span>
+                      <span className="text-[11px] font-black text-black/30 uppercase tracking-widest ml-4">
+                        {p.versionCount || 0} Phiên bản BOM
+                      </span>
                    </div>
-                   <div className="w-12 h-12 rounded-xl bg-black text-white flex items-center justify-center hover:bg-neo-purple hover:text-black transition-all border-[2px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                      <ArrowUpRight size={24} strokeWidth={3} />
-                   </div>
+                    <div className="flex items-center gap-2">
+                       <button 
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleEditProduct(p);
+                         }}
+                         className="w-12 h-12 rounded-xl bg-white text-black flex items-center justify-center hover:bg-neo-yellow transition-all border-[2px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                       >
+                          <Edit2 size={20} strokeWidth={3} />
+                       </button>
+                       <div className="w-12 h-12 rounded-xl bg-black text-white flex items-center justify-center hover:bg-neo-purple hover:text-black transition-all border-[2px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                          <ArrowUpRight size={24} strokeWidth={3} />
+                       </div>
+                    </div>
                 </div>
              </div>
            ))}
@@ -262,6 +351,14 @@ export default function ProductMaster() {
           onClose={() => setIsDetailOpen(false)}
           product={selectedProduct}
           onUpdate={fetchProducts}
+          onEdit={(p) => {
+            setIsDetailOpen(false);
+            handleEditProduct(p);
+          }}
+          onCreateVersion={(p) => {
+            setIsDetailOpen(false);
+            handleCreateNewVersion(p);
+          }}
         />
       )}
 
@@ -270,7 +367,22 @@ export default function ProductMaster() {
           isOpen={isFormOpen}
           onClose={() => setIsFormOpen(false)}
           onSubmit={handleSaveProduct}
-          initialData={editingProduct || undefined}
+          initialData={(editingProduct || undefined) as any}
+          mode={formMode}
+        />
+      )}
+
+      {showMaterialManager && (
+        <MaterialManagerModal 
+          isOpen={showMaterialManager}
+          onClose={() => setShowMaterialManager(false)}
+        />
+      )}
+
+      {showOperationManager && (
+        <OperationManagerModal 
+          isOpen={showOperationManager}
+          onClose={() => setShowOperationManager(false)}
         />
       )}
     </div>

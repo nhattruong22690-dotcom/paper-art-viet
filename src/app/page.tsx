@@ -30,7 +30,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetch('/api/dashboard/stats')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format: expected JSON");
+        }
+        return res.json();
+      })
       .then(d => {
         setData(d);
         setLoading(false);

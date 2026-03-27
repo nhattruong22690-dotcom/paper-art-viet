@@ -9,7 +9,7 @@ export async function getCustomerDefaultProducts(customerId: string) {
     .from('CustomerDefaultProduct')
     .select(`
       *,
-      product:Product(*)
+      product:products(*)
     `)
     .eq('customer_id', customerId);
 
@@ -23,7 +23,7 @@ export async function getCustomerDefaultProducts(customerId: string) {
     defaultQuantity: row.default_quantity,
     product: row.product ? {
       id: row.product.id,
-      sku: row.product.sku,
+      sku: row.product.code,
       name: row.product.name,
       basePrice: row.product.base_price,
       costPrice: row.product.cost_price,
