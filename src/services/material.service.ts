@@ -43,6 +43,19 @@ export async function bulkUpsertMaterials(materials: Partial<Material>[]) {
   return data as Material[];
 }
 
+/**
+ * Xóa một vật tư khỏi hệ thống BOM mới.
+ */
+export async function deleteMaterial(id: string) {
+  const { error } = await supabase
+    .from('materials')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
 // --- LEGACY ERP SYSTEM (Material & MaterialBatch tables) ---
 
 /**
@@ -114,4 +127,86 @@ export async function getMaterialBatches(materialId: string) {
     location: b.location,
     createdAt: b.created_at ? new Date(b.created_at) : new Date()
   }));
+}
+
+/**
+ * Ghi nhận nhập kho vật tư theo lô (Legacy System).
+ */
+export async function createMaterialBatchInward(data: {
+  partnerId: string;
+  items: {
+    materialId: string;
+    sku: string;
+    quantity: number;
+    price: number;
+    location: string;
+    note: string;
+    poItemId?: string;
+  }[];
+}) {
+  const { partnerId, items } = data;
+
+  // 1. Tạo các bản ghi lô vật tư (MaterialBatch)
+  const batches = items.map(item => ({
+    material_id: item.materialId,
+    supplier_id: partnerId,
+    batch_code: `IN-${new Date().getTime().toString().slice(-6)}-${item.sku}`,
+    initial_quantity: Number(item.quantity),
+    remain_quantity: Number(item.quantity),
+    purchase_price: Number(item.price),
+    location: item.location,
+    note: item.note,
+    status: 'received',
+    created_at: new Date().toISOString()
+  }));
+
+  const { data: createdBatches, error: batchError } = await supabase
+    .from('MaterialBatch')
+    .insert(batches)
+    .select();
+
+  if (batchError) throw batchError;
+
+  // 2. Cập nhật tổng tồn kho trong bảng materials
+  for (const item of items) {
+    const { data: mat, error: fetchError } = await supabase
+      .from('materials')
+      .select('stock_quantity')
+      .eq('id', item.materialId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const newQty = (Number(mat.stock_quantity) || 0) + Number(item.quantity);
+
+    const { error: updateError } = await supabase
+      .from('materials')
+      .update({ 
+        stock_quantity: newQty,
+        price: Number(item.price) // Cập nhật đơn giá tham chiếu là giá nhập mới nhất
+      })
+      .eq('id', item.materialId);
+
+    if (updateError) throw updateError;
+    
+    // 3. Nếu có liên kết với PO item, cập nhật số lượng thực nhận trong PurchaseOrderItem
+    if (item.poItemId) {
+      const { data: poItem } = await supabase
+        .from('PurchaseOrderItem')
+        .select('quantity_received')
+        .eq('id', item.poItemId)
+        .single();
+        
+      if (poItem) {
+        await supabase
+          .from('PurchaseOrderItem')
+          .update({ 
+            quantity_received: (Number(poItem.quantity_received) || 0) + Number(item.quantity) 
+          })
+          .eq('id', item.poItemId);
+      }
+    }
+  }
+
+  return createdBatches;
 }
