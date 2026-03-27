@@ -1,9 +1,12 @@
 export interface Material {
   id: string;
+  code?: string;         // Mã hiệu
+  name?: string;         // Tên vật tư
   type: string;          // Loại vật tư
   specification: string; // Thông số kỹ thuật
   unit: string;          // Đơn vị
   price: number;         // Giá
+  cost?: number;         // Giá vốn (dùng trong BOM)
   supplier?: string;
   created_at?: string;
 }

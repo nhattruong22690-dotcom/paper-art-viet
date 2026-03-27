@@ -107,9 +107,9 @@ export default function BOMPage() {
           >
             <div className="flex justify-between items-start mb-6">
                <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Mã sản phẩm: {bom.products?.code}</span>
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Mã sản phẩm: {bom.product?.code}</span>
                   <h3 className="text-xl font-bold font-space uppercase text-black group-hover:text-purple-600 transition-colors">
-                    {bom.products?.name}
+                    {bom.product?.name}
                   </h3>
                </div>
                <div className="bg-purple-100 border-2 border-black px-2 py-1 rounded-lg text-[10px] font-black">

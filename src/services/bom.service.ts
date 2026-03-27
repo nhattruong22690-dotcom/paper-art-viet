@@ -9,7 +9,7 @@ export async function getAllBOMs() {
     .from('bom')
     .select(`
       *,
-      products (*)
+      product:products (*)
     `)
     .order('created_at', { ascending: false });
 
@@ -25,7 +25,7 @@ export async function getBOMDetail(bomId: string): Promise<BOMWithDetails> {
     .from('bom')
     .select(`
       *,
-      products (*),
+      product:products (*),
       bom_materials (*, materials (*)),
       bom_operations (*, operations (*))
     `)

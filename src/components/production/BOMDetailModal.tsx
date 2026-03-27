@@ -15,7 +15,8 @@ import {
   Share2,
   Clock,
   ChevronRight,
-  Calculator
+  Calculator,
+  Package
 } from 'lucide-react';
 import { getBOMDetail, calculateBOMCost } from '@/services/bom.service';
 import { Card } from '@/components/ui/Card';
@@ -72,9 +73,9 @@ export default function BOMDetailModal({ bomId, isOpen, onClose }: BOMDetailModa
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest border border-purple-200 bg-purple-50 px-2 py-0.5 rounded-lg">Version {bom?.version}.0</span>
-                <span className="text-[10px] font-black text-black uppercase tracking-widest px-2 py-0.5 border-l-2 border-black ml-1">SKU: {bom?.products?.code}</span>
+                <span className="text-[10px] font-black text-black uppercase tracking-widest px-2 py-0.5 border-l-2 border-black ml-1">SKU: {bom?.product?.code}</span>
               </div>
-              <h2 className="text-3xl font-bold font-space uppercase text-black">{bom?.products?.name}</h2>
+              <h2 className="text-3xl font-bold font-space uppercase text-black">{bom?.product?.name}</h2>
             </div>
           </div>
           
@@ -233,9 +234,9 @@ export default function BOMDetailModal({ bomId, isOpen, onClose }: BOMDetailModa
                                  </td>
                                  <td className="px-6 py-4 border-r-2 border-black/5 text-center">{item.qty} {item.material?.unit}</td>
                                  <td className="px-6 py-4 border-r-2 border-black/5 text-center text-rose-500">{(item.scrap_rate * 100).toFixed(1)}%</td>
-                                 <td className="px-6 py-4 border-r-2 border-black/5 text-right tabular-nums">{formatNumber(item.material?.cost)}đ</td>
+                                 <td className="px-6 py-4 border-r-2 border-black/5 text-right tabular-nums">{formatNumber(item.material?.price)}đ</td>
                                  <td className="px-6 py-4 text-right tabular-nums font-black">
-                                    {formatNumber(item.qty * (item.material?.cost || 0) * (1 + item.scrap_rate))}đ
+                                    {formatNumber(item.qty * (item.material?.price || 0) * (1 + item.scrap_rate))}đ
                                  </td>
                               </tr>
                            ))}
