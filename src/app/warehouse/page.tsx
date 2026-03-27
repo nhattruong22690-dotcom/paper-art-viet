@@ -22,52 +22,52 @@ export default function WarehousePage() {
   const [activeTab, setActiveTab] = useState<'inventory' | 'packing'>('inventory');
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-10 animate-in fade-in duration-700 pb-20">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 bg-neo-purple/10 p-8 rounded-xl border-neo border-black shadow-neo">
         <div>
-          <nav className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-            <Archive size={12} />
+          <nav className="flex items-center gap-2 text-[10px] font-black text-black/40 uppercase tracking-[0.2em] mb-3">
+            <Archive size={14} className="text-black" />
             <span>Kho vận</span>
             <ChevronRight size={10} />
-            <span className="text-primary italic">{activeTab === 'inventory' ? 'Inventory Control' : 'Packing Station'}</span>
+            <span className="text-black">{activeTab === 'inventory' ? 'Inventory' : 'Packing'}</span>
           </nav>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
-            Quản trị <span className="text-primary">Kho bãi</span>
+          <h1 className="text-4xl font-black text-black tracking-tight uppercase leading-none">
+            Quản trị <span className="text-neo-purple italic">Kho bãi</span>
           </h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium italic">
-             Hệ thống quản lý vật tư và đóng gói thành phẩm 2025.
+          <p className="text-black/60 text-sm mt-2 font-bold uppercase tracking-tight">
+             Hệ thống quản lý vật tư và đóng gói • 2026 Edition
           </p>
         </div>
         
-        <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
+        <div className="flex bg-white p-2 rounded-xl border-neo border-black shadow-neo">
           <button 
             onClick={() => setActiveTab('inventory')}
             className={cn(
-              "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 active:scale-95",
+              "px-8 py-4 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-3 active:scale-95",
               activeTab === 'inventory' 
-                ? "bg-white text-primary shadow-soft border border-slate-200/50" 
-                : "text-slate-400 hover:text-slate-600"
+                ? "bg-black text-white shadow-neo" 
+                : "text-black/40 hover:text-black"
             )}
           >
-            <Layers size={16} strokeWidth={2.5} /> Kiểm soát vật tư
+            <Layers size={18} /> Kiểm soát vật tư
           </button>
           <button 
             onClick={() => setActiveTab('packing')}
             className={cn(
-              "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 active:scale-95",
+              "px-8 py-4 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-3 active:scale-95",
               activeTab === 'packing' 
-                ? "bg-white text-primary shadow-soft border border-slate-200/50" 
-                : "text-slate-400 hover:text-slate-600"
+                ? "bg-black text-white shadow-neo" 
+                : "text-black/40 hover:text-black"
             )}
           >
-            <Box size={16} strokeWidth={2.5} /> Trạm đóng gói
+            <Box size={18} /> Trạm đóng gói
           </button>
         </div>
       </div>
 
       {/* RENDER CONTENT BASED ON TAB */}
-      <div className="animate-in fade-in slide-in-from-bottom-6 duration-1000">
+      <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
         {activeTab === 'inventory' ? (
           <InventoryDashboard />
         ) : (
@@ -76,11 +76,14 @@ export default function WarehousePage() {
       </div>
 
       {/* Footer Meta */}
-      <div className="pt-8 border-t border-slate-100 flex justify-between items-center text-[9px] font-black text-slate-300 uppercase tracking-widest">
-         <span>Logistics Module v4.1</span>
-         <span className="flex items-center gap-2 pl-4 border-l border-slate-100">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-            Vận hành ổn định
+      <div className="pt-10 border-t-neo border-black flex justify-between items-center text-[10px] font-black text-black/20 uppercase tracking-[0.3em]">
+         <div className="flex items-center gap-4">
+            <span className="px-3 py-1 bg-black text-white rounded">V4.1</span>
+            <span>LOGISTICS CORE</span>
+         </div>
+         <span className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-neo-mint border-2 border-black rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" />
+            OPERATIONAL
          </span>
       </div>
     </div>

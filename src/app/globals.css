@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc; /* Slate 50 - Modern SaaS Background */
-  --foreground: #0f172a; /* Slate 900 - High contrast text */
-  --muted-text: #475569; /* Slate 600 - Muted content */
+  --background: #F5F5DC; /* Soft Beige */
+  --foreground: #0F172A; /* Slate 900 */
+  --muted-text: #475569; 
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #0F172A;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #3b82f6; /* Vibrant Blue (SaaS standard) */
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9; /* Slate 100 */
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b; /* Slate 500 */
-  --accent: #eff6ff; /* Blue 50 */
-  --accent-foreground: #3b82f6;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #e2e8f0; /* Slate 200 */
-  --input: #e2e8f0;
-  --ring: #3b82f6;
-  --radius: 16px; /* Bo góc 16px - Standard SaaS Modern */
+  --popover-foreground: #0F172A;
+  --primary: #D8B4FE; /* Neo-Purple */
+  --primary-foreground: #000000;
+  --secondary: #D1FAE5; /* Neo-Mint */
+  --secondary-foreground: #000000;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #FEF3C7; /* Neo-Yellow */
+  --accent-foreground: #000000;
+  --destructive: #FEE2E2; /* Neo-Red */
+  --destructive-foreground: #000000;
+  --border: #000000;
+  --input: #ffffff;
+  --ring: #D8B4FE;
+  --radius: 12px; 
 }
 
 @theme {
@@ -47,16 +47,28 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
 
+  --color-neo-purple: #D8B4FE;
+  --color-neo-mint: #D1FAE5;
+  --color-neo-yellow: #FEF3C7;
+  --color-neo-red: #FEE2E2;
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
 
   --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
+  --color-card-foreground: var(--color-card-foreground);
 
   --radius-2xl: var(--radius);
-  --radius-xl: calc(var(--radius) - 4px);
-  --radius-lg: calc(var(--radius) - 8px);
-  --radius-md: calc(var(--radius) - 10px);
+  --radius-xl: var(--radius);
+  --radius-lg: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius) - 4px);
+
+  --shadow-neo: 4px 4px 0px 0px #000000;
+  --shadow-neo-active: 2px 2px 0px 0px #000000;
+
+  --border-width-neo: 2.5px;
+
+  --font-space: var(--font-space-grotesk);
 }
 
 @layer base {
@@ -64,43 +76,43 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-muted-text antialiased;
+    @apply bg-background text-foreground antialiased font-normal;
     font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply text-foreground font-semibold tracking-tight;
+    @apply text-foreground font-bold tracking-tight font-space uppercase;
   }
 }
 
 @layer components {
-  .card {
-    @apply bg-card text-card-foreground rounded-2xl border-none shadow-xl shadow-slate-200/40 p-8 transition-all hover:shadow-2xl hover:shadow-slate-200/60;
+  .card, .neo-card {
+    @apply bg-card text-card-foreground rounded-xl border-neo border-black shadow-neo p-8 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-active;
   }
   
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-2xl text-sm font-bold transition-all focus:ring-4 focus:ring-primary/10 disabled:opacity-50 bg-primary text-primary-foreground hover:bg-blue-600 h-12 px-8 shadow-lg shadow-blue-500/20 active:scale-95;
+    @apply inline-flex items-center justify-center rounded-xl text-sm font-bold transition-all bg-primary text-black border-neo border-black shadow-neo h-12 px-8 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-active active:translate-x-[4px] active:translate-y-[4px] active:shadow-none disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-2xl text-sm font-bold transition-all focus:ring-4 focus:ring-secondary/20 disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-slate-200 h-12 px-8 active:scale-95;
+    @apply inline-flex items-center justify-center rounded-xl text-sm font-bold transition-all bg-secondary text-black border-neo border-black shadow-neo h-12 px-8 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-active active:translate-x-[4px] active:translate-y-[4px] active:shadow-none disabled:opacity-50;
   }
 
   .form-input {
-    @apply w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm text-foreground outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-400;
+    @apply w-full bg-white border-neo border-dashed border-black rounded-xl py-3 px-4 text-sm text-foreground outline-none focus:bg-white focus:border-solid focus:ring-4 focus:ring-primary/20 transition-all placeholder:text-slate-400;
   }
 
-  /* Status Badges - Muted & Minimal */
+  /* Status Badges - Neo Brutalism style */
   .badge-success {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100;
+    @apply inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-neo-mint text-black border-2 border-black;
   }
 
   .badge-error {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-100;
+    @apply inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-neo-red text-black border-2 border-black;
   }
 
   .badge-warning {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100;
+    @apply inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-neo-yellow text-black border-2 border-black;
   }
 
   /* Table Cell standard */
@@ -109,17 +121,17 @@
   }
 }
 
-/* Modern Minimalist Table */
+/* Neo-Brutalism Table */
 table {
-  @apply w-full border-collapse text-left text-sm bg-white rounded-2xl overflow-hidden shadow-sm mt-4;
+  @apply w-full border-collapse text-left text-sm bg-white rounded-xl overflow-hidden border-neo border-black shadow-neo mt-4;
 }
 
 thead th {
-  @apply bg-slate-50 border-b border-slate-100 px-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[10px];
+  @apply bg-primary/20 border-b-neo border-black px-6 py-4 font-bold text-foreground uppercase tracking-wider text-xs font-space;
 }
 
 tbody td {
-  @apply border-b border-slate-50 px-6 py-5 text-muted-text transition-colors;
+  @apply border-b border-black/10 px-6 py-5 text-foreground transition-colors;
 }
 
 tbody tr:last-child td {
@@ -142,7 +154,21 @@ tbody tr:hover {
   @apply bg-slate-200/50 rounded-full hover:bg-slate-300 transition-colors;
 }
 
+.glass-card {
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl;
+}
+
 /* Eliminated legacy classes */
-.glass-panel, .retro-paper, .liquid-bg, .glass-card, .bento-container, .washi-tape-top, .paper-clip {
+/* Animation for success flash */
+@keyframes confirm-flash {
+  0% { background-color: var(--secondary); transform: translate(4px, 4px); box-shadow: none; }
+  100% { background-color: var(--primary); transform: translate(0, 0); }
+}
+
+.btn-confirm-flash:active {
+  animation: confirm-flash 0.2s ease-in-out forwards;
+}
+
+.glass-panel, .retro-paper, .liquid-bg, .bento-container, .washi-tape-top, .paper-clip {
   display: none !important;
 }

@@ -20,7 +20,8 @@ import {
   Loader2,
   Trash2,
   UserCog,
-  ArrowRight
+  ArrowRight,
+  ChevronDown
 } from 'lucide-react';
 import { getEmployees, deleteEmployee } from '@/services/employee.service';
 import { useNotification } from '@/context/NotificationContext';
@@ -97,95 +98,90 @@ export default function EmployeesPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-slate-400 animate-in fade-in">
-        <Loader2 className="w-12 h-12 animate-spin text-primary opacity-50" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Đang đồng bộ hồ sơ nhân sự...</p>
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-6 text-black animate-in fade-in">
+        <Loader2 className="w-14 h-14 animate-spin text-black opacity-20" />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] italic">Synchronizing Human Capital Ledger...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-10 animate-in fade-in duration-700 pb-20">
       
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <nav className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-            <Users size={12} />
-            <span>Nhân sự</span>
-            <ChevronRight size={10} />
-            <span className="text-primary italic">Employee Directory</span>
-          </nav>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
-            Danh bạ <span className="text-primary italic">Nhân sự</span>
-          </h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium italic">
-             Quản lý hồ sơ, cấp quyền và theo dõi trạng thái nhân sự toàn hệ thống.
-          </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+        <div className="flex items-center gap-4">
+           <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <Users size={28} className="text-black" />
+           </div>
+           <div>
+              <h1 className="text-3xl font-black text-black tracking-tight uppercase italic">Danh bạ Nhân sự</h1>
+              <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Employee Directory & Organizational Matrix</p>
+           </div>
         </div>
         
         <button 
           onClick={() => setIsAddModalOpen(true)}
-          className="btn-primary gap-3 shadow-vibrant"
+          className="btn-primary h-14 px-10 text-xs uppercase tracking-widest gap-4"
         >
-          <UserPlus size={20} strokeWidth={2.5} />
+          <UserPlus size={20} strokeWidth={3} />
           <span>Thêm nhân viên mới</span>
         </button>
       </div>
 
       {/* Filter / Search Bar */}
-      <div className="card !p-5 flex flex-col md:flex-row gap-5 border border-slate-50 shadow-soft">
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex-1 relative group/field">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" size={24} />
           <input 
             type="text" 
             placeholder="Tìm theo tên, email hoặc phòng ban..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input pl-12 h-12 bg-slate-50/50 border-slate-100 rounded-xl"
+            className="form-input pl-14 h-16 font-black"
           />
         </div>
-        <button className="btn-secondary gap-3 whitespace-nowrap px-8">
-          <Filter size={18} strokeWidth={2.5} /> 
+        <button className="btn-secondary h-16 px-10 text-[10px] uppercase tracking-[0.2em] gap-3">
+          <Filter size={20} strokeWidth={3} /> 
           <span>Bộ lọc nâng cao</span>
         </button>
       </div>
 
       {/* Employee Table */}
-      <div className="card !p-0 border border-slate-50 shadow-soft overflow-hidden">
+      <div className="neo-card !p-0 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="!mt-0">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr>
-                <th className="px-8">Nhân viên</th>
-                <th className="px-8">Phòng ban & Chức vụ</th>
-                <th className="px-8">Thông tin liên hệ</th>
-                <th className="px-8">Quản trị hệ thống</th>
-                <th className="w-24 px-8"></th>
+              <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
+                <th className="px-8 py-5 border-b-2 border-black">Nhân viên</th>
+                <th className="px-8 py-5 border-b-2 border-black">Phòng ban & Chức vụ</th>
+                <th className="px-8 py-5 border-b-2 border-black">Thông tin liên hệ</th>
+                <th className="px-8 py-5 border-b-2 border-black">Quản trị hệ thống</th>
+                <th className="w-32 px-8 border-b-2 border-black"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y-2 divide-black/5">
               {filteredEmployees.map((emp) => (
-                <tr key={emp.id} className="group transition-all">
+                <tr key={emp.id} className="group hover:bg-neo-purple/5 transition-all">
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 text-primary flex items-center justify-center font-black text-sm shrink-0 uppercase shadow-inner group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                      <div className="w-12 h-12 rounded-xl bg-white border-2 border-black text-black flex items-center justify-center font-black text-sm shrink-0 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:bg-black group-hover:text-white transition-all duration-300 italic">
                         {emp.name.substring(0, 2)}
                       </div>
                       <div>
-                        <p className="font-black text-slate-900 tracking-tight text-base group-hover:text-primary transition-colors">{emp.name}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{emp.employeeCode}</p>
+                        <p className="font-black text-black tracking-tight text-base uppercase italic group-hover:text-neo-purple transition-colors leading-none">{emp.name}</p>
+                        <p className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] mt-1">{emp.employeeCode}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="space-y-1.5">
-                      <p className="font-bold text-slate-900 text-sm tracking-tight">{emp.department}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-lg">{emp.position}</span>
+                    <div className="space-y-2">
+                      <p className="font-black text-black text-sm tracking-tight uppercase italic">{emp.department}</p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[9px] font-black text-black/40 uppercase tracking-widest bg-black/5 px-2 py-0.5 rounded-lg border border-black/5 italic">{emp.position}</span>
                         <span className={cn(
-                          "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm",
-                          emp.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100 opacity-60'
+                          "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] italic",
+                          emp.status === 'active' ? 'bg-neo-green/20 text-black' : 'bg-neo-red/20 text-black'
                         )}>
                           {emp.status === 'active' ? 'Active' : 'Disabled'}
                         </span>
@@ -193,50 +189,50 @@ export default function EmployeesPage() {
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 text-xs font-bold text-slate-900 tracking-tight">
-                        <Mail size={12} className="text-primary opacity-50" strokeWidth={3} />
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-black text-black tracking-tight italic">
+                        <Mail size={14} strokeWidth={3} className="text-black/20" />
                         {emp.email}
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        <Phone size={12} className="text-slate-300" strokeWidth={3} />
+                      <div className="flex items-center gap-2 text-[10px] font-black text-black/40 uppercase tracking-widest tabular-nums">
+                        <Phone size={14} strokeWidth={3} className="text-black/10" />
                         {emp.phone}
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="space-y-1.5">
-                       <div className="flex items-center gap-2 text-xs font-bold text-slate-900 tracking-tight">
-                         <Calendar size={14} className="text-slate-300" />
+                    <div className="space-y-2">
+                       <div className="flex items-center gap-2 text-xs font-black text-black tracking-tight tabular-nums italic">
+                         <Calendar size={14} strokeWidth={3} className="text-black/20" />
                          {emp.joinDate || '---'}
                        </div>
                        <div className={cn(
-                         "inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
-                         emp.account?.role ? "bg-blue-50 text-primary border border-blue-100" : "bg-slate-50 text-slate-300 border border-slate-100"
+                         "inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] italic",
+                         emp.account?.role ? "bg-neo-purple/20 text-black" : "bg-white text-black/10 border-black/10 shadow-none"
                        )}>
-                          <ShieldCheck size={10} strokeWidth={3} />
+                          <ShieldCheck size={12} strokeWidth={3} />
                           {emp.account?.role || 'No Account'}
                        </div>
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 justify-end translate-x-4 group-hover:translate-x-0">
+                    <div className="flex items-center gap-3 justify-end">
                        <button 
                          onClick={() => {
                            setSelectedEmployee(emp);
                            setIsGrantModalOpen(true);
                          }}
-                         className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-blue-50 hover:border-blue-100 border border-transparent rounded-xl transition-all"
+                         className="w-10 h-10 border-2 border-black rounded-xl flex items-center justify-center text-black/20 hover:text-black hover:bg-black/5 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none bg-white"
                          title="Cấp tài khoản"
                        >
-                          <UserCog size={18} strokeWidth={2.5} />
+                          <UserCog size={20} strokeWidth={3} />
                        </button>
                        <button 
                          onClick={() => handleDelete(emp.id)}
-                         className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 border border-transparent rounded-xl transition-all"
+                         className="w-10 h-10 border-2 border-black rounded-xl flex items-center justify-center text-black/20 hover:text-neo-red hover:bg-neo-red/5 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none bg-white"
                          title="Xóa hồ sơ"
                        >
-                          <Trash2 size={18} strokeWidth={2.5} />
+                          <Trash2 size={20} strokeWidth={3} />
                        </button>
                     </div>
                   </td>
@@ -244,9 +240,9 @@ export default function EmployeesPage() {
               ))}
               {filteredEmployees.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-32 text-center text-slate-200">
-                     <Users size={64} strokeWidth={1} className="mx-auto mb-6 opacity-10" />
-                     <p className="text-xs font-black uppercase tracking-[0.3em]">Không tìm thấy hồ sơ phù hợp</p>
+                  <td colSpan={5} className="py-32 text-center opacity-10">
+                     <Users size={80} strokeWidth={1} className="mx-auto mb-6" />
+                     <p className="text-sm font-black uppercase tracking-[0.4em] italic">No active personnel records found</p>
                   </td>
                 </tr>
               )}
@@ -256,11 +252,11 @@ export default function EmployeesPage() {
       </div>
 
       {/* Footer Meta */}
-      <div className="pt-8 border-t border-slate-100 flex justify-between items-center text-[9px] font-black text-slate-300 uppercase tracking-widest">
-         <span>Human Capital v3.1</span>
-         <span className="flex items-center gap-2 pl-4 border-l border-slate-100">
-            <span className="w-1.5 h-1.5 bg-primary rounded-full" />
-            Database Synchronized
+      <div className="pt-10 border-t-2 border-black border-dashed flex justify-between items-center text-[10px] font-black text-black/20 uppercase tracking-[0.3em] italic">
+         <span>Human Capital Framework v4.0 • Enterprise Core</span>
+         <span className="flex items-center gap-3 pl-6">
+            <span className="w-2 h-2 bg-neo-green rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            Central Personnel Ledger Synchronized
          </span>
       </div>
     </div>

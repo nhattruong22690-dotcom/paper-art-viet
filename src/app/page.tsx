@@ -42,9 +42,9 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-slate-400 animate-in fade-in">
+    <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-muted-foreground animate-in fade-in">
       <Loader2 className="w-12 h-12 animate-spin text-primary opacity-50" />
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Đang đồng bộ dữ liệu...</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em]">Đang đồng bộ dữ liệu...</p>
     </div>
   );
 
@@ -56,160 +56,188 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-10 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-neo-yellow/30 p-8 rounded-xl border-neo border-black shadow-neo">
         <div>
-          <nav className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-             <Activity size={12} />
+          <nav className="flex items-center gap-2 text-[10px] font-black text-black uppercase tracking-[0.2em] mb-3">
+             <Activity size={14} strokeWidth={3} />
              <span>Hệ thống điều hành</span>
-             <ChevronRight size={10} />
-             <span className="text-primary">Dashboard</span>
+             <ChevronRight size={12} strokeWidth={3} />
+             <span className="text-purple-600 bg-neo-purple/20 px-2 py-0.5 rounded-lg border border-black/10">Dashboard</span>
           </nav>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter">
-            Tổng quan <span className="text-primary italic">Vận hành</span>
+          <h1 className="text-4xl font-bold text-foreground tracking-tight uppercase font-space">
+            Tổng quan <span className="text-purple-500 bg-white border-neo border-black px-3 py-1 -rotate-2 inline-block shadow-neo-active">Vận hành</span>
           </h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium">
-             Hôm nay là {new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <p className="text-muted-foreground text-sm mt-4 font-bold uppercase tracking-wider">
+             Hôm nay: {new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
         
         <div className="flex items-center gap-4">
-           <div className="badge-success gap-2 py-2 px-4 shadow-sm shadow-emerald-500/10">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-              Real-time Active
+           <div className="badge-success gap-2 py-3 px-6 shadow-neo-active hover:shadow-neo transition-all cursor-pointer">
+              <span className="w-3 h-3 bg-black rounded-full animate-pulse" />
+              <span className="font-black text-[11px] uppercase tracking-widest">Real-time Active</span>
            </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Bento Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6 auto-rows-[minmax(180px,auto)]">
+        
+        {/* Stats Cards - Now integrated into the Bento Grid */}
         {stats.map((stat, i) => (
-          <div key={i} className="card !p-6 flex flex-col gap-5 border border-slate-50 relative group">
-            <div className="flex justify-between items-start">
-               <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg} ${stat.color} shadow-sm group-hover:scale-110 transition-transform duration-500`}>
-                 <stat.icon size={22} strokeWidth={2.5} />
+          <div key={i} className="lg:col-span-3 neo-card !p-6 flex flex-col justify-between group relative overflow-hidden">
+            <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-10 group-hover:scale-150 transition-transform duration-700 ${stat.bg}`} />
+            <div className="flex justify-between items-start relative z-10">
+               <div className={`w-14 h-14 rounded-xl border-neo border-black flex items-center justify-center ${stat.bg} ${stat.color} shadow-neo-active group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-none transition-all`}>
+                 <stat.icon size={28} strokeWidth={2.5} />
                </div>
                <span className={cn(
-                  "text-[10px] font-bold px-2 py-1 rounded-lg",
-                  stat.trend.startsWith('+') ? 'text-emerald-600 bg-emerald-50' : 
-                  stat.trend.startsWith('-') ? 'text-rose-600 bg-rose-50' : 'text-slate-400 bg-slate-50'
+                  "text-[10px] font-black px-3 py-1.5 rounded-lg border-2 border-black shadow-neo-active",
+                  stat.trend.startsWith('+') ? 'bg-neo-mint text-black' : 
+                  stat.trend.startsWith('-') ? 'bg-neo-red text-black' : 'bg-white text-black'
                )}>
                   {stat.trend}
                </span>
             </div>
-            <div>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">{stat.label}</p>
-               <p className="text-2xl font-black text-slate-900 tabular-nums tracking-tighter">{stat.value}</p>
+            <div className="mt-6 relative z-10">
+               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">{stat.label}</p>
+               <p className="text-3xl font-bold text-foreground tabular-nums tracking-tighter font-space">{stat.value}</p>
             </div>
-            <ArrowUpRight className="absolute bottom-4 right-4 text-slate-200 group-hover:text-primary transition-colors" size={20} />
           </div>
         ))}
-      </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Production Monitor */}
-        <div className="lg:col-span-8 card !p-0 overflow-hidden shadow-soft border border-slate-50">
-          <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-            <div className="flex items-center gap-3">
-               <div className="w-8 h-8 rounded-lg bg-blue-50 text-primary flex items-center justify-center">
-                  <Activity size={18} strokeWidth={2.5} />
+        {/* Production Monitor - Large Bento Box */}
+        <div className="lg:col-span-8 lg:row-span-2 neo-card !p-0 overflow-hidden">
+          <div className="px-8 py-6 border-b-neo border-black flex justify-between items-center bg-neo-purple/10">
+            <div className="flex items-center gap-4">
+               <div className="w-10 h-10 rounded-xl bg-white border-neo border-black text-black flex items-center justify-center shadow-neo-active">
+                  <Activity size={20} strokeWidth={3} />
                </div>
-               <h3 className="font-black text-slate-900 uppercase text-xs tracking-widest">Giám sát Sản xuất</h3>
+               <h3 className="font-bold text-foreground uppercase text-sm tracking-widest font-space">Giám sát Sản xuất</h3>
             </div>
             <div className="flex items-center gap-4">
-               <span className="flex items-center gap-1.5 text-[9px] font-black text-primary bg-blue-50 px-3 py-1.5 rounded-full tracking-widest">
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" />
+               <span className="flex items-center gap-2 text-[10px] font-black text-black bg-neo-mint px-4 py-2 rounded-lg border-2 border-black shadow-neo-active tracking-widest">
+                  <span className="w-2 h-2 bg-black rounded-full animate-ping" />
                   LIVE FEED
                </span>
             </div>
           </div>
-          <div className="p-8 space-y-8">
+          <div className="p-8 space-y-10">
             {(data?.progress || []).map((item: any, i: number) => (
-              <div key={i} className="group cursor-default">
-                <div className="flex justify-between items-end mb-3">
+              <div key={i} className="group">
+                <div className="flex justify-between items-end mb-4">
                   <div className="flex flex-col gap-1">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Batch #{item.sku}</span>
-                    <span className="font-bold text-slate-900 tracking-tight group-hover:text-primary transition-colors">{item.title}</span>
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Batch #{item.sku}</span>
+                    <span className="text-xl font-bold text-foreground tracking-tight group-hover:text-purple-600 transition-colors font-space uppercase">{item.title}</span>
                   </div>
                   <div className="text-right">
-                     <span className="text-lg font-black text-slate-900 tracking-tighter">{item.progress}%</span>
+                     <span className="text-3xl font-bold text-foreground tabular-nums tracking-tighter font-space">{item.progress}%</span>
                   </div>
                 </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-6 bg-white border-neo border-black rounded-lg overflow-hidden p-1 shadow-neo-active">
                   <div 
-                    className="h-full bg-primary rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(59,130,246,0.3)]" 
+                    className="h-full bg-primary border-r-2 border-black transition-all duration-1000" 
                     style={{ width: `${item.progress}%` }}
                   />
                 </div>
-                <div className="flex justify-between items-center mt-3">
-                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                      Trạng thái: <span className="text-primary">{item.status}</span>
-                   </span>
-                   <span className="text-[10px] font-medium text-slate-300">Vừa cập nhật xong</span>
+                <div className="flex justify-between items-center mt-4">
+                   <div className="flex items-center gap-3">
+                      <span className="text-[10px] font-black text-black uppercase tracking-widest border-2 border-black bg-neo-yellow px-3 py-1 rounded-lg">
+                        {item.status}
+                      </span>
+                      <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Vừa cập nhật xong</span>
+                   </div>
                 </div>
               </div>
             ))}
             {(!data?.progress || data.progress.length === 0) && (
-              <div className="py-20 text-center text-slate-300">
-                <FileText size={48} strokeWidth={1} className="mx-auto mb-4 opacity-20" />
-                <p className="text-xs font-bold uppercase tracking-widest opacity-50">Không có lệnh sản xuất đang chạy</p>
+              <div className="py-24 text-center">
+                <div className="w-20 h-20 bg-white border-neo border-black rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-neo rotate-3">
+                  <FileText size={40} strokeWidth={2} className="text-black/20" />
+                </div>
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-black/30">Không có lệnh sản xuất đang chạy</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Logistics Manifest */}
-        <div className="lg:col-span-4 card !p-0 overflow-hidden shadow-soft border border-slate-50">
-          <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-            <div className="flex items-center gap-3">
-               <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                  <Truck size={18} strokeWidth={2.5} />
+        {/* Logistics Manifest - Vertical Bento Box */}
+        <div className="lg:col-span-4 lg:row-span-2 neo-card !p-0 overflow-hidden flex flex-col">
+          <div className="px-8 py-6 border-b-neo border-black flex justify-between items-center bg-neo-mint/20">
+            <div className="flex items-center gap-4">
+               <div className="w-10 h-10 rounded-xl bg-white border-neo border-black text-black flex items-center justify-center shadow-neo-active">
+                  <Truck size={20} strokeWidth={3} />
                </div>
-               <h3 className="font-black text-slate-900 uppercase text-xs tracking-widest">Lịch Xuất kho</h3>
+               <h3 className="font-bold text-foreground uppercase text-sm tracking-widest font-space">Lịch Xuất kho</h3>
             </div>
           </div>
-          <div className="p-4 overflow-y-auto max-h-[500px] scrollbar-hide">
+          <div className="p-6 overflow-y-auto flex-1 space-y-4">
             {(data?.deliveries || []).map((order: any, i: number) => (
-              <div key={i} className="m-2 p-5 bg-white border border-slate-50 rounded-2xl hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 group cursor-pointer relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-1 h-full bg-primary/10 group-hover:bg-primary transition-colors" />
-                <div className="flex justify-between items-start mb-3">
-                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">#{order.id}</span>
-                  <span className="text-[9px] font-black px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg">{order.date}</span>
+              <div key={i} className="p-6 bg-white border-neo border-black rounded-xl hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-active bg-card shadow-neo transition-all group cursor-pointer relative overflow-hidden">
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">#{order.id}</span>
+                  <span className="text-[10px] font-black px-2 py-1 bg-neo-mint border-2 border-black rounded-lg">{order.date}</span>
                 </div>
-                <h4 className="font-bold text-slate-900 text-sm group-hover:text-primary transition-colors tracking-tight line-clamp-1">{order.customer}</h4>
-                <div className="flex items-center gap-2 mt-3">
-                   <PackageCheck size={14} className="text-slate-300" />
-                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{order.items} SKU thành phẩm</span>
+                <h4 className="font-bold text-foreground text-base group-hover:text-purple-600 transition-colors tracking-tight line-clamp-1 uppercase font-space">{order.customer}</h4>
+                <div className="flex items-center gap-2 mt-4">
+                   <PackageCheck size={16} strokeWidth={2.5} className="text-black/40" />
+                   <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{order.items} SKU thành phẩm</span>
                 </div>
               </div>
             ))}
             {(!data?.deliveries || data.deliveries.length === 0) && (
-              <div className="py-24 text-center text-slate-200">
-                <Truck size={48} strokeWidth={1} className="mx-auto mb-4 opacity-20" />
-                <p className="text-xs font-bold uppercase tracking-widest opacity-50">Kho vận trống</p>
+              <div className="py-28 text-center">
+                <div className="w-20 h-20 bg-white border-neo border-black rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-neo -rotate-3">
+                  <Truck size={40} strokeWidth={2} className="text-black/20" />
+                </div>
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-black/30">Kho vận trống</p>
               </div>
             )}
           </div>
-          <div className="p-6 bg-slate-50/50 border-t border-slate-50">
+          <div className="p-8 bg-neo-purple/5 border-t-neo border-black">
             <Link 
               href="/logistics/inventory" 
-              className="group flex items-center justify-center gap-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:text-blue-600 transition-colors"
+              className="w-full neo-card !p-4 group flex items-center justify-center gap-3 text-[11px] font-black text-black uppercase tracking-[0.2em] bg-white hover:bg-neo-purple transition-all"
             >
               Xem tất cả vận đơn
-              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              <ChevronRight size={16} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </div>
+
+        {/* Small Utility Bento Boxes */}
+        <div className="lg:col-span-6 neo-card !bg-neo-yellow/20 flex items-center justify-between group">
+           <div>
+              <h4 className="text-xl font-bold font-space uppercase mb-1">Cảnh báo hệ thống</h4>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Kiểm tra các lỗi thợ định kỳ</p>
+           </div>
+           <div className="w-16 h-16 bg-white border-neo border-black rounded-2xl flex items-center justify-center shadow-neo group-hover:rotate-12 transition-transform">
+              <AlertCircle size={32} strokeWidth={2.5} className="text-neo-red fill-current" />
+           </div>
+        </div>
+
+        <div className="lg:col-span-6 neo-card !bg-neo-mint/20 flex items-center justify-between group">
+           <div>
+              <h4 className="text-xl font-bold font-space uppercase mb-1">Báo cáo nhân sự</h4>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Xem KPI và năng suất tổ</p>
+           </div>
+           <Link href="/hr/employees" className="w-16 h-16 bg-white border-neo border-black rounded-2xl flex items-center justify-center shadow-neo group-hover:-rotate-12 transition-transform">
+              <Users size={32} strokeWidth={2.5} className="text-neo-purple" />
+           </Link>
+        </div>
+
       </div>
 
-      <div className="flex justify-between items-center py-6 text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] opacity-50">
-         <div className="flex items-center gap-2">
+      <div className="flex flex-col md:flex-row justify-between items-center py-10 px-8 bg-black text-white rounded-xl border-neo border-black shadow-neo gap-6 mt-12">
+         <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-[0.3em]">
+            <Activity size={20} className="text-neo-mint" />
             PAPER ART VIỆT CLOUD ENGINE
          </div>
-         <div>
-            V2.4.0 • SECURE NODE
+         <div className="flex items-center gap-8 text-[11px] font-black uppercase tracking-[0.2em]">
+            <span className="text-neo-yellow">V2.4.0 REFINE</span>
+            <span className="opacity-40">SECURE NODE • {new Date().getFullYear()}</span>
          </div>
       </div>
     </div>

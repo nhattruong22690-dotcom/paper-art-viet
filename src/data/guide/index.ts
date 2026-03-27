@@ -3,6 +3,7 @@ export interface GuideStep {
   description: string;
   image?: string;
   proTip?: string;
+  chartData?: string;
 }
 
 export interface FAQ {
@@ -143,6 +144,51 @@ export const GUIDE_DATA: GuideSection[] = [
       {
         question: 'Làm sao để thay đổi mã phê duyệt (Manager Pass)?',
         answer: 'Vào Cài đặt hệ thống -> Bảo mật. Mã này dùng để phê duyệt các đơn hàng có lợi nhuận âm.'
+      }
+    ]
+  },
+  {
+    id: 'system-process-guide',
+    title: 'Hệ thống: Quy trình Tổng thể',
+    role: 'Chung',
+    description: 'Cái nhìn tổng quát về luồng dữ liệu từ lúc thiết kế BOM đến khi ra lệnh sản xuất thực tế.',
+    lastUpdated: '2026-03-27',
+    routeHints: ['/process-guide'],
+    steps: [
+      {
+        title: 'Sơ đồ Quy trình Hệ thống',
+        description: 'Sơ đồ tổng quát thể hiện sự liên kết giữa các module cốt lõi của ERP.',
+        chartData: `graph LR
+          A[Định mức vật tư - BOM] --> B[Danh mục Sản phẩm]
+          B --> C[Tạo Đơn hàng]
+          C --> D[Lệnh sản xuất]
+          
+          style A fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
+          style B fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#166534
+          style C fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#854d0e
+          style D fill:#e0f2fe,stroke:#0ea5e9,stroke-width:2px,color:#0369a1`
+      },
+      {
+        title: '1. Định mức vật tư (BOM)',
+        description: 'Mọi thứ bắt đầu từ việc định nghĩa cấu trúc sản phẩm. BOM quyết định giá vốn và kế hoạch nguyên liệu.'
+      },
+      {
+        title: '2. Danh mục Sản phẩm',
+        description: 'Sản phẩm được gán BOM và sẵn sàng để kinh doanh báo giá.'
+      },
+      {
+        title: '3. Tạo Đơn hàng',
+        description: 'Khi có đơn hàng, hệ thống kiểm tra BOM để dự báo lợi nhuận và chuẩn bị sản xuất.'
+      },
+      {
+        title: '4. Lệnh sản xuất',
+        description: 'Đơn hàng được duyệt sẽ chuyển thành lệnh sản xuất để xưởng bắt đầu thực hiện.'
+      }
+    ],
+    faqs: [
+      {
+        question: 'Tại sao BOM lại là điểm bắt đầu?',
+        answer: 'Vì BOM là "linh hồn" của sản phẩm, giúp hệ thống tính toán chính xác giá vốn và vật tư cần thiết ngay từ khâu báo giá.'
       }
     ]
   }

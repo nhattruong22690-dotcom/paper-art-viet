@@ -18,66 +18,66 @@ export default function ProductionPage() {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500">
       
       {/* Header Section */}
-      <div className="card !flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-4">
+      <div className="neo-card !p-8 !flex-col md:!flex-row justify-between items-start md:items-center gap-6 bg-neo-yellow/20">
+        <div className="flex items-center gap-6">
           <Link 
             href="/mobile-menu/production"
-            className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/5 transition-colors"
+            className="w-12 h-12 bg-white border-neo border-black rounded-xl flex items-center justify-center text-black hover:bg-neo-yellow shadow-neo-active hover:shadow-neo transition-all"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={24} strokeWidth={3} />
           </Link>
           <div>
-            <nav className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-              <Factory size={12} />
+            <nav className="flex items-center gap-2 text-[10px] font-black text-black/40 uppercase tracking-[0.2em] mb-2">
+              <Factory size={14} strokeWidth={3} />
               <span>Sản xuất</span>
-              <ChevronRight size={10} />
-              <span className="text-primary">Điều phối xưởng</span>
+              <ChevronRight size={12} strokeWidth={3} />
+              <span className="text-purple-600 bg-white px-2 py-0.5 rounded-lg border border-black/10">Điều phối xưởng</span>
             </nav>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Quản lý Lệnh sản xuất
+            <h1 className="text-3xl font-bold text-foreground tracking-tight uppercase font-space">
+              Quản lý <span className="text-purple-500">Lệnh sản xuất</span>
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="bg-slate-100 p-1 rounded-lg flex gap-1">
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="bg-black/5 p-1.5 rounded-xl border-2 border-black flex gap-2 shadow-neo-active">
             <button 
               onClick={() => setViewMode('kanban')}
-              className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              title="Dạng bảng (Kanban)"
+              className={`p-2.5 rounded-lg transition-all border-2 ${viewMode === 'kanban' ? 'bg-black text-white border-black shadow-neo' : 'text-black/40 border-transparent hover:text-black'}`}
+              title="DẠNG BẢNG (KANBAN)"
             >
-              <LayoutGrid size={18} />
+              <LayoutGrid size={20} strokeWidth={2.5} />
             </button>
             <button 
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              title="Dạng danh sách"
+              className={`p-2.5 rounded-lg transition-all border-2 ${viewMode === 'list' ? 'bg-black text-white border-black shadow-neo' : 'text-black/40 border-transparent hover:text-black'}`}
+              title="DẠNG DANH SÁCH"
             >
-              <List size={18} />
+              <List size={20} strokeWidth={2.5} />
             </button>
           </div>
-          <button className="btn-primary gap-2">
-            <Plus size={18} />
-            Tạo lệnh mới
+          <button className="btn-primary gap-3 shadow-neo hover:translate-x-[2px] hover:translate-y-[2px] transition-all">
+            <Plus size={22} strokeWidth={3} />
+            <span className="font-space uppercase tracking-widest text-xs">Tạo lệnh mới</span>
           </button>
         </div>
       </div>
 
       {/* Filter & Search */}
-      <div className="card !p-4 flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+      <div className="neo-card !p-5 flex flex-col md:flex-row gap-5 bg-white shadow-neo">
+        <div className="flex-1 relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-black transition-colors" size={20} />
           <input 
             type="text" 
-            placeholder="Tìm kiếm lệnh sản xuất, SKU, mã đơn..."
-            className="form-input pl-10 h-10"
+            placeholder="TÌM KIẾM LỆNH SẢN XUẤT, SKU, MÃ ĐƠN..."
+            className="form-input pl-12 h-12 w-full font-bold uppercase placeholder:font-normal placeholder:normal-case shadow-neo-active focus:shadow-neo"
           />
         </div>
-        <button className="btn-secondary whitespace-nowrap gap-2">
-          <Filter size={16} /> Bộ lọc nâng cao
+        <button className="btn-secondary whitespace-nowrap gap-3 bg-neo-mint shadow-neo-active">
+          <Filter size={18} strokeWidth={3} /> <span className="font-space uppercase tracking-widest text-xs">Bộ lọc nâng cao</span>
         </button>
       </div>
 
@@ -86,12 +86,12 @@ export default function ProductionPage() {
         {viewMode === 'kanban' ? (
           <ProductionPipeline />
         ) : (
-          <div className="py-32 flex flex-col items-center text-center bg-white rounded-lg border border-slate-200 border-dashed">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-6">
-              <List size={32} />
+          <div className="py-40 flex flex-col items-center text-center bg-white neo-card border-dashed bg-white/50">
+            <div className="w-20 h-20 bg-neo-purple/10 border-neo border-black rounded-3xl flex items-center justify-center text-purple-600 mb-8 shadow-neo rotate-3">
+              <List size={40} strokeWidth={2.5} />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Danh sách lệnh sản xuất</h3>
-            <p className="text-sm text-slate-500 mt-2 max-w-xs">Chế độ hiển thị danh sách đang được hoàn thiện. Vui lòng sử dụng chế độ Kanban.</p>
+            <h3 className="text-2xl font-bold text-black uppercase font-space">Danh sách lệnh sản xuất</h3>
+            <p className="text-xs font-black uppercase text-black/40 mt-4 max-w-xs tracking-widest">Chế độ hiển thị danh sách đang được hoàn thiện. Vui lòng sử dụng chế độ Kanban.</p>
           </div>
         )}
       </div>

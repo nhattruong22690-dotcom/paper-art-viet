@@ -24,9 +24,9 @@ interface Customer {
   email: string;
   address: string;
   notes: string;
-  _count?: {
-    orders: number;
-  };
+  totalOrders: number;
+  inProductionCount: number;
+  completedCount: number;
 }
 
 export default function CustomersPage() {
@@ -198,54 +198,54 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-24">
-      {/* Header Section */}
-      <div className="card !flex-col md:!flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <nav className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
-            <Building2 size={12} />
-            <span>Hệ thống</span>
-            <ChevronRight size={10} />
-            <span className="text-primary">Hồ sơ khách hàng</span>
-          </nav>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            Quản lý Đối tác & Khách hàng
-          </h1>
-        </div>
-        
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="hidden md:flex flex-col items-end px-4 border-r border-border">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tổng đối tác</span>
-            <span className="text-xl font-black text-foreground">{customers.length}</span>
+    <div className="space-y-8 animate-in fade-in duration-500 pb-24">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="md:col-span-3 neo-card !flex-col md:!flex-row justify-between items-start md:items-center gap-6 bg-neo-purple/10">
+          <div>
+            <nav className="flex items-center gap-2 text-[10px] font-black text-black uppercase tracking-[0.2em] mb-2">
+              <Building2 size={14} strokeWidth={3} />
+              <span>Hệ thống</span>
+              <ChevronRight size={12} strokeWidth={3} />
+              <span className="text-purple-600 bg-white px-2 py-0.5 rounded-lg border border-black/10">Hồ sơ khách hàng</span>
+            </nav>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight uppercase font-space">
+              Quản lý <span className="text-purple-500">Đối tác</span>
+            </h1>
           </div>
+          
           <button
             onClick={() => handleOpenModal()}
-            className="btn-primary gap-2 w-full md:w-auto justify-center"
+            className="btn-primary gap-3 w-full md:w-auto mt-4 md:mt-0 shadow-neo hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
           >
-            <Plus size={20} /> Thêm khách hàng
+            <Plus size={22} strokeWidth={3} /> <span className="font-space uppercase tracking-widest text-xs">Thêm khách hàng</span>
           </button>
+        </div>
+
+        <div className="neo-card !p-6 flex flex-col justify-center items-center text-center bg-neo-mint shadow-neo-active">
+          <span className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-2">Tổng KH</span>
+          <span className="text-4xl font-bold text-black tabular-nums font-space">{customers.length}</span>
         </div>
       </div>
 
       {/* Sticky Filters & Alphabet */}
-      <div className="card !p-4 sticky top-0 z-30 shadow-md flex flex-col gap-4">
+      <div className="neo-card !p-5 sticky top-4 z-30 shadow-neo flex flex-col gap-5 bg-white">
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="flex-1 relative w-full group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-black transition-colors" size={20} />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên hoặc mã khách hàng..."
+              placeholder="TÌM KIẾM THEO TÊN HOẶC MÃ KHÁCH HÀNG..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="form-input pl-10 h-10 w-full"
+              className="form-input pl-12 h-12 w-full font-bold uppercase placeholder:font-normal placeholder:normal-case shadow-neo-active focus:shadow-neo"
             />
           </div>
-          <button className="btn-secondary gap-2 w-full md:w-auto justify-center">
-            <Filter size={18} /> Bộ lọc
+          <button className="btn-secondary gap-3 w-full md:w-auto justify-center bg-neo-yellow">
+            <Filter size={20} strokeWidth={3} /> <span className="font-space uppercase tracking-widest text-xs">Bộ lọc</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {alphabet.map(letter => {
             const hasData = groupedCustomers[letter];
             return (
@@ -254,10 +254,10 @@ export default function CustomersPage() {
                 disabled={!hasData}
                 onClick={() => scrollToLetter(letter)}
                 className={cn(
-                  "min-w-[28px] h-7 text-[10px] font-bold rounded flex items-center justify-center transition-all",
+                  "min-w-[32px] h-8 text-[11px] font-black rounded-lg flex items-center justify-center transition-all border-neo",
                   hasData 
-                    ? 'bg-primary/5 text-primary hover:bg-primary hover:text-white border border-primary/20' 
-                    : 'text-muted-foreground/30 border border-transparent'
+                    ? 'bg-neo-purple/20 text-black border-black shadow-neo-active hover:bg-neo-purple hover:shadow-neo' 
+                    : 'text-black/10 border-transparent'
                 )}
               >
                 {letter}
@@ -269,118 +269,137 @@ export default function CustomersPage() {
 
       {/* Content List */}
       {isLoading ? (
-        <div className="py-32 flex flex-col items-center justify-center gap-4 text-muted-foreground">
-          <Loader2 size={40} className="animate-spin text-primary" />
-          <p className="text-sm font-medium">Đang tải dữ liệu khách hàng...</p>
+        <div className="py-40 flex flex-col items-center justify-center gap-6 text-black/30">
+          <Loader2 size={48} className="animate-spin text-black opacity-20" />
+          <p className="text-[10px] font-black uppercase tracking-[0.4em]">Đang đồng bộ dữ liệu khách hàng...</p>
         </div>
       ) : availableLetters.length === 0 ? (
-        <div className="card !p-24 flex flex-col items-center justify-center text-center text-muted-foreground border-dashed">
-          <Users size={48} className="mb-4 opacity-20" />
-          <p className="text-sm font-medium">Không tìm thấy khách hàng nào phù hợp</p>
+        <div className="neo-card !p-32 flex flex-col items-center justify-center text-center text-black/20 border-dashed bg-white/50">
+          <Users size={64} strokeWidth={1} className="mb-6 opacity-10" />
+          <p className="text-xs font-black uppercase tracking-[0.3em]">Không tìm thấy đối tác phù hợp</p>
         </div>
       ) : (
-        <div className="space-y-12">
+        <div className="space-y-16">
           {availableLetters.map(letter => (
-            <div key={letter} id={`group-${letter}`} className="scroll-mt-32 space-y-4">
-              <div className="flex items-center gap-4 px-2">
-                <div className="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm">
+            <div key={letter} id={`group-${letter}`} className="scroll-mt-48 space-y-6">
+              <div className="flex items-center gap-6 px-2">
+                <div className="w-12 h-12 rounded-xl bg-black text-white flex items-center justify-center font-bold text-xl shadow-neo font-space">
                   {letter}
                 </div>
-                <div className="h-px flex-1 bg-border" />
+                <div className="h-1 flex-1 bg-black/10 rounded-full" />
               </div>
 
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-6">
                 {groupedCustomers[letter].map((c) => {
                   const isExpanded = expandedIds.has(c.id);
                   return (
                     <div 
                       key={c.id} 
                       className={cn(
-                        "card !p-0 overflow-hidden transition-all border border-border hover:border-primary/30",
-                        isExpanded ? "ring-1 ring-primary/20 shadow-lg" : "hover:shadow-md"
+                        "neo-card !p-0 overflow-hidden transition-all bg-white",
+                        isExpanded ? "ring-4 ring-black/5 bg-neo-purple/5" : ""
                       )}
                     >
                       {/* Card Header/Row */}
                       <div 
                         onClick={() => toggleExpand(c.id)}
-                        className="p-4 md:px-6 flex items-center justify-between cursor-pointer group"
+                        className="p-5 md:p-6 lg:p-8 flex items-center justify-between cursor-pointer group"
                       >
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="flex items-center gap-6 flex-1 min-w-0">
                           <div className={cn(
-                            "w-10 h-10 rounded bg-gray-50 flex items-center justify-center font-bold text-[10px] border border-border text-muted-foreground uppercase group-hover:bg-primary/5 group-hover:text-primary transition-colors",
-                            isExpanded && "bg-primary text-white border-primary"
+                            "w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xs border-neo border-black text-black uppercase transition-all shadow-neo-active",
+                            isExpanded ? "bg-black text-white" : "bg-neo-mint group-hover:bg-neo-purple"
                           )}>
                             {c.customerCode || 'N/A'}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">{c.name}</h4>
-                            <div className="flex items-center gap-4 mt-1">
-                               <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                                 <Phone size={10} /> {c.phone || '---'}
+                            <h4 className="text-xl font-bold text-foreground truncate group-hover:text-purple-600 transition-colors font-space uppercase tracking-tight">{c.name}</h4>
+                            <div className="flex items-center gap-6 mt-2">
+                               <span className="text-[11px] font-black text-black/60 flex items-center gap-2 uppercase tracking-widest">
+                                 <Phone size={14} className="text-black/30" /> {c.phone || '---'}
                                </span>
-                               <span className="hidden sm:inline-block text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                                 <Mail size={10} /> {c.email || '---'}
+                               <span className="hidden sm:inline-block text-[11px] font-black text-black/60 flex items-center gap-2 uppercase tracking-widest">
+                                 <Mail size={14} className="text-black/30" /> {c.email || '---'}
                                </span>
                             </div>
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-6 ml-4">
-                          <div className="hidden lg:flex flex-col items-end">
-                            <span className="text-sm font-bold text-foreground tabular-nums">{c._count?.orders || 0}</span>
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Đơn hàng</span>
+                        <div className="flex items-center gap-8 ml-4 shrink-0">
+                          <div className="hidden lg:grid grid-cols-3 gap-10 pr-10 border-r-2 border-black/10">
+                            <div className="flex flex-col items-center">
+                              <span className="text-2xl font-bold text-black tabular-nums font-space">{c.totalOrders}</span>
+                              <span className="text-[9px] font-black text-black/40 uppercase tracking-[0.2em]">Tổng đơn</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-2xl font-bold text-black tabular-nums font-space">{c.inProductionCount}</span>
+                              <span className="text-[9px] font-black text-black/40 uppercase tracking-[0.2em]">Đang SX</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-2xl font-bold text-black tabular-nums font-space">{c.completedCount}</span>
+                              <span className="text-[9px] font-black text-black/40 uppercase tracking-[0.2em]">Hoàn thành</span>
+                            </div>
                           </div>
-                          {isExpanded ? <ChevronUp size={20} className="text-primary" /> : <ChevronDown size={20} className="text-muted-foreground" />}
+                          <div className={cn(
+                            "w-12 h-12 rounded-xl flex items-center justify-center border-neo border-black shadow-neo-active transition-all",
+                            isExpanded ? "bg-black text-white" : "bg-white group-hover:bg-neo-yellow"
+                          )}>
+                            {isExpanded ? <ChevronUp size={24} strokeWidth={3} /> : <ChevronDown size={24} strokeWidth={3} />}
+                          </div>
                         </div>
                       </div>
 
                       {/* Expanded Section */}
                       {isExpanded && (
-                        <div className="px-6 pb-6 pt-2 border-t border-border animate-in slide-in-from-top-2 duration-300">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
-                             <div className="space-y-4">
+                        <div className="px-8 pb-8 pt-4 border-t-2 border-dashed border-black/10 animate-in slide-in-from-top-4 duration-500">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pt-6">
+                             <div className="space-y-6">
                                 <div>
-                                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Liên hệ</label>
-                                   <div className="mt-2 space-y-2">
-                                      <p className="flex items-center gap-3 text-sm font-medium text-foreground">
-                                         <Phone size={14} className="text-primary/50" /> {c.phone || 'Chưa cập nhật'}
+                                   <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Chi tiết Liên hệ</label>
+                                   <div className="mt-4 space-y-3">
+                                      <p className="flex items-center gap-4 text-sm font-bold text-foreground bg-white border-neo border-black p-3 rounded-lg shadow-neo-active">
+                                         <Phone size={16} strokeWidth={2.5} className="text-purple-500" /> {c.phone || 'Chưa cập nhật'}
                                       </p>
-                                      <p className="flex items-center gap-3 text-sm font-medium text-foreground truncate">
-                                         <Mail size={14} className="text-primary/50" /> {c.email || 'Chưa cập nhật'}
+                                      <p className="flex items-center gap-4 text-sm font-bold text-foreground bg-white border-neo border-black p-3 rounded-lg shadow-neo-active truncate">
+                                         <Mail size={16} strokeWidth={2.5} className="text-purple-500" /> {c.email || 'Chưa cập nhật'}
                                       </p>
                                    </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-4">
                                    <button
                                      onClick={(e) => { e.stopPropagation(); handleOpenModal(c); }}
-                                     className="btn-secondary !py-2 text-xs flex-1 justify-center"
+                                     className="btn-secondary !h-12 !px-0 flex-[2] justify-center bg-neo-purple"
                                    >
-                                     <Edit3 size={14} /> Chỉnh sửa
+                                     <Edit3 size={18} strokeWidth={2.5} /> <span className="font-space uppercase tracking-widest text-[10px] ml-2">Chỉnh sửa</span>
                                    </button>
                                    <button
                                      onClick={(e) => handleDelete(e, c.id)}
-                                     className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                     className="w-12 h-12 bg-neo-red border-neo border-black rounded-xl flex items-center justify-center shadow-neo-active hover:shadow-neo hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
                                    >
-                                     <Trash2 size={14} />
+                                     <Trash2 size={20} strokeWidth={2.5} />
                                    </button>
                                 </div>
                              </div>
 
-                             <div className="md:col-span-2 space-y-4">
+                             <div className="md:col-span-2 space-y-6">
                                 <div>
-                                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Địa chỉ giao nhận</label>
-                                   <p className="mt-2 text-sm text-foreground flex items-start gap-3">
-                                      <MapPin size={16} className="text-red-500/50 mt-0.5" />
-                                      {c.address || 'Chưa thiết lập tuyến logistics.'}
-                                   </p>
+                                   <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Địa chỉ giao nhận & Logistics</label>
+                                   <div className="mt-4 p-5 bg-white border-neo border-black rounded-xl shadow-neo-active relative">
+                                      <div className="absolute top-4 right-4 w-8 h-8 bg-neo-yellow rounded-lg border-2 border-black shadow-neo-active flex items-center justify-center">
+                                         <MapPin size={16} strokeWidth={3} />
+                                      </div>
+                                      <p className="text-base font-bold text-foreground pr-10 leading-relaxed uppercase font-space">
+                                         {c.address || 'Chưa thiết lập tuyến logistics.'}
+                                      </p>
+                                   </div>
                                 </div>
                                 {c.notes && (
-                                   <div className="bg-gray-50/50 p-4 rounded-xl border border-border">
-                                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                                         <FileText size={12} /> Ghi chú đặc thù
+                                   <div className="bg-neo-yellow/10 p-6 rounded-xl border-neo border-black shadow-neo-active">
+                                      <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] flex items-center gap-3">
+                                         <FileText size={14} strokeWidth={3} /> Ghi chú đặc thù
                                       </label>
-                                      <p className="mt-2 text-sm text-muted-foreground italic leading-relaxed">
-                                         {c.notes}
+                                      <p className="mt-4 text-sm font-bold text-black/70 italic leading-relaxed">
+                                         " {c.notes} "
                                       </p>
                                    </div>
                                 )}
@@ -399,117 +418,119 @@ export default function CustomersPage() {
 
       {/* Modal Section */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 backdrop-blur-sm bg-black/40 animate-in fade-in duration-300">
-          <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col border border-border overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="p-6 md:p-8 border-b border-border bg-gray-50 flex justify-between items-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 bg-black/80 animate-in fade-in duration-300">
+          <div className="relative bg-background w-full max-w-2xl rounded-2xl shadow-neo border-neo border-black flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 translate-y-[-20px]">
+            <div className="p-8 border-b-neo border-black bg-neo-purple/20 flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold text-foreground">
-                  {editingCustomer ? 'Cập nhật khách hàng' : 'Đăng ký khách hàng mới'}
+                <h3 className="text-2xl font-bold text-foreground font-space uppercase tracking-tight">
+                  {editingCustomer ? 'Cập nhật đối tác' : 'Khai báo khách hàng'}
                 </h3>
-                <p className="text-xs text-muted-foreground mt-1 font-medium">Hồ sơ đối tác Paper Art Việt</p>
+                <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mt-2 flex items-center gap-2">
+                   <Building2 size={12} /> Registry Paper Art Việt
+                </p>
               </div>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-gray-200 rounded-full transition-colors text-muted-foreground"
+                className="w-12 h-12 bg-white border-neo border-black rounded-xl flex items-center justify-center shadow-neo-active hover:shadow-neo hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
               >
-                <X size={20} />
+                <X size={24} strokeWidth={3} />
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[75vh]">
+            <form onSubmit={handleSave} className="p-8 space-y-8 overflow-y-auto max-h-[75vh]">
               {error && (
-                <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-700 text-xs font-bold animate-in slide-in-from-top-2">
-                  <AlertCircle size={18} />
+                <div className="p-4 bg-neo-red border-neo border-black rounded-xl flex items-center gap-4 text-black text-xs font-black uppercase tracking-widest animate-in slide-in-from-top-2 shadow-neo-active">
+                  <AlertCircle size={20} strokeWidth={3} />
                   {error}
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider ml-1">Tên khách hàng / Đơn vị</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="md:col-span-2 space-y-3">
+                  <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] ml-2">Tên khách hàng / Đơn vị</label>
                   <input
                     required
                     type="text"
                     value={formData.name}
                     onChange={handleNameChange}
-                    className="form-input"
-                    placeholder="Nhập tên chính thức..."
+                    className="form-input !h-14 font-bold text-lg"
+                    placeholder="NHẬP TÊN CHÍNH THỨC..."
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider ml-1">Mã khách hàng</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] ml-2 text-center block">Mã định danh</label>
                   <input
                     required
                     type="text"
                     value={formData.customerCode}
                     onChange={(e) => setFormData({ ...formData, customerCode: e.target.value.toUpperCase() })}
                     maxLength={10}
-                    className="form-input text-center font-bold tracking-widest text-primary"
+                    className="form-input !h-14 text-center font-bold tracking-[0.3em] text-purple-600 bg-neo-purple/5 border-solid"
                     placeholder="MÃ SỐ"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider ml-1">Số điện thoại</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] ml-2">Đường dây nóng (Phone)</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="form-input"
-                    placeholder="0xxx xxx xxx"
+                    className="form-input !h-12 font-bold"
+                    placeholder="0XXX XXX XXX"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider ml-1">Email</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] ml-2">Thư điện tử (Email)</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="form-input"
-                    placeholder="example@mail.com"
+                    className="form-input !h-12 font-bold"
+                    placeholder="EXAMPLE@MAIL.COM"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider ml-1">Địa chỉ giao nhận</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] ml-2">Địa chỉ giao nhận</label>
                 <textarea
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="form-input min-h-[80px] py-3 resize-none"
-                  placeholder="Nhập địa chỉ đầy đủ..."
+                  className="form-input min-h-[100px] py-4 resize-none font-bold uppercase text-sm"
+                  placeholder="KHAI BÁO ĐỊA CHỈ ĐẦY ĐỦ..."
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider ml-1">Ghi chú đặc thù</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] ml-2">Ghi chú vận hành</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="form-input min-h-[60px] py-3 resize-none text-muted-foreground italic bg-gray-50/30"
-                  placeholder="Tiền lệ giao dịch, sở thích đối tác..."
+                  className="form-input min-h-[80px] py-4 resize-none font-bold italic bg-neo-yellow/5"
+                  placeholder="TIỀN LỆ GIAO DỊCH, SỞ THÍCH ĐỐI TÁC..."
                 />
               </div>
 
-              <div className="flex gap-4 pt-4 border-t border-border mt-4">
+              <div className="flex gap-6 pt-6 border-t-2 border-dashed border-black/10 mt-6">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="btn-secondary flex-1 justify-center"
+                  className="btn-secondary flex-1 !h-14 justify-center bg-white shadow-neo-active hover:shadow-neo"
                 >
-                  Hủy bỏ
+                  <span className="font-space uppercase tracking-widest">Hủy bỏ</span>
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="btn-primary flex-[1.5] justify-center"
+                  className="btn-primary flex-[1.5] !h-14 justify-center shadow-neo-active hover:shadow-neo"
                 >
-                  {isLoading ? <Loader2 size={18} className="animate-spin" /> : (
+                  {isLoading ? <Loader2 size={24} className="animate-spin" /> : (
                     <>
-                       <UserPlus size={18} className="mr-2" />
-                       {editingCustomer ? 'Cập nhật hồ sơ' : 'Khởi tạo khách hàng'}
+                       <UserPlus size={24} strokeWidth={3} className="mr-3" />
+                       <span className="font-space uppercase tracking-widest">{editingCustomer ? 'Cập nhật hồ sơ' : 'Khởi tạo khách hàng'}</span>
                     </>
                   )}
                 </button>

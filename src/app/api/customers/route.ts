@@ -5,18 +5,19 @@ export async function GET() {
   try {
     const { data: customers, error } = await supabase
       .from('Customer')
-      .select('*, Order(count)')
+      .select('*, Order(status)')
       .order('name', { ascending: true });
 
     if (error) throw error;
 
-    // Manually map to ensure 'customerCode' is always present from the DB field 'customer_code'
     const mappedCustomers = (customers || []).map((c: any) => {
-      const code = c.customer_code || '';
+      const orders = c.Order || [];
       return {
         ...c,
-        customerCode: code,
-        orderCount: c.Order?.[0]?.count || 0
+        customerCode: c.customer_code || '',
+        totalOrders: orders.length,
+        inProductionCount: orders.filter((o: any) => o.status === 'in_production').length,
+        completedCount: orders.filter((o: any) => o.status === 'completed').length,
       };
     });
 

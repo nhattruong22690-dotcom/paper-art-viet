@@ -7,16 +7,25 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6', // Vibrant Blue (Vercel/SaaS style)
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          DEFAULT: '#D8B4FE', // Neo-Purple
+          50: '#F5F3FF',
+          100: '#EDE9FE',
+          200: '#DDD6FE',
+          300: '#C4B5FD',
+          400: '#A78BFA',
+          500: '#8B5CF6',
+          600: '#7C3AED',
+          700: '#6D28D9',
+          800: '#5B21B6',
+          900: '#4C1D95',
+        },
+        neo: {
+          purple: '#D8B4FE',
+          mint: '#D1FAE5',
+          yellow: '#FEF3C7',
+          red: '#FEE2E2',
+          black: '#000000',
+          slate: '#0F172A',
         },
         slate: {
           50: '#f8fafc',
@@ -31,11 +40,20 @@ module.exports = {
           900: '#0f172a',
         }
       },
+      fontFamily: {
+        sans: ['var(--font-inter)', 'sans-serif'],
+        space: ['var(--font-space-grotesk)', 'sans-serif'],
+      },
+      borderWidth: {
+        'neo': '2.5px',
+      },
       borderRadius: {
         '2xl': '16px',
         '3xl': '24px',
       },
       boxShadow: {
+        'neo': '4px 4px 0px 0px #000000',
+        'neo-active': '2px 2px 0px 0px #000000',
         'soft': '0 10px 15px -3px rgba(148, 163, 184, 0.1), 0 4px 6px -4px rgba(148, 163, 184, 0.1)',
         'vibrant': '0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04)',
       }

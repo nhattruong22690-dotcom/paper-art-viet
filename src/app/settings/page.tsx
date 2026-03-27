@@ -65,70 +65,72 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="py-40 flex flex-col items-center justify-center gap-4 text-slate-400 animate-in fade-in">
-         <Loader2 className="w-12 h-12 animate-spin text-primary opacity-50" />
-         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Đang đồng bộ cấu hình hệ thống...</p>
+      <div className="py-40 flex flex-col items-center justify-center gap-6 text-black animate-in fade-in">
+         <div className="w-20 h-20 bg-neo-purple/10 border-neo border-black rounded-3xl flex items-center justify-center shadow-neo rotate-6 animate-pulse">
+            <RefreshCw className="w-10 h-10 animate-spin text-purple-600" strokeWidth={3} />
+         </div>
+         <p className="text-[11px] font-black uppercase tracking-[0.4em] mt-4">Đang đồng bộ cấu hình hệ thống...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20 animate-in fade-in duration-700">
+    <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <nav className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-            <Terminal size={12} />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 bg-neo-purple/5 p-8 neo-card shadow-neo">
+        <div className="space-y-4">
+          <nav className="flex items-center gap-3 text-[10px] font-black text-black/40 uppercase tracking-[0.3em] mb-2">
+            <Terminal size={14} strokeWidth={3} className="text-purple-600" />
             <span>Hệ thống</span>
-            <ChevronRight size={10} />
-            <span className="text-primary italic">Global Configuration</span>
+            <ChevronRight size={12} strokeWidth={3} />
+            <span className="text-purple-600 bg-white px-2 py-0.5 rounded-lg border border-black/10">Global Config</span>
           </nav>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
-            Thiết lập <span className="text-primary">Vận hành</span>
+          <h1 className="text-4xl font-bold text-foreground tracking-tighter uppercase font-space">
+            Thiết lập <span className="text-purple-500 bg-white border-neo border-black px-3 py-1 -rotate-1 inline-block shadow-neo-active">Vận hành</span>
           </h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium italic">
-             Kiểm soát trạng thái thời gian thực và cấu hình hạ tầng trung tâm.
+          <p className="text-black/60 text-xs font-black uppercase tracking-widest mt-2 max-w-md">
+             Kiểm soát trạng thái thời gian thực và cấu hình hạ tầng trung tâm toàn ERP.
           </p>
         </div>
         
-        <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 shadow-sm">
-           <Cpu size={16} />
-           <span className="text-[10px] font-black uppercase tracking-widest">Core Engine Active</span>
+        <div className="flex items-center gap-3 px-6 py-3 bg-neo-mint text-black border-neo border-black rounded-2xl shadow-neo-active hover:shadow-neo transition-all">
+           <Cpu size={20} strokeWidth={3} />
+           <span className="text-[11px] font-black uppercase tracking-widest">Core Engine Active</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-8">
+      <div className="grid grid-cols-1 gap-12">
         {/* Maintenance Mode Card */}
-        <div className="card !p-0 border border-slate-50 shadow-soft overflow-hidden">
-           <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-center gap-6">
-              <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl border border-rose-100 flex items-center justify-center shadow-sm">
-                    <ShieldAlert size={24} strokeWidth={2.5} />
+        <div className="neo-card !p-0 shadow-neo overflow-hidden bg-white">
+           <div className="px-10 py-8 border-b-neo border-black bg-neo-red/10 flex flex-col sm:flex-row justify-between items-center gap-8">
+              <div className="flex items-center gap-6">
+                 <div className="w-16 h-16 bg-white text-black border-neo border-black rounded-2xl flex items-center justify-center shadow-neo-active">
+                    <ShieldAlert size={32} strokeWidth={2.5} />
                  </div>
                  <div>
-                    <h3 className="text-base font-black text-slate-900 tracking-tight uppercase">Phong tỏa & Bảo trì</h3>
-                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1 leading-none">Global Maintenance Lock</p>
+                    <h3 className="text-xl font-bold text-black uppercase tracking-tight font-space">Phong tỏa & Bảo trì</h3>
+                    <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.3em] mt-2 leading-none">Global Maintenance Lock</p>
                  </div>
               </div>
-              <div className="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/10">
+              <div className="px-5 py-2 bg-black text-neo-yellow rounded-xl text-[10px] font-black uppercase tracking-widest shadow-neo-active">
                 ADMIN ACCESS ONLY
               </div>
            </div>
 
-           <div className="p-8 space-y-10">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 pb-10 border-b border-slate-100">
-                 <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-4">
-                       <h4 className="text-base font-black text-slate-900 tracking-tight">Ổ khóa bảo trì toàn cục</h4>
+           <div className="p-10 space-y-12">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-10 pb-12 border-b-2 border-dashed border-black/10">
+                 <div className="space-y-4 flex-1">
+                    <div className="flex items-center gap-6">
+                       <h4 className="text-lg font-bold text-black uppercase font-space">Ổ khóa bảo trì toàn cục</h4>
                        <span className={cn(
-                          "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border",
-                          isMaintenance ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100 opacity-60'
+                          "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-neo-active border-2 border-black",
+                          isMaintenance ? 'bg-neo-red text-black' : 'bg-neo-mint text-black'
                        )}>
-                          {isMaintenance ? 'Enabled' : 'Disabled'}
+                          {isMaintenance ? 'ENABLED' : 'DISABLED'}
                        </span>
                     </div>
-                    <p className="text-sm text-slate-500 leading-relaxed max-w-xl font-medium">
-                       <span className="text-rose-600 font-black uppercase tracking-widest text-[10px]">Cảnh báo nghiêm trọng:</span> Khi kích hoạt, toàn bộ phiên làm việc của nhân sự sẽ bị ngắt kết nối ngay lập tức. Chỉ tài khoản Quản trị viên mới có thể truy cập hệ thống.
+                    <p className="text-sm text-black/60 leading-relaxed max-w-xl font-medium">
+                       <span className="text-neo-red font-black uppercase tracking-widest text-[11px] bg-black text-white px-2 py-0.5 rounded-md mr-2 shadow-neo-active flex-inline items-center justify-center">Cảnh báo:</span> Khi kích hoạt, toàn bộ phiên làm việc của nhân sự sẽ bị ngắt kết nối ngay lập tức. Chỉ tài khoản Quản trị viên mới có thể truy cập hệ thống.
                     </p>
                  </div>
 
@@ -136,41 +138,41 @@ export default function SettingsPage() {
                    onClick={handleToggleMaintenance}
                    disabled={saving}
                    className={cn(
-                     "relative w-16 h-8 rounded-full transition-all duration-500 shadow-inner overflow-hidden",
-                     isMaintenance ? 'bg-rose-500' : 'bg-slate-200',
+                     "relative w-20 h-10 rounded-full transition-all duration-500 shadow-neo-active border-neo border-black overflow-hidden",
+                     isMaintenance ? 'bg-neo-red' : 'bg-neo-purple/20',
                      saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                    )}
                  >
                     <div className={cn(
-                      "absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-500 flex items-center justify-center",
-                      isMaintenance ? 'left-9' : 'left-1'
+                       "absolute top-1 w-7 h-7 bg-white rounded-full border-2 border-black shadow-neo transition-all duration-500 flex items-center justify-center",
+                       isMaintenance ? 'left-11 shadow-[-4px_0_0_0_#000]' : 'left-1 shadow-[4px_0_0_0_#000]'
                     )}>
-                       {saving ? <RefreshCw size={12} className="animate-spin text-slate-400" /> : isMaintenance ? <Lock size={12} strokeWidth={3} className="text-rose-600" /> : <Unlock size={12} strokeWidth={3} className="text-slate-300" />}
+                       {saving ? <RefreshCw size={14} strokeWidth={3} className="animate-spin text-black" /> : isMaintenance ? <Lock size={14} strokeWidth={3} className="text-black" /> : <Unlock size={14} strokeWidth={3} className="text-black/30" />}
                     </div>
                  </button>
               </div>
 
-              <div className="space-y-4">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2.5">
-                    <MessageSquare size={16} strokeWidth={2.5} className="text-primary opacity-50" /> 
-                    Thông báo hiển thị cho nhân sự
+              <div className="space-y-6">
+                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-3 ml-2">
+                    <MessageSquare size={18} strokeWidth={3} className="text-purple-600" /> 
+                    Thông báo hiển thị cho nhân sự khi bảo trì
                  </label>
                  <textarea 
                     value={maintenanceMsg}
                     onChange={(e) => setMaintenanceMsg(e.target.value)}
-                    placeholder="VD: Hệ thống đang tái cấu trúc dữ liệu..."
-                    className="form-input min-h-[120px] shadow-sm font-medium"
+                    placeholder="VD: HỆ THỐNG ĐANG TÁI CẤU TRÚC DỮ LIỆU..."
+                    className="form-input w-full p-6 !bg-neo-purple/5 !h-auto min-h-[160px] text-base font-bold uppercase placeholder:font-normal placeholder:normal-case shadow-neo-active focus:shadow-neo"
                  />
               </div>
            </div>
 
-           <div className="p-8 bg-blue-50/30 border-t border-slate-50 flex items-start gap-4">
-              <div className="w-12 h-12 bg-white text-primary rounded-2xl border border-blue-100/50 flex items-center justify-center shadow-sm shrink-0">
-                 <ShieldCheck size={24} strokeWidth={2.5} />
+           <div className="p-10 bg-neo-yellow/10 border-t-neo border-black border-dashed flex items-start gap-6">
+              <div className="w-16 h-16 bg-white text-black border-neo border-black rounded-2xl flex items-center justify-center shadow-neo-active shrink-0 rotate-2">
+                 <ShieldCheck size={32} strokeWidth={2.5} />
               </div>
-              <div className="space-y-1.5 pt-1">
-                 <p className="text-[10px] font-black text-primary uppercase tracking-widest">PAV-Sync Protocol Enabled</p>
-                 <p className="text-xs text-slate-500 leading-relaxed font-medium">
+              <div className="space-y-3 pt-2">
+                 <p className="text-[11px] font-black text-black uppercase tracking-[0.2em] bg-neo-yellow px-2 py-0.5 rounded shadow-neo-active inline-block">PAV-Sync Protocol Enabled</p>
+                 <p className="text-xs text-black/60 leading-relaxed font-bold uppercase tracking-widest">
                    Hệ thống truyền phát tín hiệu phong tỏa qua Socket thời gian thực. Toàn bộ phiên làm việc sẽ bị chấm dứt mà không cần tải lại trình duyệt.
                  </p>
               </div>
@@ -178,24 +180,24 @@ export default function SettingsPage() {
         </div>
 
         {/* Action Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-4 px-2">
-           <div className="flex items-center gap-3 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">
-              <Activity size={14} /> System Health: 100%
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-8 pt-6">
+           <div className="flex items-center gap-4 text-[10px] font-black text-black/30 uppercase tracking-[0.4em] bg-white border-2 border-black px-6 py-3 rounded-xl shadow-neo-active">
+              <Activity size={18} strokeWidth={3} /> System Health: 100%
            </div>
            <button 
              onClick={() => showToast('success', 'Đã lưu cấu hình hệ thống')}
-             className="btn-primary gap-3 h-14 px-12 shadow-vibrant active:scale-95 transition-all text-[11px] uppercase tracking-widest"
+             className="w-full sm:w-auto px-12 py-5 bg-black text-white border-neo border-black rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-black/90 transition-all shadow-neo flex items-center justify-center gap-4 active:translate-x-[2px] active:translate-y-[2px] active:shadow-neo-active font-space"
            >
-              <Save size={20} strokeWidth={2.5} />
+              <Save size={24} strokeWidth={3} />
               <span>Lưu cấu hình hệ thống</span>
            </button>
         </div>
       </div>
 
-      <div className="flex justify-between items-center py-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] opacity-40 px-4">
-         <div className="flex items-center gap-3">
-            <Terminal size={16} strokeWidth={2.5} /> 
-            <span>System Config Shell v4.0</span>
+      <div className="flex justify-between items-center py-12 text-[11px] font-black text-black/20 uppercase tracking-[0.5em] px-8 border-t-2 border-dashed border-black/10">
+         <div className="flex items-center gap-4">
+            <Terminal size={20} strokeWidth={2} /> 
+            <span>System Config Shell v4.0.25</span>
          </div>
       </div>
     </div>

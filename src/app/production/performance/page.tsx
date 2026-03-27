@@ -11,7 +11,10 @@ import {
   X,
   Target,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  Calendar,
+  Activity,
+  Info
 } from 'lucide-react';
 import PerformanceTable from '@/components/production/PerformanceTable';
 import PerformanceChart from '@/components/production/PerformanceChart';
@@ -55,112 +58,136 @@ export default function PerformancePage() {
 
   const stats = useMemo(() => {
     if (employees.length === 0) return [
-      { label: 'Hiệu suất TB', value: '0%', icon: TrendingUp, color: 'text-retro-moss', bg: 'bg-retro-moss/10' },
-      { label: 'Sản lượng tổng', value: '0', icon: BarChart3, color: 'text-retro-sepia', bg: 'bg-retro-sepia/10' },
-      { label: 'Tổng nhân sự', value: '0', icon: Users, color: 'text-retro-brick', bg: 'bg-retro-brick/10' },
+      { label: 'Avg Efficiency', value: '0%', icon: TrendingUp, color: 'text-neo-purple' },
+      { label: 'Gross Output', value: '0', icon: BarChart3, color: 'text-neo-blue' },
+      { label: 'Active Hands', value: '0', icon: Users, color: 'text-black' },
     ];
 
     const avgKPI = employees.reduce((acc, emp) => acc + emp.kpi, 0) / employees.length;
     const totalQty = employees.reduce((acc, emp) => acc + emp.totalQty, 0);
 
     return [
-      { label: 'Hiệu suất TB', value: `${avgKPI.toFixed(1)}%`, icon: TrendingUp, color: 'text-retro-moss', bg: 'bg-retro-moss/10' },
-      { label: 'Sản lượng tổng', value: totalQty.toLocaleString(), icon: BarChart3, color: 'text-retro-sepia', bg: 'bg-retro-sepia/10' },
-      { label: 'Tổng nhân sự', value: employees.length.toString(), icon: Users, color: 'text-retro-brick', bg: 'bg-retro-brick/10' },
+      { label: 'Avg Efficiency', value: `${avgKPI.toFixed(1)}%`, icon: TrendingUp, color: 'text-neo-purple' },
+      { label: 'Gross Output', value: totalQty.toLocaleString(), icon: BarChart3, color: 'text-neo-blue' },
+      { label: 'Active Hands', value: employees.length.toString(), icon: Users, color: 'text-black' },
     ];
   }, [employees]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-24">
+    <div className="space-y-10 animate-in fade-in duration-700 pb-32">
       {/* Header Section */}
-      <div className="card !flex-col md:!flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <nav className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
-            <ClipboardList size={12} />
-            <span>Sản xuất</span>
-            <ChevronRight size={10} />
-            <span className="text-primary">Báo cáo hiệu suất</span>
-          </nav>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            Hiệu suất & Tổ đội
-          </h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+        <div className="flex items-center gap-4">
+           <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <Activity size={28} className="text-black" />
+           </div>
+           <div>
+              <h1 className="text-3xl font-black text-black tracking-tight uppercase italic">Hiệu suất Sản xuất</h1>
+              <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Real-time KPI Analytics & Personnel Benchmarking</p>
+           </div>
         </div>
         
-        <div className="flex items-center gap-3 w-full md:w-auto">
-           <button className="btn-secondary gap-2 w-full md:w-auto justify-center">
-             <Filter size={18} />
-             Lọc Tổ Đội
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+           <button className="btn-secondary h-12 px-6 text-[10px] uppercase tracking-widest gap-3 font-black">
+              <Filter size={18} strokeWidth={3} />
+              Lọc Tổ Đội
            </button>
-           <button className="btn-primary gap-2 w-full md:w-auto justify-center whitespace-nowrap">
-             Tháng {new Date().getMonth() + 1}/2024
-             <ArrowRight size={18} />
+           <button className="btn-primary h-12 px-8 text-[10px] uppercase tracking-[0.2em] gap-4 font-black">
+              Tháng {new Date().getMonth() + 1}/{new Date().getFullYear()}
+              <ArrowRight size={18} strokeWidth={3} />
            </button>
         </div>
       </div>
 
       {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
         {stats.map((stat, i) => (
-          <div key={i} className="card !p-6 flex items-center justify-between group hover:border-primary/30 transition-all">
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{stat.label}</p>
-              <p className="text-3xl font-black text-foreground">{stat.value}</p>
+          <div key={i} className="p-8 bg-white border-neo border-black rounded-xl shadow-neo hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-between group relative overflow-hidden">
+            <div className="absolute -bottom-10 -right-10 opacity-5 rotate-12 transition-transform duration-700 group-hover:scale-110">
+               <stat.icon size={180} strokeWidth={1} className="text-black" />
             </div>
-            <div className={cn("p-4 rounded-xl bg-gray-50 transition-colors group-hover:bg-primary/5", stat.color)}>
-              <stat.icon size={24} />
+            <div className="relative z-10 space-y-2">
+              <p className="text-[11px] font-black text-black/40 uppercase tracking-[0.3em]">{stat.label}</p>
+              <p className="text-4xl font-black text-black tracking-tighter tabular-nums italic uppercase">{stat.value}</p>
+            </div>
+            <div className={cn("relative z-10 p-5 rounded-xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:bg-black group-hover:text-white transition-all", stat.color)}>
+              <stat.icon size={32} strokeWidth={3} />
             </div>
           </div>
         ))}
       </div>
 
       {/* Table Section */}
-      <div className="space-y-4">
-         <div className="flex items-center justify-between px-2">
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-              <TrendingUp size={18} className="text-primary" />
-              Bảng xếp hạng Năng suất
+      <div className="space-y-6">
+         <div className="flex items-center justify-between">
+            <h2 className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-4 italic">
+              <TrendingUp size={20} strokeWidth={3} className="text-neo-purple" />
+              Personnel Benchmarking Matrix
             </h2>
+            <div className="h-0.5 flex-1 bg-black/5 mx-10 shrink-0 border-t-2 border-black border-dashed opacity-10" />
          </div>
-         <div className="card !p-0 overflow-hidden shadow-sm">
+         <div className="neo-card !p-0 overflow-hidden">
             <PerformanceTable initialData={employees} loading={loading} onSelect={setSelectedEmployee} />
          </div>
       </div>
 
       {/* Detail Modal */}
       {selectedEmployee && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300 backdrop-blur-sm bg-black/40">
-           <div className="relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden border border-border">
-              <div className="p-6 md:p-8 flex justify-between items-center bg-gray-50 border-b border-border">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 md:p-12 animate-in fade-in duration-300">
+           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setSelectedEmployee(null)} />
+           <div className="relative bg-white border-neo border-black rounded-xl w-full max-w-6xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden shadow-[24px_24px_0px_0px_rgba(0,0,0,1)] max-h-[90vh]">
+              <header className="p-10 border-b-2 border-black flex justify-between items-center bg-neo-purple/10">
                  <div>
-                    <h2 className="text-xl font-bold text-foreground">Chi tiết Hiệu năng</h2>
-                    <p className="text-xs text-muted-foreground font-medium mt-1">Hồ sơ cá nhân & Biến thiên sản lượng</p>
+                    <h2 className="text-3xl font-black text-black tracking-tight uppercase italic underline underline-offset-8 decoration-neo-purple">Personnel Insight Card</h2>
+                    <p className="text-[10px] text-black font-black uppercase tracking-[0.3em] mt-5 flex items-center gap-3">
+                      <span className="bg-black text-white px-3 py-1 rounded-lg italic">{selectedEmployee.name}</span>
+                      <span className="text-black/40">•</span> 
+                      <span className="italic">Organization: {selectedEmployee.group}</span>
+                    </p>
                  </div>
                  <button 
                    onClick={() => setSelectedEmployee(null)}
-                   className="p-2 hover:bg-gray-200 rounded-full transition-colors text-muted-foreground hover:text-foreground"
+                   className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center text-black hover:bg-neo-red transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
                  >
-                   <X size={20} />
+                   <X size={28} strokeWidth={3} />
                  </button>
-              </div>
+              </header>
               
-              <div className="p-6 md:p-8 overflow-y-auto max-h-[70vh] bg-white">
+              <div className="p-12 overflow-y-auto bg-white scrollbar-hide">
                  <PerformanceChart employee={selectedEmployee} />
               </div>
               
-              <div className="p-6 md:p-8 pt-0 bg-white flex flex-col sm:flex-row gap-4 border-t border-border mt-auto">
-                 <button className="btn-primary flex-1 py-3 justify-center">
-                   Xuất báo cáo chi tiết
-                 </button>
-                 <button 
-                  onClick={() => setSelectedEmployee(null)}
-                  className="btn-secondary px-8 py-3 justify-center"
-                 >
-                   Đóng cửa sổ
-                 </button>
+              <div className="p-10 bg-black/5 flex flex-col md:flex-row gap-8 border-t-2 border-black border-dashed mt-auto">
+                 <div className="flex-1 flex items-center gap-4 text-black/40">
+                    <Info size={24} strokeWidth={3} />
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] italic max-w-sm leading-relaxed">
+                      KPI trends are calculated based on a 30-day rolling average of total output vs specific error margins.
+                    </p>
+                 </div>
+                 <div className="flex items-center gap-6">
+                    <button className="btn-secondary !h-14 px-10 text-[10px] uppercase tracking-[0.2em] gap-3 font-black">
+                       <Download size={20} strokeWidth={3} />
+                       Export Detailed Audit
+                    </button>
+                    <button 
+                      onClick={() => setSelectedEmployee(null)}
+                      className="px-12 h-14 bg-black text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-black/90 active:translate-y-[2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] transition-all italic"
+                    >
+                       Acknowledge & Close
+                    </button>
+                 </div>
               </div>
            </div>
         </div>
       )}
+
+      {/* FOOTER */}
+      <div className="pt-20 flex flex-col items-center gap-6 opacity-20 italic">
+         <div className="h-0.5 w-32 bg-black/40 border-t-2 border-black border-dashed" />
+         <p className="text-[10px] font-black text-black uppercase tracking-[0.4em] text-center leading-relaxed italic">
+           PAV-INFRA • Metrics Engine v4.0 • Enterprise Resource Platform
+         </p>
+      </div>
     </div>
   );
 }

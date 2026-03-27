@@ -15,7 +15,10 @@ import {
   ChevronRight,
   ArrowUpRight,
   ArrowLeft,
-  Loader2
+  Loader2,
+  ShoppingCart,
+  ArrowRight,
+  ChevronDown
 } from 'lucide-react';
 import { createPurchaseOrder, getSuppliersForDropdown } from '@/services/purchase.service';
 import SupplierManagementModal from './SupplierManagementModal';
@@ -139,183 +142,181 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-10 animate-in fade-in duration-500 pb-20">
       {/* HEADER SECTION */}
-      <div className="bg-white p-8 border-b border-border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+        <div className="flex items-center gap-6">
            <button 
              onClick={onBack}
-             className="w-10 h-10 bg-white border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all rounded-lg shadow-sm"
+             className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center text-black/40 hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
            >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={28} strokeWidth={3} />
            </button>
            <div>
-              <nav className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
-                <Package size={12} />
-                <span>Thu mua</span>
-                <ChevronRight size={10} />
-                <span className="text-primary">Khai báo Đơn mua hàng (PO)</span>
-              </nav>
-              <h2 className="text-xl font-bold text-foreground tracking-tight">Lập đơn mua hàng mới</h2>
+              <h2 className="text-3xl font-black text-black tracking-tight uppercase italic">Lập đơn Mua hàng</h2>
+              <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Drafting Purchase Requisition & Supplier Commitment</p>
            </div>
         </div>
 
-        <div className="flex gap-4 w-full md:w-auto">
-           <button 
-             onClick={handleSave}
-             disabled={isSaving}
-             className="btn-primary flex-1 md:flex-none gap-2"
-           >
-              {isSaving ? (
-                <Loader2 className="animate-spin" size={18} />
-              ) : (
-                <Save size={18} />
-              )}
-              {isSaving ? 'Đang lưu...' : 'Lưu đơn hàng'}
-           </button>
-        </div>
+        <button 
+          onClick={handleSave}
+          disabled={isSaving}
+          className="btn-primary btn-confirm-flash h-14 px-10 text-xs uppercase tracking-widest"
+        >
+          {isSaving ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : (
+            <Save size={20} strokeWidth={3} />
+          )}
+          {isSaving ? 'Processing...' : 'Xác nhận & Gửi đơn'}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-4 md:px-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 px-0">
         {/* LEFT COLUMN: BASIC INFO */}
-        <div className="lg:col-span-1 space-y-8">
-          <div className="bg-white p-8 rounded-lg border border-border shadow-sm space-y-6">
-            
-            <div className="space-y-6 relative z-10">
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
-                  <User size={12} className="text-primary" />
-                  Nhà cung cấp
-                </label>
-                <div className="relative">
-                  <select 
-                    className="form-input pr-12"
-                    value={selectedSupplier}
-                    onChange={(e) => setSelectedSupplier(e.target.value)}
-                  >
-                    <option value="">Chọn nhà cung cung cấp...</option>
-                    {suppliers.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                  <button 
-                    type="button"
-                    onClick={() => setShowSupplierModal(true)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-gray-50 border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all rounded"
-                  >
-                    <Plus size={16} />
-                  </button>
+        <div className="lg:col-span-1 space-y-10">
+          <div className="neo-card space-y-10 bg-white">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Nhà cung cấp</label>
+              <div className="relative group/field">
+                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
+                <select 
+                  className="form-input pl-12 pr-14 h-14 appearance-none cursor-pointer text-xs font-black uppercase"
+                  value={selectedSupplier}
+                  onChange={(e) => setSelectedSupplier(e.target.value)}
+                >
+                  <option value="">Chọn nhà cung cung cấp...</option>
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+                <button 
+                  type="button"
+                  onClick={() => setShowSupplierModal(true)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border-2 border-black rounded-lg flex items-center justify-center text-black/40 hover:text-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                >
+                  <Plus size={18} strokeWidth={3} />
+                </button>
+                <div className="absolute right-14 top-1/2 -translate-y-1/2 pointer-events-none text-black">
+                  <ChevronDown size={18} />
                 </div>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
-                  <Calendar size={12} className="text-primary" />
-                  Ngày giao hàng dự kiến
-                </label>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Ngày giao dự kiến</label>
+              <div className="relative group/field">
+                <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
                 <input 
                   type="date"
-                  className="form-input"
+                  className="form-input pl-12 h-14 font-black"
                   value={expectedDate}
                   onChange={(e) => setExpectedDate(e.target.value)}
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
-                  <FileText size={12} className="text-primary" />
-                  Ghi chú nội bộ
-                </label>
-                <textarea 
-                  placeholder="Yêu cầu đặc thù về giao hàng hoặc chất lượng..."
-                  className="form-input min-h-[120px] resize-none"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Ghi chú nội bộ</label>
+              <textarea 
+                placeholder="Yêu cầu đặc thù về giao nhận hàng..."
+                className="form-input !h-40 py-4 resize-none italic font-black text-xs"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
             </div>
           </div>
 
           {/* TOTAL CARD */}
-          <div className="bg-primary p-8 rounded-lg shadow-lg relative overflow-hidden group border border-blue-400/20">
-            <div className="absolute -bottom-6 -right-6 opacity-10 group-hover:scale-110 transition-transform">
-               <DollarSign size={120} strokeWidth={2} className="text-white" />
+          <div className="p-8 bg-black text-white border-neo border-black rounded-xl shadow-[6px_6px_0px_0px_rgba(30,30,30,1)] relative overflow-hidden">
+            <div className="absolute -bottom-8 -right-8 opacity-10 rotate-12">
+               <DollarSign size={200} strokeWidth={1} className="text-neo-purple" />
             </div>
-            <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Tạm tính đơn hàng</p>
-            <h3 className="text-3xl font-bold text-white mt-2 tabular-nums">
-               {calculateTotal().toLocaleString()} <span className="text-sm font-normal text-white/60 ml-1">VNĐ</span>
-            </h3>
+            <div className="relative z-10">
+              <p className="text-[11px] font-black text-neo-purple uppercase tracking-[0.3em] flex items-center gap-3">
+                <span className="w-2 h-2 bg-neo-purple rounded-full animate-pulse shadow-[0_0_8px_rgba(167,139,250,0.8)]" />
+                Dự chi Hợp đồng
+              </p>
+              <h3 className="text-5xl font-black text-white mt-6 tabular-nums tracking-tighter italic">
+                 {calculateTotal().toLocaleString()} <span className="text-sm font-light opacity-30">đ</span>
+              </h3>
+              <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mt-3 italic leading-relaxed">
+                * Estimated total based on reference prices. <br/>Final amount confirms on fulfillment.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN: ITEMS TABLE */}
         <div className="lg:col-span-2">
-          <div className="bg-white border border-border rounded-lg shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-            <div className="p-6 border-b border-border bg-gray-50/50 flex justify-between items-center">
-               <h3 className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
-                  <Package size={16} className="text-primary" />
-                  Danh mục vật tư thu mua
-               </h3>
-               <span className="px-2 py-1 bg-white border border-border rounded text-[10px] font-bold text-muted-foreground uppercase">
-                  {items.length} Dòng
+          <div className="neo-card !p-0 overflow-hidden min-h-[500px] flex flex-col">
+            <div className="p-6 border-b-2 border-black bg-neo-purple/5 flex justify-between items-center px-8">
+               <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                    <Package size={20} className="text-black" />
+                  </div>
+                  <h3 className="text-[11px] font-black text-black uppercase tracking-[0.2em] italic">Danh mục vật tư thu mua</h3>
+               </div>
+               <span className="px-5 py-2 bg-black text-neo-purple border-2 border-black rounded-xl text-[10px] font-black uppercase tracking-widest italic shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  {items.length} Hạng mục
                </span>
             </div>
             
             <div className="flex-1 overflow-x-auto">
-              <table className="w-full text-left border-none rounded-none shadow-none">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-gray-50/30 text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border italic">
-                    <th className="px-6 py-4 w-12">#</th>
-                    <th className="px-6 py-4">Vật tư</th>
-                    <th className="px-6 py-4 w-28 text-center">Số lượng</th>
-                    <th className="px-6 py-4 w-36 text-right">Đơn giá</th>
-                    <th className="px-6 py-4 w-36 text-right">Thành tiền</th>
-                    <th className="px-6 py-4 w-16"></th>
+                  <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
+                    <th className="px-8 py-5 border-b-2 border-black w-14">#</th>
+                    <th className="px-8 py-5 border-b-2 border-black">Vật tư / SKU</th>
+                    <th className="px-8 py-5 w-32 text-center border-b-2 border-black">Số lượng</th>
+                    <th className="px-8 py-5 w-40 text-right border-b-2 border-black">Đơn giá</th>
+                    <th className="px-8 py-5 w-44 text-right border-b-2 border-black pr-12">Thành tiền</th>
+                    <th className="px-8 py-5 w-16 border-b-2 border-black"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y-2 divide-black/5">
                   {items.map((item, index) => (
-                    <tr key={item.id} className="group hover:bg-gray-50 transition-all">
-                      <td className="px-6 py-4">
-                        <span className="text-[10px] font-bold text-muted-foreground italic">{(index + 1).toString().padStart(2, '0')}</span>
+                    <tr key={item.id} className="group hover:bg-neo-purple/5 transition-all">
+                      <td className="px-8 py-6">
+                        <span className="text-[11px] font-black text-black/20 italic">{(index + 1).toString().padStart(2, '0')}</span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-8 py-6">
                         <select 
-                          className="form-input py-1.5 px-3 h-9"
+                          className="w-full bg-transparent border-b-2 border-black border-dashed focus:border-solid py-2 text-xs font-black text-black outline-none transition-all uppercase tracking-tight italic"
                           value={item.materialId}
                           onChange={(e) => updateItem(item.id, 'materialId', e.target.value)}
                         >
                           <option value="">Chọn vật tư...</option>
                           {materials.map(m => (
-                            <option key={m.id} value={m.id}>{m.sku} - {m.name}</option>
+                            <option key={m.id} value={m.id}>{m.sku} • {m.name}</option>
                           ))}
                         </select>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-8 py-6">
                          <input 
                            type="number"
-                           className="form-input py-1.5 px-2 h-9 text-center tabular-nums"
-                           value={item.quantityOrdered}
+                           className="form-input !h-10 text-center font-black tabular-nums"
+                           value={item.quantityOrdered || ''}
                            onChange={(e) => updateItem(item.id, 'quantityOrdered', Number(e.target.value))}
                          />
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-8 py-6">
                          <input 
                            type="number"
-                           className="form-input py-1.5 px-2 h-9 text-right tabular-nums"
-                           value={item.expectedPrice}
+                           className="form-input !h-10 text-right font-black tabular-nums italic"
+                           value={item.expectedPrice || ''}
                            onChange={(e) => updateItem(item.id, 'expectedPrice', Number(e.target.value))}
                          />
                       </td>
-                      <td className="px-6 py-4 text-right font-bold text-xs text-foreground tabular-nums tracking-tight">
+                      <td className="px-8 py-6 text-right font-black text-black tabular-nums tracking-tighter text-lg italic pr-12">
                          {(item.quantityOrdered * item.expectedPrice).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-8 py-6 text-right">
                          <button 
                            onClick={() => removeItem(item.id)}
-                           className="p-2 text-muted-foreground hover:text-destructive transition-all"
+                           className="w-10 h-10 flex items-center justify-center text-black/20 hover:text-neo-red transition-all"
                          >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} strokeWidth={2.5} />
                          </button>
                       </td>
                     </tr>
@@ -324,13 +325,13 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
               </table>
             </div>
 
-            <div className="p-8 bg-gray-50/30 flex justify-center border-t border-border mt-auto">
+            <div className="p-10 bg-black/5 flex justify-center border-t-2 border-black border-dashed mt-auto">
               <button 
                 onClick={addItem}
-                className="flex items-center gap-2 px-6 py-2.5 bg-white border border-dashed border-border rounded-lg text-xs font-bold text-muted-foreground hover:text-primary hover:border-primary transition-all group shadow-sm"
+                className="w-full py-4 border-2 border-dashed border-black hover:border-solid hover:bg-white text-black/40 hover:text-black transition-all rounded-xl flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-[0.3em] active:translate-y-[2px]"
               >
-                <Plus size={16} className="group-hover:rotate-90 transition-transform" />
-                Thêm dòng vật tư
+                <Plus size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
+                Thêm dòng vật tư mới
               </button>
             </div>
           </div>

@@ -4,20 +4,18 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   AlertTriangle, 
-  TrendingUp, 
   Package, 
-  ArrowUpRight, 
-  ArrowDownRight,
   History,
-  Info,
   ChevronRight,
   ChevronDown,
-  DollarSign,
   MapPin,
   Calendar,
   Layers,
   Activity,
-  Search
+  Search,
+  Loader2,
+  TrendingUp,
+  ArrowUpRight
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -122,94 +120,96 @@ export default function InventoryDashboard() {
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-10 animate-in fade-in duration-500 pb-20">
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Quản lý Kho Vật tư</h1>
-          <p className="text-slate-500 text-sm mt-1">Giám sát tồn kho, định mức và luồng hàng lưu kho thời gian thực.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+             <Box size={28} className="text-black" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-black tracking-tight uppercase italic">Quản lý Kho Vật tư</h1>
+            <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Real-time Stock Monitoring & FIFO Audit</p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-           <button className="btn-secondary gap-2">
-              <History size={16} /> Lịch sử biến động
+        <div className="flex items-center gap-4">
+           <button className="btn-secondary h-12 px-6 text-[10px] uppercase tracking-widest">
+              <History size={16} strokeWidth={2.5} /> Lịch sử biến động
            </button>
         </div>
       </div>
 
       {/* TOP STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card flex flex-col justify-center">
-           <div className="space-y-4">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loại vật tư đang lưu</span>
-              <div className="flex items-baseline gap-3">
-                <h3 className="text-4xl font-black text-foreground">{stats.totalTypes}</h3>
-                <span className="text-xs font-bold text-slate-500 uppercase">Chủng loại</span>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="p-8 bg-neo-purple/10 border-neo border-black rounded-xl shadow-neo flex flex-col justify-between">
+           <span className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-4">Master Catalog</span>
+           <div className="flex items-baseline gap-3">
+             <h3 className="text-5xl font-black text-black italic tabular-nums">{stats.totalTypes}</h3>
+             <span className="text-xs font-black text-black/60 uppercase italic">SKUs</span>
            </div>
         </div>
 
-        <div className="card border-rose-100 flex flex-col justify-center bg-rose-50/50">
-           <div className="space-y-4">
-              <span className="text-[10px] font-bold text-rose-600 uppercase tracking-widest flex items-center gap-2">
-                <AlertTriangle size={14} /> Cảnh báo tồn kho thấp
-              </span>
-              <div className="flex items-baseline gap-3">
-                <h3 className="text-4xl font-black text-rose-700">{stats.lowStock}</h3>
-                <span className="text-xs font-bold text-rose-400 uppercase">Cần nhập gấp</span>
-              </div>
+        <div className={cn(
+          "p-8 border-neo border-black rounded-xl shadow-neo flex flex-col justify-between transition-all duration-500",
+          stats.lowStock > 0 ? "bg-neo-red/20 animate-pulse" : "bg-neo-green/10"
+        )}>
+           <span className="text-[10px] font-black text-black uppercase tracking-widest flex items-center gap-2 mb-4">
+             <AlertTriangle size={14} strokeWidth={3} /> Critical Stock Alert
+           </span>
+           <div className="flex items-baseline gap-3">
+             <h3 className="text-5xl font-black text-black italic tabular-nums">{stats.lowStock}</h3>
+             <span className="text-xs font-black text-black/60 uppercase italic">Reorder Required</span>
            </div>
         </div>
 
-        <div className="card flex flex-col justify-center hover:border-primary/20 transition-all">
-           <div className="space-y-4">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tổng giá trị trữ kho</span>
-              <div className="flex items-baseline gap-2">
-                <h3 className="text-3xl font-black text-foreground tracking-tight">
-                  {stats.totalValue.toLocaleString()}
-                </h3>
-                <span className="text-xs font-bold text-slate-500 uppercase font-mono">VND</span>
-              </div>
+        <div className="p-8 bg-white border-neo border-black rounded-xl shadow-neo flex flex-col justify-between group">
+           <span className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-4">Total Asset Valuation</span>
+           <div className="flex items-baseline gap-2">
+             <h3 className="text-4xl font-black text-black italic tracking-tighter tabular-nums">
+               {stats.totalValue.toLocaleString()}
+             </h3>
+             <span className="text-[10px] font-black text-black/40 uppercase">VND</span>
            </div>
         </div>
       </div>
 
       {/* INVENTORY LIST */}
-      <div className="card !p-0">
-        <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 bg-gray-50/50">
-           <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center shadow-sm">
-                <Layers size={22} />
+      <div className="neo-card !p-0 overflow-hidden">
+        <div className="p-6 md:p-8 border-b-2 border-black flex flex-col md:flex-row justify-between items-center gap-6 bg-neo-purple/5">
+           <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                <Layers size={24} className="text-black" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-foreground">Sổ cái Tồn kho</h2>
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Dữ liệu kiểm kê mới nhất</p>
+                <h2 className="text-xl font-black text-black uppercase italic tracking-tight">Sổ cái Tồn kho</h2>
+                <p className="text-[10px] text-black/40 font-black uppercase tracking-widest mt-0.5">Live Inventory Ledger</p>
               </div>
            </div>
-           <div className="w-full md:w-72 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+           <div className="w-full md:w-80 relative group/field">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" size={20} />
               <input 
                 type="text" 
                 placeholder="Tìm mã hoặc tên vật tư..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input pl-10 h-10"
+                className="form-input pl-12 h-14"
               />
            </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                <th className="px-8 py-5">Mã Vật Tư</th>
-                <th className="px-8 py-5">Tên Vật Tư</th>
-                <th className="px-8 py-5 text-center">Tồn Hiện Tại</th>
-                <th className="px-8 py-5 text-center">Định Mức Min</th>
-                <th className="px-8 py-5 text-center">Trạng Thái</th>
-                <th className="px-8 py-5 text-center">Tác vụ</th>
+              <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
+                <th className="px-8 py-5 border-b-2 border-black text-neo-purple">Mã Vật Tư</th>
+                <th className="px-8 py-5 border-b-2 border-black text-neo-purple">Tên Vật Tư</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Tồn Hiện Tại</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Định Mức Min</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Trạng Thái</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple w-20"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y-2 divide-black/5">
               {filteredMaterials.map((m) => {
                 const isUnderStock = m.stockQuantity < m.minStock;
                 const isNearStock = m.stockQuantity < m.minStock * 1.1 && !isUnderStock;
@@ -218,125 +218,123 @@ export default function InventoryDashboard() {
                 return (
                   <React.Fragment key={m.id}>
                     <tr className={cn(
-                      "hover:bg-slate-50/80 transition-all group cursor-pointer",
-                      isExpanded && "bg-blue-50/30"
+                      "hover:bg-neo-purple/5 transition-all group cursor-pointer",
+                      isExpanded && "bg-neo-purple/10"
                     )} onClick={() => toggleExpand(m.id)}>
-                      <td className="px-8 py-5">
-                         <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded shadow-sm border border-slate-200">
+                      <td className="px-8 py-6">
+                         <span className="px-3 py-1 bg-black text-neo-purple text-[10px] font-black rounded-lg uppercase tracking-widest italic">
                             {m.sku}
                          </span>
                       </td>
-                      <td className="px-8 py-5">
-                         <p className="text-sm font-bold text-slate-700 hover:text-blue-600 transition-colors">{m.name}</p>
+                      <td className="px-8 py-6">
+                         <p className="font-black text-black uppercase italic tracking-tight">{m.name}</p>
                       </td>
-                      <td className="px-8 py-5 text-center">
+                      <td className="px-8 py-6 text-center">
                          <span className={cn(
-                            "text-base font-black tabular-nums tracking-tight",
-                            isUnderStock ? "text-rose-600" : isNearStock ? "text-amber-600" : "text-emerald-600"
+                            "text-xl font-black tabular-nums tracking-tighter italic",
+                            isUnderStock ? "text-neo-red" : isNearStock ? "text-amber-600" : "text-neo-green-pure text-green-600"
                          )}>
-                            {m.stockQuantity.toLocaleString()} <span className="text-[10px] font-bold text-slate-400 uppercase ml-0.5">{m.unit}</span>
+                            {m.stockQuantity.toLocaleString()} <span className="text-[9px] font-black text-black/40 uppercase ml-0.5">{m.unit}</span>
                          </span>
                       </td>
-                      <td className="px-8 py-5 text-center">
-                         <span className="text-xs font-bold text-slate-400 tracking-tight">
+                      <td className="px-8 py-6 text-center">
+                         <span className="text-[11px] font-black text-black/20 tracking-widest uppercase">
                             {m.minStock} {m.unit}
                          </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-8 py-6">
                          <div className="flex justify-center">
                             {isUnderStock ? (
-                              <div className="badge-error gap-1.5">
-                                 <AlertTriangle size={12} strokeWidth={2.5} className="animate-pulse" />
-                                 <span className="text-[9px] font-bold uppercase tracking-wider">Cần nhập</span>
-                              </div>
+                               <div className="px-4 py-1.5 bg-neo-red text-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 italic">
+                                  <AlertTriangle size={12} strokeWidth={3} className="animate-pulse" />
+                                  <span>Cần nhập gấp</span>
+                               </div>
                             ) : isNearStock ? (
-                              <div className="badge-warning gap-1.5">
-                                 <Info size={12} strokeWidth={2.5} />
-                                 <span className="text-[9px] font-bold uppercase tracking-wider">Sắp hết</span>
-                              </div>
+                               <div className="px-4 py-1.5 bg-neo-yellow text-black border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 italic">
+                                  <TrendingUp size={12} strokeWidth={3} />
+                                  <span>Sắp hết</span>
+                               </div>
                             ) : (
-                              <div className="badge-success gap-1.5">
-                                 <Package size={12} strokeWidth={2.5} />
-                                 <span className="text-[9px] font-bold uppercase tracking-wider">Dồi dào</span>
-                              </div>
+                               <div className="px-4 py-1.5 bg-neo-green text-black border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 italic">
+                                  <Package size={12} strokeWidth={3} />
+                                  <span>Dồi dào</span>
+                               </div>
                             )}
                          </div>
                       </td>
-                      <td className="px-8 py-5 text-center">
+                      <td className="px-8 py-6 text-center">
                          <button className={cn(
-                           "p-2 rounded-lg transition-all border",
-                           isExpanded 
-                            ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200 rotate-90" 
-                            : "bg-white text-slate-300 border-slate-200 hover:text-blue-600 hover:border-blue-600"
+                           "w-10 h-10 rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center bg-white active:translate-x-[1px] active:translate-y-[1px] active:shadow-none",
+                           isExpanded && "bg-black text-white rotate-180"
                          )}>
-                            <ChevronRight size={16} strokeWidth={2.5} />
+                            <ChevronDown size={20} strokeWidth={3} />
                          </button>
                       </td>
                     </tr>
                     
                     {/* BATCH DETAILS */}
                     {isExpanded && (
-                      <tr className="bg-slate-50/50 animate-in slide-in-from-top-1 duration-300">
-                        <td colSpan={6} className="px-8 py-8 md:px-12">
-                          <div className="space-y-6">
+                      <tr className="bg-black/5 animate-in slide-in-from-top-1 duration-300">
+                        <td colSpan={6} className="px-8 py-10">
+                          <div className="space-y-8 max-w-6xl mx-auto">
                             <div className="flex items-center gap-4">
-                              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                <Activity size={14} className="text-blue-500" /> 
-                                Chi tiết các lô hàng lưu kho (FIFO)
+                              <h4 className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-3">
+                                <Activity size={18} strokeWidth={3} className="text-black" /> 
+                                FIFO BATCH ALLOCATION
                               </h4>
-                              <div className="h-px flex-1 bg-slate-200" />
+                              <div className="h-0.5 flex-1 bg-black/10 border-t-2 border-black border-dashed" />
                             </div>
 
                             {loadingBatches === m.id ? (
-                              <div className="flex flex-col items-center gap-4 text-slate-400 py-10">
-                                <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
-                                <p className="text-[9px] font-bold uppercase tracking-widest animate-pulse">Đang nạp dữ liệu...</p>
+                              <div className="flex flex-col items-center gap-4 py-12">
+                                <Loader2 size={40} className="animate-spin text-black opacity-20" />
+                                <p className="text-[10px] font-black uppercase tracking-widest text-black/20">Accessing warehouse data...</p>
                               </div>
                             ) : batches[m.id]?.length > 0 ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {batches[m.id].map((batch) => (
-                                  <div key={batch.id} className="card !p-6 hover:shadow-md transition-all group relative overflow-hidden">
-                                    <div className="flex justify-between items-start mb-4">
+                                  <div key={batch.id} className="bg-white border-2 border-black rounded-xl p-6 shadow-neo-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-neo transition-all group relative">
+                                    <div className="flex justify-between items-start mb-6">
                                       <div>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mã Lô</p>
-                                        <p className="text-sm font-black text-slate-800 tracking-tight">{batch.batchCode}</p>
+                                        <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1.5 leading-none">Mã Lô</p>
+                                        <p className="text-sm font-black text-black tracking-widest italic">{batch.batchCode}</p>
                                       </div>
-                                      <div className="badge-success">
-                                        Batch Item
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-6">
-                                      <div className="space-y-1">
-                                        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Tồn lô</p>
-                                        <p className="text-lg font-black text-emerald-600 tabular-nums">
-                                          {Number(batch.remainQuantity).toLocaleString()} <span className="text-[9px] uppercase font-bold text-slate-300">{m.unit}</span>
-                                        </p>
-                                      </div>
-                                      <div className="space-y-1">
-                                        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Vị trí</p>
-                                        <p className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5 uppercase">
-                                          <MapPin size={10} className="text-blue-400" />
-                                          {batch.location || 'Khu A'}
-                                        </p>
+                                      <div className="px-3 py-1 bg-black text-neo-purple rounded-lg text-[8px] font-black uppercase tracking-widest italic">
+                                        FIFO Stack
                                       </div>
                                     </div>
                                     
-                                    <div className="mt-6 pt-4 border-t border-slate-50 flex justify-between items-center text-[10px] font-bold text-slate-300">
-                                      <div className="flex items-center gap-2">
-                                        <Calendar size={12} />
-                                        <span>{new Date(batch.createdAt).toLocaleDateString('vi-VN')}</span>
+                                    <div className="grid grid-cols-2 gap-8 mb-6">
+                                      <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-black/40 uppercase tracking-widest leading-none">Tồn lô</p>
+                                        <p className="text-2xl font-black text-black tabular-nums italic">
+                                          {Number(batch.remainQuantity).toLocaleString()} <span className="text-[9px] uppercase font-black text-black/40">{m.unit}</span>
+                                        </p>
                                       </div>
-                                      <div className="text-slate-600 font-mono tracking-tight">
-                                        {Number(batch.purchasePrice).toLocaleString()}đ
+                                      <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-black/40 uppercase tracking-widest leading-none">Vị trí</p>
+                                        <p className="text-[11px] font-black text-black flex items-center gap-2 uppercase italic">
+                                          <MapPin size={12} strokeWidth={3} className="text-black" />
+                                          {batch.location || 'KHU A'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="pt-4 border-t-2 border-black border-dashed flex justify-between items-center bg-black/5 -mx-6 -mb-6 p-4 rounded-b-xl">
+                                      <div className="flex items-center gap-2 opacity-50">
+                                        <Calendar size={12} strokeWidth={3} />
+                                        <span className="text-[10px] font-black uppercase tracking-tight">{new Date(batch.createdAt).toLocaleDateString('vi-VN')}</span>
+                                      </div>
+                                      <div className="text-black font-black tracking-tighter italic text-xs">
+                                        {Number(batch.purchasePrice).toLocaleString()} đ
                                       </div>
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <div className="bg-white p-12 rounded-2xl border border-dashed border-slate-200 text-center">
-                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Không có dữ liệu lô hàng</p>
+                              <div className="bg-white p-16 rounded-xl border-2 border-black border-dashed text-center">
+                                <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.4em] italic leading-loose">No active batches detected in FIFO stack</p>
                               </div>
                             )}
                           </div>

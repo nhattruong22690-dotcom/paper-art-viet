@@ -3,29 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
-  Key, 
   Save, 
   Search, 
   User, 
-  Mail, 
   Loader2, 
-  ChevronRight, 
-  ArrowLeft,
-  FileText,
+  X,
   Lock,
-  Unlock,
-  Building2,
-  Trash2,
-  AlertCircle,
-  Shield,
   CheckCircle2,
   ChevronDown,
-  Activity,
-  UserCircle
+  Shield,
+  ChevronRight
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useNotification } from '@/context/NotificationContext';
-import Link from 'next/link';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -55,10 +45,10 @@ const MODULES = [
 ];
 
 const ACTIONS = [
-  { id: 'read', label: 'R', color: 'bg-primary', active: 'hover:bg-blue-600' },
-  { id: 'write', label: 'W', color: 'bg-emerald-500', active: 'hover:bg-emerald-600' },
-  { id: 'update', label: 'U', color: 'bg-amber-500', active: 'hover:bg-amber-600' },
-  { id: 'delete', label: 'D', color: 'bg-rose-500', active: 'hover:bg-rose-600' }
+  { id: 'read', label: 'R', color: 'bg-primary' },
+  { id: 'write', label: 'W', color: 'bg-emerald-500' },
+  { id: 'update', label: 'U', color: 'bg-amber-500' },
+  { id: 'delete', label: 'D', color: 'bg-rose-500' }
 ];
 
 export default function AdminUsersPage() {
@@ -141,30 +131,30 @@ export default function AdminUsersPage() {
   const roles = ['Admin', 'Warehouse', 'Production', 'Staff', 'Supervisor', 'Sales'];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 pb-20">
+    <div className="space-y-10 animate-in fade-in duration-700 pb-20 px-4 md:px-0">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <div className="bg-neo-purple/10 p-8 rounded-xl border-neo border-black shadow-neo flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
         <div>
-          <nav className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-            <Shield size={12} />
+          <nav className="flex items-center gap-2 text-[10px] font-black text-black/40 uppercase tracking-[0.2em] mb-3">
+            <Shield size={14} className="text-black" />
             <span>Hệ thống</span>
             <ChevronRight size={10} />
-            <span className="text-primary italic">Security & Permissions</span>
+            <span className="text-black italic tracking-widest">Security & Permissions</span>
           </nav>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
-            Quản trị <span className="text-primary">Quyền truy cập</span>
+          <h1 className="text-4xl font-black text-black tracking-tight uppercase leading-none">
+            Quản trị <span className="text-neo-purple italic">Quyền hạn</span>
           </h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium italic">
-             Thiết lập ma trận quyền hạn granular cho từng tài khoản nhân sự.
+          <p className="text-black/60 text-sm mt-3 font-bold uppercase tracking-tight italic leading-none flex items-center gap-2">
+             <span className="w-2 h-2 bg-neo-mint rounded-full border border-black" /> Thiết lập ma trận truy cập nhắm mục tiêu
           </p>
         </div>
         
         <div className="relative group w-full md:w-96">
-           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={20} />
+           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-black transition-colors" size={24} />
            <input 
              type="text"
-             placeholder="Tìm kiếm tài khoản / tên..."
-             className="form-input pl-12 h-12 bg-slate-50 border-slate-100 rounded-xl"
+             placeholder="Tìm mã số hoặc tên nhân viên..."
+             className="w-full pl-16 pr-6 h-14 bg-white border-2 border-black rounded-xl focus:outline-none focus:ring-4 focus:ring-neo-purple/20 transition-all text-sm font-black text-black uppercase tracking-tight shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
              value={searchTerm}
              onChange={(e) => setSearchTerm(e.target.value)}
            />
@@ -172,66 +162,67 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Main Table Container */}
-      <div className="card !p-0 border border-slate-50 shadow-soft overflow-hidden min-h-[500px]">
+      <div className="neo-card !p-0 border-none shadow-none bg-transparent">
         {loading ? (
-          <div className="py-40 flex flex-col items-center justify-center gap-4 animate-in fade-in">
-             <Loader2 size={48} className="animate-spin text-primary opacity-30" />
-             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Đang đồng bộ quyền hạn...</p>
+          <div className="py-40 flex flex-col items-center justify-center gap-6 animate-in fade-in">
+             <Loader2 size={64} className="animate-spin text-black opacity-20" />
+             <p className="text-xs font-black uppercase tracking-[0.4em] text-black/40 italic">Đang đồng bộ giao thức bảo mật...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full !mt-0 text-left">
+            <table className="mt-0">
               <thead>
                 <tr>
-                  <th className="px-8 py-5">Tài khoản & Vai trò</th>
-                  <th className="px-8 py-5 text-center">Ma trận Quyền hạn (ACL Matrix)</th>
-                  <th className="px-8 py-5 text-right w-40">Thao tác</th>
+                  <th className="px-8 py-6">Người dùng & Vai trò</th>
+                  <th className="px-8 py-6 text-center">Ma trận Quyền hạn (ACL Matrix)</th>
+                  <th className="px-8 py-6 text-right w-48 font-black">Trạng thái & Sync</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-black/10">
                 {filteredUsers.map(user => (
-                  <tr key={user.id} className="group hover:bg-slate-50/30 transition-all">
-                    <td className="px-8 py-7">
-                       <div className="flex items-center gap-4">
-                         <div className="w-12 h-12 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-inner">
-                            <User size={22} strokeWidth={2.5} />
+                  <tr key={user.id} className="group hover:bg-neo-purple/5 transition-all bg-white">
+                    <td className="px-8 py-8">
+                       <div className="flex items-center gap-6">
+                         <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center text-black/20 group-hover:text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:bg-neo-purple transition-all italic">
+                            <span className="font-black text-xl">{user.email[0].toUpperCase()}</span>
                          </div>
                          <div className="flex flex-col">
-                            <span className="font-black text-slate-900 text-base tracking-tighter">{user.email}</span>
-                            <div className="mt-1.5 flex items-center gap-3">
-                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{user.employeeName || 'No Employee Record'}</span>
-                               <div className="relative inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                            <span className="font-black text-black text-lg tracking-tighter uppercase italic leading-none mb-3">{user.email}</span>
+                            <div className="flex flex-wrap items-center gap-3">
+                               <span className="text-[10px] font-black text-black/40 uppercase tracking-widest">{user.employeeName || 'No Employee Record'}</span>
+                               <div className="relative inline-flex items-center gap-2 px-3 py-1 bg-neo-purple/20 rounded border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                   <select 
                                     value={user.role}
                                     onChange={(e) => updateLocalUser(user.id, 'role', e.target.value)}
-                                    className="bg-transparent text-[9px] font-black uppercase text-primary py-0.5 pr-4 outline-none appearance-none cursor-pointer tracking-widest"
+                                    className="bg-transparent text-[10px] font-black uppercase text-black outline-none appearance-none cursor-pointer tracking-widest pr-4 italic"
                                   >
                                      {roles.map(r => <option key={r} value={r}>{r}</option>)}
                                   </select>
-                                  <ChevronDown size={10} className="absolute right-1 top-1/2 -translate-y-1/2 text-primary opacity-60 pointer-events-none" />
+                                  <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-black pointer-events-none" />
                                </div>
                             </div>
                          </div>
                       </div>
                     </td>
 
-                    <td className="px-8 py-7">
+                    <td className="px-8 py-8 text-center bg-black/[0.02]">
                        <div className="flex justify-center">
-                          <div className="flex gap-6 p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner">
+                          <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 p-6 bg-white border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                              {MODULES.map(module => (
-                                <div key={module.id} className="flex flex-col items-center gap-3">
-                                   <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest w-16 text-center truncate">{module.label}</span>
+                                <div key={module.id} className="flex flex-col items-center gap-4 py-2">
+                                   <span className="text-[10px] font-black uppercase text-black/40 tracking-[0.2em] w-20 text-center truncate italic">{module.label}</span>
                                    <div className="flex gap-1.5">
                                       {ACTIONS.map(action => {
                                         const has = (user.permissions?.[module.id] || []).includes(action.id);
+                                        const actionColor = action.id === 'read' ? 'bg-neo-purple' : action.id === 'write' ? 'bg-neo-mint' : action.id === 'update' ? 'bg-neo-yellow' : 'bg-neo-red';
+                                        
                                         return (
                                           <button
                                             key={action.id}
                                             onClick={() => togglePermission(user.id, module.id, action.id)}
-                                            title={`${module.label}: ${action.id}`}
                                             className={cn(
-                                              "w-8 h-8 rounded-xl transition-all flex items-center justify-center text-[10px] font-black uppercase text-white shadow-sm active:scale-90",
-                                              has ? action.color : "bg-white border border-slate-200 text-slate-200 hover:border-primary/50 hover:text-primary"
+                                              "w-9 h-9 rounded border-2 border-black flex items-center justify-center text-[11px] font-black uppercase transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none",
+                                              has ? actionColor + " text-black" : "bg-white text-black/10 hover:text-black/40"
                                             )}
                                           >
                                              {action.label}
@@ -245,26 +236,26 @@ export default function AdminUsersPage() {
                        </div>
                     </td>
 
-                    <td className="px-8 py-7">
-                       <div className="flex flex-col items-end gap-3">
+                    <td className="px-8 py-8 text-right">
+                       <div className="flex flex-col items-end gap-5">
                           <button 
                             onClick={() => updateLocalUser(user.id, 'is_active', !user.is_active)}
                             className={cn(
-                              "flex items-center gap-2 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm border",
-                              user.is_active ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
+                              "flex items-center gap-3 px-5 py-2 rounded border-2 border-black text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none",
+                              user.is_active ? 'bg-neo-mint text-black' : 'bg-neo-red text-black'
                             )}
                           >
-                             {user.is_active ? <CheckCircle2 size={12} strokeWidth={3} /> : <Lock size={12} strokeWidth={3} />}
-                             {user.is_active ? 'Active' : 'Locked'}
+                             {user.is_active ? <CheckCircle2 size={16} /> : <Lock size={16} />}
+                             {user.is_active ? 'ACTIVE' : 'LOCKED'}
                           </button>
                           
                           <button 
                             onClick={() => handleUpdate(user)}
                             disabled={savingId === user.id}
-                            className="btn-primary h-11 w-full text-[10px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-vibrant"
+                            className="btn-primary w-full h-14 text-[11px] uppercase tracking-[0.3em] font-black gap-3"
                           >
-                             {savingId === user.id ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2.5} />}
-                             Sync
+                             {savingId === user.id ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                             Sync matrix
                           </button>
                        </div>
                     </td>
@@ -276,15 +267,21 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      <div className="flex justify-between items-center py-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] opacity-50 px-4">
-         <div className="flex items-center gap-3">
-            <Shield size={16} strokeWidth={2.5} /> 
-            <span>Auth Protocol v2.5.0-Release</span>
-         </div>
+      <div className="mt-10 pt-10 border-t-neo border-black flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black text-black/20 uppercase tracking-[0.4em]">
          <div className="flex items-center gap-4">
-            <span>RSA-4096 VALIDATED</span>
-            <span className="w-px h-3 bg-slate-200" />
-            <span>SESSION STANDBY</span>
+            <span className="px-3 py-1 bg-black text-white rounded">V2.5.0</span>
+            <Shield size={16} className="text-black/40" /> 
+            <span>AUTH PROTOCOL SECURED</span>
+         </div>
+         <div className="flex items-center gap-6">
+            <span className="flex items-center gap-2">
+               <span className="w-2.5 h-2.5 bg-neo-mint border-2 border-black rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" />
+               RSA-4096 STANDBY
+            </span>
+            <span className="flex items-center gap-2">
+               <span className="w-2.5 h-2.5 bg-neo-yellow border-2 border-black rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" />
+               ENCRYPTED CHANNEL
+            </span>
          </div>
       </div>
     </div>

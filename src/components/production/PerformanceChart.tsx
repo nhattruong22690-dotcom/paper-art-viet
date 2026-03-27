@@ -1,4 +1,4 @@
-import { Settings, FileText, AlertTriangle, ShieldCheck, TrendingUp, PieChart as PieChartIcon, Info, ChevronRight, Target } from 'lucide-react';
+import { Settings, FileText, AlertTriangle, ShieldCheck, TrendingUp, PieChart as PieChartIcon, Info, ChevronRight, Target, Activity } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -29,73 +29,73 @@ export default function PerformanceChart({ employee }: { employee: EmployeePerfo
   const max = Math.max(...employee.trend, 100);
   
   return (
-    <div className="space-y-10 animate-in fade-in duration-500">
+    <div className="space-y-12 animate-in fade-in duration-500">
       {/* EMPLOYEE HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8 border-b border-slate-100">
-         <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 font-bold text-lg shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 pb-10 border-b-2 border-black border-dashed">
+         <div className="flex items-center gap-6">
+            <div className="w-16 h-16 bg-white border-2 border-black rounded-xl flex items-center justify-center text-black font-black text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] italic">
                {employee.name.split(' ').pop()?.substring(0, 2).toUpperCase()}
             </div>
             <div>
-               <h4 className="text-xl font-bold text-slate-900 tracking-tight">{employee.name}</h4>
-               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
-                 <Target size={12} className="text-blue-500" strokeWidth={2.5} />
-                 {employee.group} • Nhật trình sản xuất
+               <h4 className="text-2xl font-black text-black tracking-tight uppercase italic underline underline-offset-4 decoration-black/10">{employee.name}</h4>
+               <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-3">
+                 <Target size={14} strokeWidth={3} className="text-black" />
+                 {employee.group} <span className="text-black/10">•</span> Sổ Nhật Trình Điện Tử
                </p>
             </div>
          </div>
          {isHighMatError && (
-            <div className="bg-rose-50 text-rose-600 px-4 py-2 rounded-lg border border-rose-100 flex items-center gap-3 animate-pulse shadow-sm">
-               <AlertTriangle size={16} strokeWidth={2.5} />
-               <span className="text-[10px] font-bold uppercase tracking-wider">Cảnh báo Hao hụt Vật tư</span>
+            <div className="bg-neo-red/20 text-black px-6 py-3 rounded-lg border-2 border-black flex items-center gap-4 animate-pulse shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+               <AlertTriangle size={20} strokeWidth={3} className="text-black" />
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Critical Material Variance Detected</span>
             </div>
          )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* LINE CHART SECTION */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <TrendingUp size={14} className="text-blue-600" /> Biến động Hiệu suất
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-3 italic">
+              <TrendingUp size={16} strokeWidth={3} className="text-neo-purple" /> Efficiency Vector
             </p>
-            <span className="text-[10px] font-bold text-slate-300 uppercase">30 Days</span>
+            <span className="text-[10px] font-black text-black/20 uppercase tracking-widest italic">30 Day Epoch</span>
           </div>
           
-          <div className="relative h-60 bg-slate-50 rounded-2xl border border-slate-200 p-8 pt-10 group overflow-hidden shadow-sm">
+          <div className="relative h-72 bg-white rounded-xl border-2 border-black p-10 group overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             {/* GUIDES */}
-            <div className="absolute inset-x-8 top-10 border-t border-slate-200/50 h-0" />
-            <div className="absolute inset-x-8 top-1/2 border-t border-slate-200/50 h-0 border-dashed" />
-            <div className="absolute inset-x-8 bottom-8 border-t border-slate-200/50 h-0" />
+            <div className="absolute inset-x-10 top-10 border-t-2 border-black/5 h-0" />
+            <div className="absolute inset-x-10 top-1/2 border-t-2 border-black/5 h-0 border-dashed" />
+            <div className="absolute inset-x-10 bottom-10 border-t-2 border-black/5 h-0" />
 
             {/* Y-AXIS LABELS */}
-            <div className="absolute left-3 h-[calc(100%-48px)] top-10 flex flex-col justify-between text-[8px] font-bold text-slate-300 uppercase">
-               <span>100</span>
-               <span>50</span>
-               <span>0</span>
+            <div className="absolute left-4 h-[calc(100%-80px)] top-10 flex flex-col justify-between text-[8px] font-black text-black/20 uppercase italic">
+               <span>100%</span>
+               <span>50%</span>
+               <span>0%</span>
             </div>
 
             {/* SVG LINE CHART */}
-            <svg className="absolute inset-0 w-full h-full px-12 pt-10 pb-8 overflow-visible" preserveAspectRatio="none">
+            <svg className="absolute inset-0 w-full h-full px-16 pt-10 pb-10 overflow-visible" preserveAspectRatio="none">
               <defs>
-                <linearGradient id="modernLineGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563EB" stopOpacity="0.1" />
-                  <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
+                <linearGradient id="neoLineGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#A78BFA" stopOpacity="0" />
                 </linearGradient>
               </defs>
               
               <path 
                 d={`M ${employee.trend.map((val, i) => `${(i / (employee.trend.length - 1)) * 100}%,${100 - (val / max * 100)}%`).join(' L ')} L 100%,100% L 0%,100% Z`}
-                fill="url(#modernLineGradient)"
+                fill="url(#neoLineGradient)"
                 className="transition-all duration-1000"
               />
 
               <polyline
                 fill="none"
-                stroke="#2563EB"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                stroke="black"
+                strokeWidth="4"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
                 points={employee.trend.map((val, i) => `${(i / (employee.trend.length - 1)) * 100},${100 - (val / max * 100)}`).join(' ')}
                 className="transition-all duration-1000"
                 style={{ vectorEffect: 'non-scaling-stroke' }}
@@ -106,26 +106,26 @@ export default function PerformanceChart({ employee }: { employee: EmployeePerfo
                   key={i}
                   cx={`${(i / (employee.trend.length - 1)) * 100}%`}
                   cy={`${100 - (val / max * 100)}%`}
-                  r="4"
+                  r="6"
                   fill="white"
-                  stroke="#2563EB"
-                  strokeWidth="2"
-                  className="transition-all duration-300 cursor-pointer shadow-sm group-hover:r-5"
+                  stroke="black"
+                  strokeWidth="3"
+                  className="transition-all duration-300 cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:r-8 hover:fill-neo-purple"
                 />
               ))}
             </svg>
 
             {/* X-AXIS */}
-            <div className="absolute inset-0 px-12 pt-10 pb-8 flex justify-between pointer-events-none">
+            <div className="absolute inset-0 px-16 pt-10 pb-10 flex justify-between pointer-events-none">
               {employee.trend.map((val, i) => (
                 <div key={i} className="relative flex-1 flex flex-col items-center group/tip pointer-events-auto">
                    <div className="flex-1 w-full" />
-                   <div className="absolute transition-all duration-300 opacity-0 group-hover/tip:opacity-100 -translate-y-2" style={{ bottom: `${(val / max * 100) + 8}%` }}>
-                     <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded shadow-xl border border-slate-700 whitespace-nowrap">
+                   <div className="absolute transition-all duration-300 opacity-0 group-hover/tip:opacity-100 -translate-y-4" style={{ bottom: `${(val / max * 100) + 12}%` }}>
+                     <div className="bg-black text-white text-[10px] font-black px-3 py-1.5 rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] whitespace-nowrap italic">
                         {val}%
                      </div>
                    </div>
-                   <p className="mt-2 text-[8px] font-bold text-slate-300 uppercase absolute -bottom-5">D{i+1}</p>
+                   <p className="mt-3 text-[8px] font-black text-black/20 uppercase absolute -bottom-6 italic">D{i+1}</p>
                 </div>
               ))}
             </div>
@@ -133,46 +133,46 @@ export default function PerformanceChart({ employee }: { employee: EmployeePerfo
         </div>
 
         {/* ERROR DISTRIBUTION SECTION */}
-        <div className="space-y-4">
-           <div className="flex items-center justify-between px-1">
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-               <PieChartIcon size={14} className="text-amber-500" /> Tỷ lệ Khiếm khuyết
+        <div className="space-y-6">
+           <div className="flex items-center justify-between">
+             <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-3 italic">
+               <PieChartIcon size={16} strokeWidth={3} className="text-neo-red" /> Defect Anatomy
              </p>
-             <span className="text-[10px] font-bold text-slate-300 uppercase">Analysis</span>
+             <span className="text-[10px] font-black text-black/20 uppercase tracking-widest italic">Compositional Analysis</span>
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-8 bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm transition-all hover:bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row items-center gap-10 bg-white p-10 rounded-xl border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none">
              {/* MODERN PIE CHART */}
-             <div className="relative w-28 h-28 rounded-full shadow-inner border-[6px] border-slate-50 shrink-0" style={{
+             <div className="relative w-36 h-36 rounded-full border-4 border-black shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" style={{
                background: totalErrors > 0 
-                ? `conic-gradient(#E11D48 0% ${techPct}%, #F59E0B ${techPct}% 100%)`
+                ? `conic-gradient(#FF6B6B 0% ${techPct}%, #FFD93D ${techPct}% 100%)`
                 : '#F1F5F9'
              }}>
-                <div className="absolute inset-6 bg-white rounded-full flex flex-col items-center justify-center shadow-lg border border-slate-100">
-                   <p className="text-lg font-bold text-slate-900 leading-none">{totalErrors}</p>
-                   <p className="text-[8px] text-slate-400 font-bold uppercase mt-0.5">Sự vụ</p>
+                <div className="absolute inset-8 bg-white rounded-full border-2 border-black flex flex-col items-center justify-center shadow-inner">
+                   <p className="text-2xl font-black text-black leading-none italic">{totalErrors}</p>
+                   <p className="text-[8px] text-black/40 font-black uppercase mt-1 italic tracking-widest">Sự vụ</p>
                 </div>
              </div>
 
-             <div className="flex flex-col gap-5 flex-1 w-full">
-                <div className="space-y-3">
-                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                      <div className="flex items-center gap-3">
-                         <div className="w-2.5 h-2.5 bg-rose-500 rounded-sm shadow-sm" />
-                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lỗi Thao tác</span>
+             <div className="flex flex-col gap-6 flex-1 w-full">
+                <div className="space-y-4">
+                   <div className="flex items-center justify-between border-b-2 border-black/5 pb-3">
+                      <div className="flex items-center gap-4">
+                         <div className="w-4 h-4 bg-neo-red border-2 border-black rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" />
+                         <span className="text-[10px] font-black text-black uppercase tracking-widest italic">Lỗi Thao tác (Tech)</span>
                       </div>
-                      <span className="text-sm font-bold text-rose-600 tabular-nums">{techPct.toFixed(0)}%</span>
+                      <span className="text-lg font-black text-black tabular-nums italic">{techPct.toFixed(0)}%</span>
                    </div>
-                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                      <div className="flex items-center gap-3">
-                         <div className="w-2.5 h-2.5 bg-amber-500 rounded-sm shadow-sm" />
-                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lỗi Vật liệu</span>
+                   <div className="flex items-center justify-between border-b-2 border-black/5 pb-3">
+                      <div className="flex items-center gap-4">
+                         <div className="w-4 h-4 bg-neo-yellow border-2 border-black rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" />
+                         <span className="text-[10px] font-black text-black uppercase tracking-widest italic">Lỗi Vật liệu (Mat)</span>
                       </div>
-                      <span className="text-sm font-bold text-amber-600 tabular-nums">{matPct.toFixed(0)}%</span>
+                      <span className="text-lg font-black text-black tabular-nums italic">{matPct.toFixed(0)}%</span>
                    </div>
                 </div>
                 
-                <p className="text-[9px] text-slate-400 font-medium italic border-l-2 border-slate-200 pl-4 leading-relaxed">
-                  Phân tích dựa trên Sổ nhật trình & Kiểm duyệt định kỳ.
+                <p className="text-[9px] text-black/40 font-black italic border-l-4 border-black pl-6 leading-relaxed uppercase tracking-[0.1em]">
+                  Root cause distribution based on quality control audit logs.
                 </p>
              </div>
           </div>
@@ -181,18 +181,18 @@ export default function PerformanceChart({ employee }: { employee: EmployeePerfo
 
       {/* ERROR NOTE */}
       {employee.errorNote && (
-        <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 relative overflow-hidden group shadow-sm">
-           <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-             <Info size={100} className="text-slate-400" />
+        <div className="bg-neo-purple/5 p-8 rounded-xl border-2 border-black relative overflow-hidden group shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] italic">
+           <div className="absolute -top-10 -right-10 p-4 opacity-5 pointer-events-none rotate-12 transition-transform group-hover:scale-110">
+             <Activity size={180} strokeWidth={1} className="text-black" />
            </div>
            
-           <div className="relative z-10 flex gap-6">
-              <div className="p-3 bg-white rounded-xl text-rose-500 border border-rose-100 shadow-sm shrink-0 h-fit">
-                 <AlertTriangle size={24} />
+           <div className="relative z-10 flex gap-8">
+              <div className="w-14 h-14 bg-white border-2 border-black rounded-lg text-neo-red flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                 <AlertTriangle size={32} strokeWidth={3} />
               </div>
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ghi chú Kiểm duyệt</p>
-                <p className="text-base text-slate-700 font-medium leading-relaxed italic pr-12">
+              <div className="space-y-3">
+                <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] italic">Auditor Metadata & Field Notes</p>
+                <p className="text-xl text-black font-black leading-tight italic pr-20 underline decoration-neo-red/20 underline-offset-8">
                    "{employee.errorNote}"
                 </p>
               </div>
@@ -201,37 +201,37 @@ export default function PerformanceChart({ employee }: { employee: EmployeePerfo
       )}
 
       {/* KPI METRICS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 border-t border-slate-100">
-         <div className="p-6 bg-emerald-50/50 border border-emerald-100 rounded-2xl relative group hover:bg-emerald-50 transition-all shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+         <div className="p-8 bg-neo-green/10 border-2 border-black rounded-xl relative group hover:bg-neo-green/20 transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             <div className="flex justify-between items-start">
                <div>
-                  <p className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest mb-3">Chỉ số Tinh anh (Quality)</p>
+                  <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 italic">Quality Fidelity Index</p>
                   <div className="flex items-baseline gap-2">
-                     <p className="text-4xl font-black text-emerald-700 tabular-nums tracking-tighter">
+                     <p className="text-5xl font-black text-black tabular-nums tracking-tighter italic">
                         {(100 - (employee.techErrors / employee.totalQty * 100)).toFixed(1)}
                      </p>
-                     <span className="text-sm font-bold text-emerald-600/40">%</span>
+                     <span className="text-xl font-black text-black opacity-40">%</span>
                   </div>
                </div>
-               <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
-                  <ShieldCheck size={24} />
+               <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <ShieldCheck size={32} strokeWidth={3} className="text-black" />
                </div>
             </div>
          </div>
          
-         <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl relative group hover:bg-slate-100 transition-all shadow-sm">
+         <div className="p-8 bg-neo-yellow/10 border-2 border-black rounded-xl relative group hover:bg-neo-yellow/20 transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             <div className="flex justify-between items-start">
                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Hệ số Hao hụt (Waste)</p>
+                  <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 italic">Resource Dissipation (Waste)</p>
                   <div className="flex items-baseline gap-2">
-                     <p className="text-4xl font-black text-slate-700 tabular-nums tracking-tighter">
+                     <p className="text-5xl font-black text-black tabular-nums tracking-tighter italic">
                         {(totalErrors / employee.totalQty * 100).toFixed(1)}
                      </p>
-                     <span className="text-sm font-bold text-slate-400/40">%</span>
+                     <span className="text-xl font-black text-black opacity-40">%</span>
                   </div>
                </div>
-               <div className="w-10 h-10 bg-white text-slate-400 rounded-lg flex items-center justify-center border border-slate-200 shadow-sm">
-                  <FileText size={24} />
+               <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <FileText size={32} strokeWidth={3} className="text-black" />
                </div>
             </div>
          </div>

@@ -5,18 +5,11 @@ import {
   Package, 
   Search, 
   Plus, 
-  Filter, 
-  Edit2, 
-  Trash2, 
-  History,
   Tag,
-  Layers,
-  DollarSign,
   Loader2,
   Box,
-  FileText,
-  ChevronRight,
-  MoreVertical
+  Trash2,
+  Edit2,
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -49,7 +42,6 @@ export default function MaterialMasterList() {
   const [isLoading, setIsLoading] = useState(false);
   const { showToast, showModal, confirm: confirmDialog } = useNotification();
   
-  // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
 
@@ -91,7 +83,6 @@ export default function MaterialMasterList() {
       showToast('success', 'Đã lưu vật tư thành công');
       fetchMaterials();
     } catch (error: any) {
-      console.error('Failed to save material full error:', error);
       const errorMsg = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
       showModal('error', 'Không thể lưu vật tư', errorMsg);
     }
@@ -110,7 +101,6 @@ export default function MaterialMasterList() {
       showToast('success', 'Đã xóa vật tư thành công');
       fetchMaterials();
     } catch (error: any) {
-      console.error('Failed to delete material:', error);
       showModal('error', 'Không thể xóa vật tư', 'Vật tư này có thể đang được sử dụng trong BOM hoặc đơn hàng.');
     }
   };
@@ -118,12 +108,17 @@ export default function MaterialMasterList() {
   const types = ['All', 'Giấy', 'Keo', 'Phụ kiện'];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-10 animate-in fade-in duration-500 pb-20">
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Từ điển Vật tư</h1>
-          <p className="text-slate-500 text-sm mt-1">Danh mục gốc và định mức nguyên vật liệu sản xuất.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+             <Package size={28} className="text-black" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-black tracking-tight uppercase italic">Từ điển Vật tư</h1>
+            <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Master Specification & Inventory Baseline</p>
+          </div>
         </div>
 
         <button 
@@ -131,35 +126,35 @@ export default function MaterialMasterList() {
             setEditingMaterial(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/10"
+          className="btn-primary h-14 px-10 text-xs uppercase tracking-widest"
         >
-          <Plus size={18} /> Đăng ký vật tư mới
+          <Plus size={20} strokeWidth={3} /> Đăng ký vật tư mới
         </button>
       </div>
 
       {/* FILTER & SEARCH BAR */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex-1 relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-all" size={18} />
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1 relative group/field">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" size={24} />
           <input 
             type="text" 
             placeholder="Tìm theo tên hoặc SKU vật tư..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-blue-300 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+            className="form-input pl-14 h-16"
           />
         </div>
 
-        <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex bg-white p-2 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] gap-2 overflow-x-auto">
           {types.map(type => (
             <button
               key={type}
               onClick={() => setActiveType(type)}
               className={cn(
-                "px-6 py-2 text-[10px] font-bold uppercase tracking-widest transition-all rounded-lg",
+                "px-8 py-3 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg whitespace-nowrap",
                 activeType === type 
-                  ? "bg-slate-900 text-white shadow-md shadow-slate-200"
-                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                  ? "bg-black text-white"
+                  : "text-black/40 hover:text-black hover:bg-black/5"
               )}
             >
               {type === 'All' ? 'Tất cả' : type}
@@ -169,82 +164,77 @@ export default function MaterialMasterList() {
       </div>
 
       {/* MATERIALS TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
+      <div className="neo-card !p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                <th className="px-8 py-5">Vật tư / SKU</th>
-                <th className="px-8 py-5">Phân loại</th>
-                <th className="px-8 py-5 text-center">Đơn vị</th>
-                <th className="px-8 py-5 text-center">Tồn kho</th>
-                <th className="px-8 py-5 text-right">Đơn giá tham chiếu</th>
-                <th className="px-8 py-5 text-center">Tác vụ</th>
+              <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
+                <th className="px-8 py-5 border-b-2 border-black text-neo-purple">Vật tư / SKU</th>
+                <th className="px-8 py-5 border-b-2 border-black text-neo-purple">Phân loại</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Đơn vị</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Tồn kho</th>
+                <th className="px-8 py-5 text-right border-b-2 border-black text-neo-purple">Đơn giá tham chiếu</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple w-32">Quản lý</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y-2 divide-black/5">
               {isLoading ? (
                 <tr>
                   <td colSpan={6} className="px-8 py-32 text-center">
-                    <div className="flex flex-col items-center gap-4 text-slate-400">
-                      <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-                      <p className="text-xs font-bold uppercase tracking-widest">Đang trích xuất dữ liệu...</p>
+                    <div className="flex flex-col items-center gap-4">
+                      <Loader2 className="w-12 h-12 animate-spin text-black opacity-20" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-black/20">Syncing with server...</p>
                     </div>
                   </td>
                 </tr>
               ) : materials.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-8 py-32 text-center text-slate-300">
-                    <div className="flex flex-col items-center gap-4">
-                      <Box size={48} strokeWidth={1} />
-                      <p className="text-sm font-medium">Không tìm thấy vật tư nào</p>
+                  <td colSpan={6} className="px-8 py-32 text-center">
+                    <div className="flex flex-col items-center gap-4 opacity-10">
+                      <Box size={64} strokeWidth={1} />
+                      <p className="text-sm font-black uppercase tracking-[0.3em]">No materials cataloged</p>
                     </div>
                   </td>
                 </tr>
               ) : materials.map((m) => (
-                <tr key={m.id} className="hover:bg-slate-50/50 transition-all group">
+                <tr key={m.id} className="hover:bg-neo-purple/5 transition-all group">
                   <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 bg-slate-50 text-slate-300 border border-slate-100 rounded-lg flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-500 group-hover:border-blue-100 transition-all">
-                          <Package size={20} />
-                       </div>
-                       <div>
-                          <p className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{m.name}</p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{m.sku}</p>
-                       </div>
+                    <div>
+                      <p className="font-black text-black leading-tight italic uppercase tracking-tight">{m.name}</p>
+                      <p className="text-[10px] text-black/40 font-black uppercase tracking-widest mt-0.5">{m.sku}</p>
                     </div>
                   </td>
                   <td className="px-8 py-6">
                     <span className={cn(
-                      "text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm",
-                      m.type === 'Giấy' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                      m.type === 'Keo' ? "bg-amber-50 text-amber-600 border-amber-100" :
-                      "bg-blue-50 text-blue-600 border-blue-100"
+                      "text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] inline-flex items-center gap-1.5",
+                      m.type === 'Giấy' ? "bg-neo-green/20 text-black" :
+                      m.type === 'Keo' ? "bg-neo-yellow/20 text-black" :
+                      "bg-neo-purple/20 text-black"
                     )}>
-                      {m.type}
+                      <Tag size={10} strokeWidth={3} /> {m.type}
                     </span>
                   </td>
                   <td className="px-8 py-6 text-center">
-                    <span className="text-xs font-bold text-slate-500 uppercase">{m.unit}</span>
+                    <span className="text-[11px] font-black text-black/40 uppercase tabular-nums">{m.unit}</span>
                   </td>
                   <td className="px-8 py-6 text-center">
                     <div className="inline-flex flex-col items-center">
                        <p className={cn(
-                         "text-base font-black tracking-tight",
-                         m.stockQuantity < m.minStock ? "text-rose-600" : "text-slate-900"
+                         "text-lg font-black tracking-tighter tabular-nums italic",
+                         m.stockQuantity < m.minStock ? "text-neo-red" : "text-black"
                        )}>
                          {m.stockQuantity.toLocaleString()}
                        </p>
-                       <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Min: {m.minStock}</p>
+                       <p className="text-[9px] text-black/20 font-black uppercase tracking-tighter">Min: {m.minStock}</p>
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <p className="text-sm font-black text-slate-900 tabular-nums tracking-tight">
-                      {m.referencePrice.toLocaleString()} <span className="text-[10px] text-slate-400 underline decoration-slate-200">đ</span>
+                    <p className="font-black text-black tabular-nums tracking-tighter text-lg italic">
+                      {m.referencePrice.toLocaleString()} <span className="text-[10px] text-black/40">đ</span>
                     </p>
                     {m.unitPrice && m.unitPrice > 0 && (
-                      <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-tight mt-0.5">
-                        Giá nhập: {m.unitPrice.toLocaleString()}đ
+                      <p className="text-[9px] text-neo-green font-black uppercase tracking-tight mt-1 italic">
+                        Last In: {m.unitPrice.toLocaleString()}đ
                       </p>
                     )}
                   </td>
@@ -252,15 +242,15 @@ export default function MaterialMasterList() {
                     <div className="flex items-center justify-center gap-2">
                        <button 
                         onClick={() => handleEdit(m)}
-                        className="p-2 bg-white border border-slate-200 text-slate-400 rounded-lg hover:text-blue-600 hover:border-blue-600 transition-all shadow-sm"
+                        className="w-10 h-10 flex items-center justify-center text-black/20 hover:text-black hover:bg-black/5 rounded-xl transition-all"
                        >
-                          <Edit2 size={16} />
+                          <Edit2 size={18} strokeWidth={2.5} />
                        </button>
                        <button 
                         onClick={() => handleDelete(m.id)}
-                        className="p-2 bg-white border border-slate-200 text-slate-400 rounded-lg hover:text-rose-600 hover:border-rose-600 transition-all shadow-sm"
+                        className="w-10 h-10 flex items-center justify-center text-black/20 hover:text-neo-red hover:bg-neo-red/10 rounded-xl transition-all"
                        >
-                          <Trash2 size={16} />
+                          <Trash2 size={18} strokeWidth={2.5} />
                        </button>
                     </div>
                   </td>

@@ -54,12 +54,8 @@ const navigation: NavItem[] = [
     ]
   },
   {
-    name: 'Vật tư', href: '/production/products', icon: Package, roles: ['Admin', 'Warehouse', 'Production'], children: [
-      { name: 'Vật tư NVL', href: '/logistics/materials' },
-    ]
-  },
-  {
     name: 'Kho vận', href: '/logistics/inventory', icon: Archive, roles: ['Admin', 'Warehouse'], children: [
+      { name: 'Vật tư NVL', href: '/logistics/materials' },
       { name: 'Mua hàng', href: '/logistics/purchase' },
       { name: 'Tồn kho', href: '/logistics/inventory' },
       { name: 'Nhập kho', href: '/logistics/inward' },
@@ -105,26 +101,26 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex fixed lg:sticky top-0 left-0 h-screen w-72 bg-slate-50 border-r border-slate-200 flex-col z-[101] overflow-y-auto font-sans">
+    <aside className="hidden lg:flex fixed lg:sticky top-0 left-0 h-screen w-72 bg-background border-r-neo border-black flex-col z-[101] overflow-y-auto font-sans">
       <div className="flex flex-col h-full">
         {/* Brand Header */}
         <div className="p-8">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary/20">
-              <Box size={24} strokeWidth={2} />
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-12 h-12 bg-primary rounded-xl border-neo border-black flex items-center justify-center text-black shrink-0 shadow-neo group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-neo-active transition-all">
+              <Box size={24} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-xl tracking-tighter text-slate-900 leading-none">
+              <span className="font-bold text-xl tracking-tight text-foreground leading-none font-space uppercase">
                 PAPER ART
               </span>
-              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mt-1">
+              <span className="text-[10px] font-bold text-black uppercase tracking-[0.2em] mt-1">
                 ERP SYSTEM
               </span>
             </div>
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1">
+        <nav className="flex-1 px-4 space-y-2">
           {navigation.map((item) => {
             const hasChildren = !!item.children;
             const isOpenMenu = openMenus.includes(item.name);
@@ -137,39 +133,39 @@ export default function Sidebar() {
                     <button
                       onClick={(e) => toggleMenu(e, item.name)}
                       className={cn(
-                        "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all",
-                        isActive ? "text-primary bg-white shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                        "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all border-neo",
+                        isActive ? "text-black bg-primary border-black shadow-neo" : "text-muted-foreground border-transparent hover:text-foreground hover:bg-card/50"
                       )}
                     >
                       <div className="flex items-center gap-3 text-sm font-bold">
                         <item.icon
                           size={20}
-                          className={cn(isActive ? "text-primary" : "text-slate-400 opacity-70")}
+                          className={cn(isActive ? "text-black" : "text-muted-foreground/60")}
                           strokeWidth={isActive ? 2.5 : 2}
                         />
-                        <span>{item.name}</span>
+                        <span className="font-space uppercase tracking-wider">{item.name}</span>
                       </div>
                       <ChevronDown
                         size={14}
                         className={cn(
-                          "transition-transform duration-300 opacity-40",
+                          "transition-transform duration-300 opacity-60",
                           isOpenMenu ? "rotate-180" : ""
                         )}
                       />
                     </button>
 
                     {isOpenMenu && (
-                      <div className="mt-1 ml-6 pl-4 border-l-2 border-slate-200 space-y-1">
+                      <div className="mt-2 ml-6 pl-4 border-l-neo border-black space-y-2">
                         {item.children?.map((child) => (
                           <Link
                             key={child.name}
                             href={child.href}
                             className={cn(
-                              "flex items-center justify-between px-3 py-2.5 text-xs font-bold rounded-xl transition-all",
-                              pathname === child.href ? "text-primary bg-blue-50" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"
+                              "flex items-center justify-between px-4 py-2.5 text-xs font-bold rounded-xl transition-all border-neo",
+                              pathname === child.href ? "text-black bg-secondary border-black shadow-neo" : "text-muted-foreground border-transparent hover:text-foreground hover:bg-card"
                             )}
                           >
-                            {child.name}
+                            <span className="uppercase tracking-widest">{child.name}</span>
                             {pathname === child.href && <ChevronRight size={12} />}
                           </Link>
                         ))}
@@ -180,16 +176,16 @@ export default function Sidebar() {
                   <Link
                     href={item.href!}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all",
-                      pathname === item.href ? "text-primary bg-white shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                      "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all border-neo",
+                      pathname === item.href ? "text-black bg-primary border-black shadow-neo" : "text-muted-foreground border-transparent hover:text-foreground hover:bg-card/50"
                     )}
                   >
                     <item.icon
                       size={20}
-                      className={cn(pathname === item.href ? "text-primary" : "text-slate-400 opacity-70")}
+                      className={cn(pathname === item.href ? "text-black" : "text-muted-foreground/60")}
                       strokeWidth={pathname === item.href ? 2.5 : 2}
                     />
-                    <span>{item.name}</span>
+                    <span className="font-space uppercase tracking-wider">{item.name}</span>
                   </Link>
                 )}
               </div>
@@ -198,16 +194,16 @@ export default function Sidebar() {
         </nav>
 
         {/* User Profile Info */}
-        <div className="p-6 border-t border-slate-200 mt-auto bg-white/50">
+        <div className="p-6 border-t-neo border-black mt-auto bg-background">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-primary font-black shrink-0 shadow-inner">
+            <div className="w-12 h-12 rounded-xl bg-secondary border-neo border-black flex items-center justify-center text-black font-bold shrink-0 shadow-neo">
               {profile?.name?.substring(0, 2).toUpperCase() || 'PA'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-black text-slate-900 truncate tracking-tight">
+              <p className="text-sm font-bold text-foreground truncate tracking-tight uppercase font-space">
                 {profile?.name || 'User Account'}
               </p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
                 {currentRole}
               </p>
             </div>
@@ -215,7 +211,7 @@ export default function Sidebar() {
 
           <button
             onClick={() => signOut()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-slate-900/10 active:scale-95"
+            className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-black hover:bg-slate-900 text-white rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all border-neo border-black shadow-neo hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-active active:scale-95"
           >
             <LogOut size={16} />
             Đăng xuất
