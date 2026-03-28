@@ -190,7 +190,7 @@ export async function updateProductionOrder(id: string, data: any) {
     // Mapping client-side status strings back to database strings if necessary
     const s = data.status;
     dbData.current_status = s === 'Pending' ? 'pending' :
-                            s === 'Processing' ? 'processing' :
+                            s === 'Processing' ? 'in_progress' :
                             s === 'QualityControl' ? 'qc' :
                             s === 'Archived' ? 'archived' : 'completed';
   }
@@ -304,7 +304,7 @@ export async function getProductionOrders() {
       quantityCompleted: qtyDone,
       progress,
       status: (po.current_status === 'pending' ? 'Pending' : 
-              po.current_status === 'processing' ? 'Processing' : 
+              (po.current_status === 'processing' || po.current_status === 'in_progress') ? 'Processing' : 
               po.current_status === 'qc' ? 'QualityControl' : 
               po.current_status === 'archived' ? 'Archived' : 'Completed') as any,
       deadlineProduction: po.deadline_production,
@@ -323,7 +323,7 @@ export async function getProductionOrders() {
 
 export async function updateProductionStatus(id: string, status: string) {
   const dbStatus = status === 'Pending' ? 'pending' : 
-                   status === 'Processing' ? 'processing' : 
+                   status === 'Processing' ? 'in_progress' : 
                    status === 'QualityControl' ? 'qc' : 
                    status === 'Archived' ? 'archived' : 'completed';
                    

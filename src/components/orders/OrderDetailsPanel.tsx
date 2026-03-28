@@ -244,6 +244,11 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                        stats.remaining > 0 ? "text-amber-500" : "text-muted-foreground"
                                      )}>{stats.remaining}</span>
                                    </div>
+                                   <div className="w-px h-6 bg-gray-100" />
+                                   <div className="flex flex-col">
+                                     <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Đã xong</span>
+                                     <span className="text-[11px] font-bold text-blue-600">{stats.totalDone}</span>
+                                   </div>
                                  </div>
                               </div>
                            </div>
