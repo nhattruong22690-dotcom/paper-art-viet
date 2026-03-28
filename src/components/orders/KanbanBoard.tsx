@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import OrderCard from './OrderCard';
 import OrderDetailsPanel from './OrderDetailsPanel';
-import { Search, Filter, LayoutGrid, List, CheckCircle2, Truck, Package, Factory, ClipboardList } from 'lucide-react';
+import { Search, Filter, LayoutGrid, List, CheckCircle2, Truck, Package, Factory, ClipboardList, AlertTriangle } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -19,13 +19,23 @@ const STAGES = [
   { id: 'completed', label: 'Hoàn tất', icon: CheckCircle2, color: 'bg-emerald-500' },
 ];
 
-export default function KanbanBoard() {
+interface KanbanBoardProps {
+  selectedOrderId?: string | null;
+  onSelectOrder?: (id: string | null) => void;
+  onRefreshRequest?: () => void;
+}
+
+export default function KanbanBoard({ 
+  selectedOrderId, 
+  onSelectOrder, 
+  onRefreshRequest 
+}: KanbanBoardProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('new'); // For mobile
   const [filterDelay, setFilterDelay] = useState(false);
+  const [filterUnallocated, setFilterUnallocated] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -51,7 +61,11 @@ export default function KanbanBoard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
-      fetchOrders();
+      if (onRefreshRequest) {
+        onRefreshRequest();
+      } else {
+        fetchOrders();
+      }
     } catch (error) {
       console.error('Update error:', error);
     }
@@ -60,12 +74,18 @@ export default function KanbanBoard() {
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
       order.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase());
+      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.contractCode && order.contractCode.toLowerCase().includes(searchTerm.toLowerCase()));
     
     if (filterDelay) {
       const hoursLeft = (new Date(order.deadlineDelivery).getTime() - new Date().getTime()) / (1000 * 60 * 60);
       return matchesSearch && hoursLeft <= 24 && (order.overallProgress || 0) < 80;
     }
+
+    if (filterUnallocated) {
+       return matchesSearch && order.isAllocated === false;
+    }
+
     return matchesSearch;
   });
 
@@ -102,13 +122,28 @@ export default function KanbanBoard() {
         </div>
         <div className="flex gap-2">
            <button 
-             onClick={() => setFilterDelay(!filterDelay)}
+             onClick={() => {
+               setFilterDelay(!filterDelay);
+               if (!filterDelay) setFilterUnallocated(false);
+             }}
              className={cn(
                "px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border shadow-sm",
                filterDelay ? "bg-red-600 text-white border-red-700" : "bg-white text-muted-text border-border hover:border-gray-400"
              )}
            >
              <Filter size={14} /> Trễ tiến độ
+           </button>
+           <button 
+             onClick={() => {
+               setFilterUnallocated(!filterUnallocated);
+               if (!filterUnallocated) setFilterDelay(false);
+             }}
+             className={cn(
+               "px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border shadow-sm",
+               filterUnallocated ? "bg-amber-500 text-white border-amber-600" : "bg-white text-muted-text border-border hover:border-gray-400"
+             )}
+           >
+             <AlertTriangle size={14} /> Chưa phân bổ
            </button>
         </div>
       </div>
@@ -155,7 +190,7 @@ export default function KanbanBoard() {
                 <OrderCard 
                   key={order.id} 
                   order={order} 
-                  onClick={() => setSelectedOrderId(order.id)} 
+                  onClick={() => onSelectOrder?.(order.id)} 
                 />
               ))}
               {getOrdersByStage(stage.id).length === 0 && (
@@ -174,7 +209,7 @@ export default function KanbanBoard() {
           <OrderCard 
             key={order.id} 
             order={order} 
-            onClick={() => setSelectedOrderId(order.id)} 
+            onClick={() => onSelectOrder?.(order.id)} 
           />
         ))}
         {getOrdersByStage(activeTab).length === 0 && (
@@ -184,16 +219,7 @@ export default function KanbanBoard() {
         )}
       </div>
 
-      {/* Detail Side Panel */}
-      <OrderDetailsPanel 
-        orderId={selectedOrderId} 
-        onClose={() => setSelectedOrderId(null)}
-        onUpdate={fetchOrders}
-        onDelete={() => {
-          setSelectedOrderId(null);
-          fetchOrders();
-        }}
-      />
+      {/* Sidebar removed - now handled by parent OrdersPage */}
     </div>
   );
 }

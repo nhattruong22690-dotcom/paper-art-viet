@@ -24,6 +24,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
   const [editData, setEditData] = useState<any>({});
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
   const [activeItemForSplit, setActiveItemForSplit] = useState<any>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     if (orderId) {
@@ -33,13 +34,22 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
 
   const fetchOrder = async () => {
     setLoading(true);
+    setOrder(null);
+    setFetchError(null);
     try {
       const res = await fetch(`/api/orders/${orderId}`);
       const data = await res.json();
+      
+      if (data.error) {
+        setFetchError(data.error);
+        return;
+      }
+      
       setOrder(data);
       setEditData(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fetch error:', error);
+      setFetchError(error.message || 'Lỗi không xác định khi tải dữ liệu');
     } finally {
       setLoading(false);
     }
@@ -98,16 +108,39 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
           <div className="h-full flex items-center justify-center p-20 text-xs font-black uppercase tracking-widest text-gray-400 animate-pulse">
             Đang tải dữ liệu chi tiết...
           </div>
+        ) : fetchError ? (
+          <div className="h-full flex flex-col items-center justify-center p-10 text-center">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+               <X size={32} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Không thể tải dữ liệu</h3>
+            <p className="text-sm text-gray-500 max-w-xs mb-8">
+              Đã xảy ra lỗi khi truy vấn thông tin đơn hàng từ máy chủ.
+              <br/>
+              <span className="text-[10px] uppercase font-bold text-red-400 mt-2 block">Lỗi: {fetchError}</span>
+            </p>
+            <button 
+              onClick={fetchOrder}
+              className="px-6 py-3 bg-foreground text-white rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-primary transition-all"
+            >
+              Thử lại
+            </button>
+          </div>
         ) : order && (
           <div className="h-full flex flex-col">
             {/* Header */}
             <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-white shrink-0">
               <div>
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <span className="bg-primary text-white px-2 py-0.5 rounded text-xs">#{order.id.slice(-6).toUpperCase()}</span>
+                  <span className="bg-primary text-white px-2 py-0.5 rounded text-xs">#{order.contractCode || orderId.slice(-6).toUpperCase()}</span>
                   Chi tiết đơn hàng
                 </h2>
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Trạng thái: {order.status}</p>
+                <div className="flex items-center gap-3 mt-1.5 overflow-hidden">
+                   <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest bg-gray-50 px-2 py-0.5 rounded border border-gray-100 shrink-0">Trạng thái: {order.status}</p>
+                   {order.contractCode && (
+                     <p className="text-[10px] text-primary font-bold tracking-widest truncate">Mã đơn: {order.contractCode}</p>
+                   )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={handleDelete} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all">
@@ -142,17 +175,21 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                         onChange={(e) => setEditData({...editData, deadlineDelivery: e.target.value})}
                       />
                     ) : (
-                      <p className="text-sm font-bold text-foreground">{new Date(order.deadlineDelivery).toLocaleDateString('vi-VN')}</p>
+                      <p className="text-sm font-bold text-foreground">
+                        {order.deadlineDelivery ? new Date(order.deadlineDelivery).toLocaleDateString('vi-VN') : '---'}
+                      </p>
                     )}
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                 <div className="space-y-4">
                    <div>
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-1.5">
-                       <FileText size={12} /> Nhân viên phụ trách
+                       <FileText size={12} /> Mã Hợp Đồng
                     </label>
-                    <p className="text-sm font-bold text-foreground">Admin Team</p>
+                    <p className="text-sm font-bold text-primary italic underline-offset-4 decoration-primary/30">
+                      {order.contractCode || '---'}
+                    </p>
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-1.5">
@@ -177,7 +214,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
               <div className="space-y-4">
                 <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-l-4 border-primary pl-3">Mục sản xuất</h3>
                 <div className="space-y-4">
-                  {order.orderItems.map((item: any) => {
+                  {(order.orderItems || []).map((item: any) => {
                     const stats = getItemProgress(item.productId, item.quantity);
                     return (
                       <div key={item.id} className="bg-white border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all divide-y divide-border">
@@ -242,7 +279,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                        </div>
                                        <div>
                                           <p className="text-[10px] font-bold text-foreground uppercase">
-                                            {po.assignedTo || po.outsourcedName || 'Chưa gán'}
+                                            {po.workshop?.name || po.outsourcer?.name || po.assignedTo || 'Chưa gán'}
                                           </p>
                                           <p className="text-[9px] text-muted-foreground font-bold tracking-tight">
                                             HT: {po.quantityCompleted || 0} / {po.quantityTarget}
@@ -282,12 +319,12 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                 <div className="grid grid-cols-2 gap-6 relative z-10">
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Giá trị đơn hàng</p>
-                    <p className="text-2xl font-bold text-white">{order.orderItems.reduce((acc: any, i: any) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}đ</p>
+                    <p className="text-2xl font-bold text-white">{(order.orderItems || []).reduce((acc: any, i: any) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}đ</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Dự kiến lợi nhuận</p>
                     <p className="text-2xl font-bold text-green-400">
-                      {order.orderItems.reduce((acc: any, i: any) => acc + ((Number(i.price) - Number(i.cogsAtOrder || 0)) * i.quantity), 0).toLocaleString()}đ
+                      {(order.orderItems || []).reduce((acc: any, i: any) => acc + ((Number(i.price) - Number(i.cogsAtOrder || 0)) * i.quantity), 0).toLocaleString()}đ
                     </p>
                   </div>
                 </div>
@@ -336,7 +373,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
           fetchOrder();
           onUpdate();
         }}
-        orderId={order.id}
+        orderId={orderId}
         orderItem={activeItemForSplit}
       />
     </div>

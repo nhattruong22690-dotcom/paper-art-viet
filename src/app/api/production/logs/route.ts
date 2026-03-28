@@ -5,10 +5,11 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date') || undefined;
+    const productionOrderId = searchParams.get('productionOrderId') || undefined;
     const skip = parseInt(searchParams.get('skip') || '0');
-    const take = parseInt(searchParams.get('take') || '20');
+    const take = parseInt(searchParams.get('take') || '50');
 
-    const logs = await getWorkLogs({ date, skip, take });
+    const logs = await getWorkLogs({ date, productionOrderId, skip, take });
     return NextResponse.json(logs);
   } catch (error) {
     console.error('API Error /production/logs:', error);

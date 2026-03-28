@@ -286,3 +286,25 @@ export async function getUserById(id: string) {
   if (error) throw error;
   return data;
 }
+
+/**
+ * Lấy danh sách công nhân (workers) đang hoạt động để phục vụ Ghi nhận sản xuất.
+ */
+export async function getProductionWorkers() {
+  const { data, error } = await supabase
+    .from('Employees')
+    .select('id, full_name, employee_code, department, position')
+    .eq('status', 'active')
+    .or('department.eq.SX,position.eq.Sản xuất')
+    .order('full_name', { ascending: true });
+
+  if (error) throw error;
+  
+  return (data || []).map(emp => ({
+    id: emp.id,
+    name: emp.full_name,
+    code: emp.employee_code,
+    department: emp.department,
+    position: emp.position
+  }));
+}

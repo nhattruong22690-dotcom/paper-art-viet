@@ -63,8 +63,8 @@
   --radius-lg: calc(var(--radius) - 2px);
   --radius-md: calc(var(--radius) - 4px);
 
-  --shadow-neo: 4px 4px 0px 0px #000000;
-  --shadow-neo-active: 2px 2px 0px 0px #000000;
+  --shadow-neo: 2px 2px 0px 0px #000000;
+  --shadow-neo-active: 1px 1px 0px 0px #000000;
 
   --border-width-neo: 2.5px;
 
@@ -99,7 +99,7 @@
   }
 
   .form-input {
-    @apply w-full bg-white border-neo border-dashed border-black rounded-xl py-3 px-4 text-sm text-foreground outline-none focus:bg-white focus:border-solid focus:ring-4 focus:ring-primary/20 transition-all placeholder:text-slate-400;
+    @apply w-full bg-white border-neo border-solid border-black rounded-xl py-3 px-4 text-sm text-foreground outline-none focus:bg-white focus:ring-4 focus:ring-primary/20 transition-all placeholder:text-slate-400;
   }
 
   /* Status Badges - Neo Brutalism style */

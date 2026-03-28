@@ -48,7 +48,7 @@ const navigation: NavItem[] = [
     name: 'Sản xuất', href: '/production', icon: ClipboardCheck, roles: ['Admin', 'Production'], children: [
       { name: 'Sản phẩm', href: '/production/products' },
       { name: 'Lệnh sản xuất', href: '/production' },
-      { name: 'Gia công', href: '/outsourcing' },
+      { name: 'Quản lý cơ sở', href: '/production/facilities' },
       { name: 'Báo cáo tổ', href: '/production/team-log' },
       { name: 'Nhật ký XS', href: '/production/work-log' },
     ]

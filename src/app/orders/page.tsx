@@ -4,11 +4,13 @@ import React, { useState } from 'react';
 import { Plus, ShoppingCart, ChevronRight } from 'lucide-react';
 import KanbanBoard from '@/components/orders/KanbanBoard';
 import CreateSalesOrder from '@/components/orders/CreateSalesOrder';
+import OrderDetailsPanel from '@/components/orders/OrderDetailsPanel';
 import Link from 'next/link';
 
 export default function OrdersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const handleCreateSuccess = () => {
     setRefreshKey(prev => prev + 1);
@@ -48,8 +50,24 @@ export default function OrdersPage() {
            </div>
            <h3 className="font-bold text-foreground uppercase text-sm tracking-widest font-space">Bảng điều phối Kanban</h3>
         </div>
-        <KanbanBoard key={refreshKey} />
+         <KanbanBoard 
+           key={refreshKey} 
+           selectedOrderId={selectedOrderId}
+           onSelectOrder={setSelectedOrderId}
+           onRefreshRequest={() => setRefreshKey(prev => prev + 1)}
+         />
       </div>
+
+      {/* Detail Side Panel - Moved to Page Root to ensure full height */}
+      <OrderDetailsPanel 
+        orderId={selectedOrderId} 
+        onClose={() => setSelectedOrderId(null)}
+        onUpdate={() => setRefreshKey(prev => prev + 1)}
+        onDelete={() => {
+          setSelectedOrderId(null);
+          setRefreshKey(prev => prev + 1);
+        }}
+      />
 
       {/* Create Order Modal */}
       <CreateSalesOrder 

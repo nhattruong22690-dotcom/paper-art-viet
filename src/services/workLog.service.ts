@@ -14,6 +14,10 @@ export async function startWorkSession(data: {
       production_order_id: data.productionOrderId,
       employee_id: data.employeeId,
       staff_name: data.staffName,
+      type: 'production',
+      quantity: 0,
+      technical_error_count: 0,
+      material_error_count: 0,
       status: 'processing',
       start_time: new Date().toISOString(),
     })
@@ -51,7 +55,7 @@ export async function submitWorkSession(data: {
     .from('WorkLog')
     .update({
       end_time: new Date().toISOString(),
-      quantity_produced: data.quantityProduced,
+      quantity: data.quantityProduced,
       technical_error_count: data.technicalErrorCount,
       material_error_count: data.materialErrorCount,
       error_note: data.errorNote,
@@ -148,7 +152,7 @@ export async function submitWorkSession(data: {
   return {
     ...workLog,
     productionOrderId: workLog.production_order_id,
-    quantityProduced: workLog.quantity_produced,
+    quantityProduced: workLog.quantity,
     productionOrder: {
       ...workLog.productionOrder,
       productId: workLog.productionOrder.product_id,
@@ -184,7 +188,7 @@ export async function getPersonalWorkHistory(employeeId: string) {
     staffName: log.staff_name,
     startTime: log.start_time,
     endTime: log.end_time,
-    quantityProduced: log.quantity_produced,
+    quantityProduced: log.quantity,
     status: log.status,
     productionOrder: log.productionOrder ? {
       ...log.productionOrder,
@@ -231,7 +235,8 @@ export async function createBatchWorkLogs(
         production_order_id: log.productionOrderId,
         employee_id: log.employeeId,
         staff_name: log.staffName,
-        quantity_produced: log.quantityProduced,
+        type: 'production',
+        quantity: log.quantityProduced,
         technical_error_count: log.technicalErrorCount,
         material_error_count: log.materialErrorCount,
         error_note: log.errorNote,

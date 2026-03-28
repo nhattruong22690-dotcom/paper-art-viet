@@ -126,9 +126,20 @@ export async function getOrders() {
   
   // Calculate aggregate progress for each order and transform to camelCase
   const enhanced = (data || []).map(order => {
-    const totalTarget = (order.productionOrders || []).reduce((acc: number, po: any) => acc + (po.quantity_target || 0), 0);
-    const totalCompleted = (order.productionOrders || []).reduce((acc: number, po: any) => acc + (po.quantity_completed || 0), 0);
+    const pos = order.productionOrders || [];
+    const items = order.orderItems || [];
+    
+    const totalTarget = pos.reduce((acc: number, po: any) => acc + (po.quantity_target || 0), 0);
+    const totalCompleted = pos.reduce((acc: number, po: any) => acc + (po.quantity_completed || 0), 0);
     const progress = totalTarget > 0 ? Math.round((totalCompleted / totalTarget) * 100) : 0;
+
+    // Check if every item is fully allocated for production
+    const isAllocated = items.length > 0 && items.every((item: any) => {
+      const itemAllocatedQty = pos
+        .filter((po: any) => po.product_id === item.product_id)
+        .reduce((sum: number, po: any) => sum + (po.quantity_target || 0), 0);
+      return itemAllocatedQty >= (item.quantity || 0);
+    });
     
     return {
       id: order.id,
@@ -137,6 +148,7 @@ export async function getOrders() {
       orderDate: order.order_date,
       deadlineDelivery: order.deadline_delivery,
       status: order.status,
+      isAllocated,
       customer: order.customer ? {
         id: order.customer.id,
         name: order.customer.name,
@@ -223,14 +235,13 @@ export async function getOrderById(id: string) {
       ),
       productionOrders:ProductionOrder(
         *,
-        product:products(*)
+        product:products(*),
+        workshop:Workshop(name),
+        outsourcer:Outsourcer(name)
       ),
       packages:Package(
         *,
-        packingListDetails:PackingListDetail(
-          *,
-          product:products(*)
-        )
+        packingListDetails:PackingListDetail(*)
       )
     `)
     .eq('id', id)
@@ -254,7 +265,11 @@ export async function getOrderById(id: string) {
       ...oi,
       productId: oi.product_id,
       cogsAtOrder: oi.cogs_at_order,
-      bomSnapshot: oi.bom_snapshot
+      bomSnapshot: oi.bom_snapshot,
+      product: oi.product ? {
+        ...oi.product,
+        sku: oi.product.code
+      } : null
     })),
     productionOrders: (order.productionOrders || []).map((po: any) => ({
       ...po,
@@ -264,7 +279,11 @@ export async function getOrderById(id: string) {
       quantityCompleted: po.quantity_completed,
       deadlineProduction: po.deadline_production,
       currentStatus: po.current_status,
-      allocationType: po.allocation_type
+      allocationType: po.allocation_type,
+      product: po.product ? {
+        ...po.product,
+        sku: po.product.code
+      } : null
     })),
     packages: (order.packages || []).map((pk: any) => ({
       ...pk,

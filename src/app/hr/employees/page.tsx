@@ -24,6 +24,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { getEmployees, deleteEmployee } from '@/services/employee.service';
+import AddEmployeeModal from '@/components/hr/AddEmployeeModal';
 import { useNotification } from '@/context/NotificationContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -259,6 +260,15 @@ export default function EmployeesPage() {
             Central Personnel Ledger Synchronized
          </span>
       </div>
+
+      <AddEmployeeModal 
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => {
+          loadEmployees();
+          showToast('success', 'Đã thêm nhân viên mới thành công');
+        }}
+      />
     </div>
   );
 }

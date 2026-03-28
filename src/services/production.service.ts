@@ -46,8 +46,8 @@ export async function getProductionOrdersWithDeadline() {
   });
 }
 
-export async function getWorkLogs(params: { date?: string; skip?: number; take?: number }) {
-  const { date, skip = 0, take = 20 } = params;
+export async function getWorkLogs(params: { date?: string; productionOrderId?: string; skip?: number; take?: number }) {
+  const { date, productionOrderId, skip = 0, take = 20 } = params;
   
   let query = supabase
     .from('WorkLog')
@@ -73,6 +73,10 @@ export async function getWorkLogs(params: { date?: string; skip?: number; take?:
       .lte('created_at', endOfDay.toISOString());
   }
 
+  if (productionOrderId) {
+    query = query.eq('production_order_id', productionOrderId);
+  }
+
   const { data, error } = await query;
   if (error) throw error;
 
@@ -83,7 +87,7 @@ export async function getWorkLogs(params: { date?: string; skip?: number; take?:
     staffName: log.staff_name,
     startTime: log.start_time,
     endTime: log.end_time,
-    quantityProduced: log.quantity_produced,
+    quantityProduced: log.quantity,
     technicalErrorCount: log.technical_error_count,
     materialErrorCount: log.material_error_count,
     errorNote: log.error_note,
@@ -120,7 +124,7 @@ export async function getWorkerPerformance() {
 
   return (employees || []).map(emp => {
     const logs = emp.workLogs || [];
-    const totalQty = logs.reduce((sum: number, log: any) => sum + (log.quantity_produced || 0), 0);
+    const totalQty = logs.reduce((sum: number, log: any) => sum + (log.quantity || 0), 0);
     const techErrors = logs.reduce((sum: number, log: any) => sum + (log.technical_error_count || 0), 0);
     const matErrors = logs.reduce((sum: number, log: any) => sum + (log.material_error_count || 0), 0);
     
@@ -139,7 +143,7 @@ export async function getWorkerPerformance() {
         const logDate = new Date(l.created_at);
         return logDate.toDateString() === day.toDateString();
       });
-      const dayQty = dayLogs.reduce((sum: number, log: any) => sum + (log.quantity_produced || 0), 0);
+      const dayQty = dayLogs.reduce((sum: number, log: any) => sum + (log.quantity || 0), 0);
       const dayTech = dayLogs.reduce((sum: number, log: any) => sum + (log.technical_error_count || 0), 0);
       return dayQty > 0 ? Math.round(((dayQty - dayTech) / dayQty) * 100) : 0;
     });
@@ -182,8 +186,17 @@ export async function updateProductionOrder(id: string, data: any) {
   if ('quantityCompleted' in data) dbData.quantity_completed = data.quantityCompleted;
   if ('deadlineProduction' in data) dbData.deadline_production = data.deadlineProduction;
   if ('currentStatus' in data) dbData.current_status = data.currentStatus;
+  if ('status' in data) {
+    // Mapping client-side status strings back to database strings if necessary
+    const s = data.status;
+    dbData.current_status = s === 'Pending' ? 'pending' :
+                            s === 'Processing' ? 'processing' :
+                            s === 'QualityControl' ? 'qc' :
+                            s === 'Archived' ? 'archived' : 'completed';
+  }
   if ('allocationType' in data) dbData.allocation_type = data.allocationType;
   if ('assignedTo' in data) dbData.assigned_to = data.assignedTo;
+  if ('priority' in data) dbData.priority = data.priority;
   if ('contractPrice' in data) dbData.contract_price = data.contractPrice;
 
   const { data: updated, error: updateError } = await supabase
@@ -242,8 +255,9 @@ export async function splitProductionOrders(
       quantity_target: alloc.quantity,
       quantity_completed: 0,
       allocation_type: alloc.type,
-      assigned_to: alloc.assignedTo,
-      outsourced_name: alloc.type === 'outsourced' ? alloc.assignedTo : null,
+      assigned_to: alloc.assignedTo, // Vẫn giữ assigned_to cho tương thích ngược
+      workshop_id: alloc.type === 'internal' ? alloc.assignedTo : null,
+      outsourcer_id: alloc.type === 'outsourced' ? alloc.assignedTo : null,
       current_status: alloc.type === 'internal' ? 'pending' : 'outsourced',
       deadline_production: order?.deadline_delivery || new Date()
     })))
@@ -260,33 +274,58 @@ export async function getProductionOrders() {
       *,
       product:products(code, name),
       order:Order(
+        id,
         contract_code,
-        customer:Customer(name)
-      )
+        deadline_delivery,
+        customer:Customer(
+          name,
+          customer_code
+        )
+      ),
+      workshop:Workshop(name),
+      outsourcer:Outsourcer(name)
     `)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
 
-  return (data || []).map(po => ({
-    id: po.id,
-    sku: po.product?.code || 'N/A',
-    title: po.product?.name || 'Sản phẩm không tên',
-    customer: po.order?.customer?.name || 'Khách lẻ',
-    quantity: po.quantity_target,
-    status: (po.current_status === 'pending' ? 'Pending' : 
-            po.current_status === 'processing' ? 'Processing' : 
-            po.current_status === 'qc' ? 'QualityControl' : 'Completed') as any,
-    dueDate: po.deadline_production ? new Date(po.deadline_production).toLocaleDateString('vi-VN') : 'N/A',
-    assignedTo: po.assigned_to,
-    priority: (po.priority === 'High' ? 'High' : po.priority === 'Low' ? 'Low' : 'Medium') as any
-  }));
+  return (data || []).map(po => {
+    const qtyTarget = po.quantity_target || 0;
+    const qtyDone = po.quantity_completed || 0;
+    const progress = qtyTarget > 0 ? Math.round((qtyDone / qtyTarget) * 100) : 0;
+
+    return {
+      id: po.id,
+      sku: po.product?.code || 'N/A',
+      title: po.product?.name || 'Sản phẩm không tên',
+      customer: po.order?.customer?.name || 'Khách lẻ',
+      customerCode: po.order?.customer?.customer_code || 'N/A',
+      quantityTarget: qtyTarget,
+      quantityCompleted: qtyDone,
+      progress,
+      status: (po.current_status === 'pending' ? 'Pending' : 
+              po.current_status === 'processing' ? 'Processing' : 
+              po.current_status === 'qc' ? 'QualityControl' : 
+              po.current_status === 'archived' ? 'Archived' : 'Completed') as any,
+      deadlineProduction: po.deadline_production,
+      dueDate: po.order?.deadline_delivery ? new Date(po.order.deadline_delivery).toLocaleDateString('vi-VN') : 'N/A',
+      assignedTo: po.assigned_to,
+      locationName: po.workshop?.name || po.outsourcer?.name || po.assigned_to || 'Chưa gán',
+      allocationType: po.allocation_type,
+      orderId: po.order?.id,
+      contractCode: po.order?.contract_code,
+      priority: (po.priority === 'Urgent' ? 'Urgent' : 
+                 po.priority === 'High' ? 'High' : 
+                 po.priority === 'Low' ? 'Low' : 'Medium') as any
+    };
+  });
 }
 
 export async function updateProductionStatus(id: string, status: string) {
   const dbStatus = status === 'Pending' ? 'pending' : 
                    status === 'Processing' ? 'processing' : 
-                   status === 'QualityControl' ? 'qc' : 'completed';
+                   status === 'QualityControl' ? 'qc' : 
+                   status === 'Archived' ? 'archived' : 'completed';
                    
   const { error } = await supabase
     .from('ProductionOrder')

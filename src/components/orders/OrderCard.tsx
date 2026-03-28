@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Clock, User, DollarSign, ArrowRight } from 'lucide-react';
+import { Clock, User, DollarSign, ArrowRight, AlertTriangle } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -40,10 +40,18 @@ export default function OrderCard({ order, onClick }: OrderCardProps) {
       )}
     >
       <div className="flex justify-between items-start mb-3">
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-bold bg-foreground text-white px-2 py-0.5 rounded uppercase tracking-tighter group-hover:bg-primary transition-colors w-fit">
-            #{order.id.slice(-6).toUpperCase()}
-          </span>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold bg-foreground text-white px-2 py-0.5 rounded uppercase tracking-tighter group-hover:bg-primary transition-colors w-fit">
+              #{order.id.slice(-6).toUpperCase()}
+            </span>
+            {order.isAllocated === false && (
+              <div className="flex items-center gap-1 bg-amber-50 text-amber-600 px-2 py-0.5 rounded border border-amber-200 animate-pulse shadow-sm">
+                 <AlertTriangle size={10} strokeWidth={3} />
+                 <span className="text-[9px] font-black uppercase tracking-widest leading-none">Chưa phân bổ</span>
+              </div>
+            )}
+          </div>
           {order.contractCode && (
             <span className="text-[9px] font-bold text-primary uppercase tracking-widest italic">{order.contractCode}</span>
           )}

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getProductionOrders, updateProductionStatus } from '@/services/production.service';
+import { getProductionOrders, updateProductionOrder } from '@/services/production.service';
 
 export async function GET() {
   try {
@@ -13,14 +13,17 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const { id, status } = await request.json();
-    if (!id || !status) {
-      return NextResponse.json({ error: 'Missing id or status' }, { status: 400 });
+    const { id, ...updates } = await request.json();
+    if (!id) {
+      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
-    await updateProductionStatus(id, status);
-    return NextResponse.json({ success: true });
+    
+    // Nếu có status trong updates, mapping nó sang camelCase để dùng với updateProductionOrder nếu cần
+    // Hiện tại updateProductionOrder trong service.ts dùng data trực tiếp
+    const result = await updateProductionOrder(id, updates);
+    return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
-    console.error('Update Production Status API Error:', error);
+    console.error('Update Production Order API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
