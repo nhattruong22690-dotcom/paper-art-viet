@@ -200,7 +200,10 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [contractCode, setContractCode] = useState('');
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [deadline, setDeadline] = useState('');
+  const [milestones, setMilestones] = useState<{id: string, label: string, deadline: string, isCompleted: boolean}[]>([]);
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<OrderItem[]>([]);
   const [showManagerLock, setShowManagerLock] = useState(false);
@@ -256,6 +259,22 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Lock scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollBarWidth}px`;
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     if (selectedCustomerId) {
       const customer = customers.find(c => c.id === selectedCustomerId);
@@ -263,15 +282,35 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
       if (customer) {
         setCustomerSearch(`${customer.customerCode || '??'} - ${customer.name}`);
       }
-      fetch(`/api/orders/next-code?customerId=${selectedCustomerId}`)
-        .then(res => res.json())
-        .then(data => setContractCode(data.contractCode || ''));
     } else {
       setSelectedCustomer(null);
       setContractCode('');
       setCustomerSearch('');
     }
   }, [selectedCustomerId, customers]);
+
+  // Kiểm tra trùng mã hợp đồng
+  useEffect(() => {
+    if (!contractCode.trim()) {
+      setIsDuplicate(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsCheckingCode(true);
+      try {
+        const res = await fetch(`/api/orders/check-duplicate?code=${encodeURIComponent(contractCode.trim())}`);
+        const data = await res.json();
+        setIsDuplicate(data.isDuplicate);
+      } catch (error) {
+        console.error('Lỗi kiểm tra trùng mã:', error);
+      } finally {
+        setIsCheckingCode(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [contractCode]);
 
   const filteredCustomers = useMemo(() => {
     if (!customerSearch || selectedCustomerId) return customers.slice(0, 10);
@@ -360,6 +399,23 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
     setItems([...items, newItem]);
   };
 
+  const addMilestone = () => {
+    setMilestones([...milestones, { 
+      id: Math.random().toString(36).substr(2, 9), 
+      label: '', 
+      deadline: '', 
+      isCompleted: false 
+    }]);
+  };
+
+  const removeMilestone = (id: string) => {
+    setMilestones(milestones.filter(m => m.id !== id));
+  };
+
+  const updateMilestone = (id: string, field: string, value: any) => {
+    setMilestones(milestones.map(m => m.id === id ? { ...m, [field]: value } : m));
+  };
+
   const removeItem = (id: string) => {
     setItems(items.filter(item => item.id !== id));
   };
@@ -395,7 +451,9 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerId: selectedCustomerId,
+          contractCode: contractCode.trim(),
           deadlineDelivery: deadline,
+          estimated_stages: milestones.filter(m => m.label.trim()), // Chỉ gửi những khâu có tên
           items: items.map(i => ({
             productId: i.productId,
             quantity: i.quantity,
@@ -422,7 +480,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
     }
   };
 
-  const canSubmit = selectedCustomerId && items.length > 0 && deadline && !isSubmitting;
+  const canSubmit = selectedCustomerId && items.length > 0 && deadline && contractCode.trim() && !isDuplicate && !isSubmitting;
 
   if (!isOpen) return null;
 
@@ -468,8 +526,8 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
           </div>
 
         {/* MODAL BODY */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 scrollbar-hide bg-slate-50/50">
-          <div className="max-w-6xl mx-auto space-y-10">
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 bg-slate-50/50 overscroll-contain">
+          <div className="max-w-6xl mx-auto space-y-10 pb-20">
             
             {/* CUSTOMER SECTION */}
             <section className="p-8 bg-white border-neo border-black rounded-xl shadow-neo space-y-10">
@@ -534,14 +592,30 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                   </div>
 
                   <div className="space-y-3">
-                     <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Số hiệu Hợp đồng</label>
-                     <input 
-                      type="text" 
-                      readOnly
-                      value={contractCode}
-                      className="form-input h-14 bg-black/5 text-black/40 border-black/20 cursor-not-allowed font-black tracking-widest text-center"
-                      placeholder="Tự động..."
-                     />
+                     <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Số hợp đồng</label>
+                     <div className="relative group/field">
+                       <input 
+                        type="text" 
+                        value={contractCode}
+                        onChange={(e) => setContractCode(e.target.value)}
+                        className={cn(
+                          "form-input h-14 font-black tracking-widest text-center",
+                          isDuplicate ? "border-neo-red bg-neo-red/5" : ""
+                        )}
+                        placeholder="Nhập số hợp đồng..."
+                       />
+                       {isCheckingCode && (
+                         <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                           <Loader2 size={16} className="animate-spin text-black/20" />
+                         </div>
+                       )}
+                     </div>
+                     {isDuplicate && (
+                       <div className="flex items-center gap-2 text-neo-red animate-in fade-in slide-in-from-top-1">
+                         <AlertCircle size={12} />
+                         <span className="text-[9px] font-black uppercase italic">Số hợp đồng này đã tồn tại!</span>
+                       </div>
+                     )}
                   </div>
 
                   <div className="space-y-3">
@@ -574,7 +648,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                <div className="overflow-visible border-2 border-black rounded-xl hidden md:block">
                   <table className="w-full text-left">
                      <thead>
-                        <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
+                        <tr className="bg-black text-[10px] font-black uppercase tracking-widest">
                            <th className="px-6 py-4">Sản phẩm</th>
                            <th className="px-6 py-4 text-center w-36">Số lượng</th>
                            <th className="px-6 py-4 text-right">Giá vốn</th>
@@ -647,6 +721,82 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                      </tbody>
                   </table>
                </div>
+            </section>
+
+            {/* MILESTONES SECTION */}
+            <section className="p-8 bg-white border-neo border-black rounded-xl shadow-neo space-y-8">
+               <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 bg-neo-yellow/20 border-2 border-black rounded-lg flex items-center justify-center">
+                        <Calendar size={16} className="text-black" />
+                     </div>
+                     <h3 className="text-[11px] font-black text-black/40 uppercase tracking-[0.3em]">Thời hạn các khâu dự tính</h3>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={addMilestone}
+                    className="btn-secondary !h-10 !px-6 text-[10px]"
+                  >
+                    <Plus size={14} strokeWidth={2.5} /> Thêm khâu
+                  </button>
+               </div>
+
+               {milestones.length > 0 ? (
+                 <div className="border-2 border-black rounded-xl overflow-hidden">
+                    <table className="w-full text-left">
+                       <thead>
+                          <tr className="bg-black/5 text-[9px] font-black text-black/40 uppercase tracking-widest border-b-2 border-black">
+                             <th className="px-6 py-3">Các công đoạn</th>
+                             <th className="px-6 py-3 w-48">Thời gian dự tính</th>
+                             <th className="px-6 py-3 w-32 text-center">Hoàn thành</th>
+                             <th className="px-6 py-3 w-12"></th>
+                          </tr>
+                       </thead>
+                       <tbody className="divide-y-2 divide-black/5">
+                          {milestones.map((m) => (
+                             <tr key={m.id} className="group">
+                                <td className="px-6 py-3">
+                                   <input 
+                                     type="text" 
+                                     placeholder="Tên công đoạn..."
+                                     value={m.label}
+                                     onChange={(e) => updateMilestone(m.id, 'label', e.target.value)}
+                                     className="w-full bg-transparent border-none outline-none font-black text-xs italic placeholder:text-black/10"
+                                   />
+                                </td>
+                                <td className="px-6 py-3">
+                                   <input 
+                                     type="date" 
+                                     value={m.deadline}
+                                     onChange={(e) => updateMilestone(m.id, 'deadline', e.target.value)}
+                                     className="w-full bg-transparent border-none outline-none font-black text-xs tabular-nums"
+                                   />
+                                </td>
+                                <td className="px-6 py-3 text-center">
+                                   <div className="flex justify-center">
+                                      <div className={cn(
+                                        "w-6 h-6 border-2 border-black rounded-lg flex items-center justify-center transition-all",
+                                        m.isCompleted ? "bg-neo-green-pure" : "bg-white"
+                                      )}>
+                                         {m.isCompleted && <Check size={14} strokeWidth={4} className="text-white" />}
+                                      </div>
+                                   </div>
+                                </td>
+                                <td className="px-6 py-3 text-center">
+                                   <button onClick={() => removeMilestone(m.id)} className="w-8 h-8 flex items-center justify-center text-black/20 hover:text-neo-red transition-all">
+                                     <Trash2 size={14} />
+                                   </button>
+                                </td>
+                             </tr>
+                          ))}
+                       </tbody>
+                    </table>
+                 </div>
+               ) : (
+                 <div className="py-10 text-center border-2 border-dashed border-black/10 rounded-xl">
+                    <p className="text-[10px] font-black text-black/20 uppercase tracking-widest italic">Chưa có công đoạn nào được thiết lập</p>
+                 </div>
+               )}
             </section>
           </div>
         </div>

@@ -257,7 +257,7 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
                   </div>
                   <h3 className="text-[11px] font-black text-black uppercase tracking-[0.2em] italic">Danh mục vật tư thu mua</h3>
                </div>
-               <span className="px-5 py-2 bg-black text-neo-purple border-2 border-black rounded-xl text-[10px] font-black uppercase tracking-widest italic shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+               <span className="px-5 py-2 bg-black text-white border-2 border-black rounded-xl text-[10px] font-black uppercase tracking-widest italic shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                   {items.length} Hạng mục
                </span>
             </div>
@@ -265,13 +265,13 @@ export default function PurchaseOrderForm({ onBack, onSuccess }: { onBack: () =>
             <div className="flex-1 overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
-                    <th className="px-8 py-5 border-b-2 border-black w-14">#</th>
-                    <th className="px-8 py-5 border-b-2 border-black">Vật tư / SKU</th>
-                    <th className="px-8 py-5 w-32 text-center border-b-2 border-black">Số lượng</th>
-                    <th className="px-8 py-5 w-40 text-right border-b-2 border-black">Đơn giá</th>
-                    <th className="px-8 py-5 w-44 text-right border-b-2 border-black pr-12">Thành tiền</th>
-                    <th className="px-8 py-5 w-16 border-b-2 border-black"></th>
+                  <tr className="bg-black text-[10px] font-black uppercase tracking-widest">
+                    <th className="px-8 py-5 border-b-2 border-black w-14 text-white">#</th>
+                    <th className="px-8 py-5 border-b-2 border-black text-white">Vật tư / SKU</th>
+                    <th className="px-8 py-5 w-32 text-center border-b-2 border-black text-white">Số lượng</th>
+                    <th className="px-8 py-5 w-40 text-right border-b-2 border-black text-white">Đơn giá</th>
+                    <th className="px-8 py-5 w-44 text-right border-b-2 border-black pr-12 text-white">Thành tiền</th>
+                    <th className="px-8 py-5 w-16 border-b-2 border-black text-white"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y-2 divide-black/5">

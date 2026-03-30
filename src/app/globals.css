@@ -142,6 +142,13 @@ tbody tr:hover {
   @apply bg-slate-50/50;
 }
 
+/* Global override for black-background table headers to ensure visibility */
+thead tr.bg-black th,
+tr.bg-black th,
+.bg-black thead th {
+  color: #FFFFFF !important;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;

@@ -244,21 +244,26 @@ export default function TeamWorkLog() {
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-24 px-4 md:px-0">
       {/* Header Section */}
-      <div className="bg-card p-8 rounded-[2.5rem] border border-border/10 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="flex items-center gap-6">
-           <div className="w-16 h-16 bg-primary text-white rounded-[2rem] flex items-center justify-center shadow-xl shadow-primary/20">
-              <ClipboardList size={28} />
+      <div className="px-10 py-8 border-b-[3px] border-black flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-black text-white relative overflow-hidden rounded-[2.5rem] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-neo-purple/20 to-transparent pointer-events-none" />
+        
+        <div className="flex items-center gap-6 relative z-10">
+           <div className="w-16 h-16 bg-neo-purple/20 border-2 border-neo-purple/30 rounded-[2rem] flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(139,92,246,0.3)]">
+              <ClipboardList size={28} strokeWidth={3} className="text-neo-purple" />
            </div>
            <div>
-              <nav className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1 opacity-40">
-                <Users size={12} className="text-primary opacity-100" />
+              <nav className="flex items-center gap-2 text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-2 opacity-100">
+                <Users size={12} strokeWidth={3} className="text-neo-purple" />
                 <span>Sản xuất</span>
-                <ChevronRight size={10} />
-                <span className="text-primary italic opacity-100 italic">Báo cáo tổ trưởng</span>
+                <ChevronRight size={10} strokeWidth={3} />
+                <span className="text-neo-purple italic">Báo cáo tổ trưởng</span>
               </nav>
-              <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-                Khai báo <span className="text-primary italic font-semibold">Sản lượng hàng loạt</span>
+              <h1 className="text-2xl font-black text-white tracking-tight italic uppercase">
+                Khai báo <span className="text-neo-purple underline decoration-[3px] underline-offset-4">Sản lượng hàng loạt</span>
               </h1>
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mt-2 italic flex items-center gap-2">
+                Quản lý ghi nhận sản lượng theo nhóm nhân sự
+              </p>
            </div>
         </div>
 
@@ -393,14 +398,14 @@ export default function TeamWorkLog() {
         <div className="overflow-x-auto text-sm">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-foreground text-white">
-                <th className="px-8 py-5 w-16 text-center text-[10px] font-semibold uppercase tracking-[0.2em] opacity-40">#</th>
-                <th className="px-8 py-5 text-[10px] font-semibold uppercase tracking-[0.2em] opacity-40">Đối tượng Nhân sự</th>
-                <th className="px-6 py-5 w-36 text-center text-[10px] font-semibold uppercase tracking-[0.2em] opacity-40">Sản lượng</th>
-                <th className="px-6 py-5 w-36 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-rose-300">Lỗi Thợ</th>
-                <th className="px-6 py-5 w-36 text-center text-[10px] font-semibold uppercase tracking-[0.2em] opacity-40">Lỗi Vật tư</th>
-                <th className="px-8 py-5 text-[10px] font-semibold uppercase tracking-[0.2em] opacity-40">Ký lục / Ghi chú</th>
-                <th className="px-8 py-5 w-28 text-center text-[10px] font-semibold uppercase tracking-[0.2em] opacity-40">Control</th>
+              <tr className="bg-black text-white border-b-2 border-black">
+                <th className="px-8 py-5 w-16 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/40">#</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Đối tượng Nhân sự</th>
+                <th className="px-6 py-5 w-36 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Sản lượng</th>
+                <th className="px-6 py-5 w-36 text-center text-[10px] font-black uppercase tracking-[0.2em] text-rose-300">Lỗi Thợ</th>
+                <th className="px-6 py-5 w-36 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Lỗi Vật tư</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Ký lục / Ghi chú</th>
+                <th className="px-8 py-5 w-28 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Control</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/5">

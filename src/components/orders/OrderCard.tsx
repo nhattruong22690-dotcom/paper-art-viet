@@ -75,10 +75,17 @@ export default function OrderCard({ order, onClick }: OrderCardProps) {
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="space-y-1">
+      {/* Progress Bar & Milestones */}
+      <div className="space-y-2 mt-4">
+        {order.estimatedStages && order.estimatedStages.length > 0 && (
+          <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50/50 px-2 py-1 rounded border border-amber-100">
+            <span>Các khâu dự tính:</span>
+            <span>{order.estimatedStages.filter((s: any) => s.isCompleted).length}/{order.estimatedStages.length}</span>
+          </div>
+        )}
+        
         <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter">
-          <span className="text-muted-foreground">Tiến độ</span>
+          <span className="text-muted-foreground">Tiến độ SX</span>
           <span className={cn(progress < 100 ? "text-primary" : "text-green-600")}>{progress}%</span>
         </div>
         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50">

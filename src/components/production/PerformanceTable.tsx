@@ -116,29 +116,29 @@ export default function PerformanceTable({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
+            <tr className="bg-black text-[10px] font-black text-white uppercase tracking-widest">
               <th className="px-8 py-5 border-b-2 border-black">
-                <button onClick={() => requestSort('name')} className="flex items-center gap-3 hover:text-white transition-opacity">
+                <button onClick={() => requestSort('name')} className="flex items-center gap-3 hover:text-neo-purple transition-all">
                    Personnel Principal <ArrowUpDown size={14} strokeWidth={3} />
                 </button>
               </th>
               <th className="px-8 py-5 border-b-2 border-black">
-                <button onClick={() => requestSort('totalQty')} className="flex items-center gap-3 hover:text-white transition-opacity">
+                <button onClick={() => requestSort('totalQty')} className="flex items-center gap-3 hover:text-neo-purple transition-all">
                   Gross Output <ArrowUpDown size={14} strokeWidth={3} />
                 </button>
               </th>
               <th className="px-8 py-5 border-b-2 border-black">
-                <button onClick={() => requestSort('kpi')} className="flex items-center gap-3 hover:text-white transition-opacity">
+                <button onClick={() => requestSort('kpi')} className="flex items-center gap-3 hover:text-neo-purple transition-all">
                   KPI Efficiency <ArrowUpDown size={14} strokeWidth={3} />
                 </button>
               </th>
               <th className="px-8 py-5 border-b-2 border-black">
-                <button onClick={() => requestSort('techErrors')} className="flex items-center gap-3 text-neo-red hover:text-white transition-colors">
+                <button onClick={() => requestSort('techErrors')} className="flex items-center gap-3 hover:text-neo-red transition-all">
                   Technical Defect <ArrowUpDown size={14} strokeWidth={3} />
                 </button>
               </th>
               <th className="px-8 py-5 border-b-2 border-black">
-                <button onClick={() => requestSort('matErrors')} className="flex items-center gap-3 hover:text-white transition-opacity">
+                <button onClick={() => requestSort('matErrors')} className="flex items-center gap-3 hover:text-neo-purple transition-all">
                   Material Loss <ArrowUpDown size={14} strokeWidth={3} />
                 </button>
               </th>

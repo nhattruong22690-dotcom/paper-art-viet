@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
 
     const { order } = await createSalesOrder({
       customerId: data.customerId,
+      contractCode: data.contractCode,
       deadlineDelivery: new Date(data.deadlineDelivery),
+      estimated_stages: data.estimated_stages,
       items: data.items
     });
 

@@ -35,11 +35,27 @@ export async function calculateProductCOGS(productId: string) {
 }
 
 /**
+ * Kiểm tra xem mã hợp đồng đã tồn tại chưa.
+ */
+export async function checkContractCodeDuplicate(code: string) {
+  const { data, error } = await supabase
+    .from('Order')
+    .select('id')
+    .eq('contract_code', code)
+    .maybeSingle();
+
+  if (error) return false;
+  return !!data;
+}
+
+/**
  * Tạo Đơn hàng mới và Tự động tách thành các Lệnh sản xuất (Tasks).
  */
 export async function createSalesOrder(data: {
   customerId?: string;
+  contractCode?: string;
   deadlineDelivery: Date | string;
+  estimated_stages?: any[];
   items: {
     productId: string;
     quantity: number;
@@ -49,26 +65,36 @@ export async function createSalesOrder(data: {
     note?: string;
   }[]
 }) {
-  // 0. Tính toán Mã Hợp đồng mới (Theo chuẩn: CUSTOMERCODE-HD-XXXX-MMDDYYYY)
-  const { data: customer, error: customerError } = await supabase
-    .from('Customer')
-    .select('*, orders:Order(id)')
-    .eq('id', data.customerId)
-    .single();
+  let nextCode = data.contractCode;
 
-  if (customerError || !customer) throw new Error('Customer not found');
-  
-  const customerCode = customer.customer_code || customer.name.substring(0, 3).toUpperCase();
-  const nextNumber = (customer.orders?.length || 0) + 1;
-  const formattedNumber = nextNumber.toString().padStart(4, '0');
-  
-  const now = new Date();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const yyyy = now.getFullYear();
-  const dateStr = `${mm}${dd}${yyyy}`;
+  // Nếu không có mã truyền vào, mới sinh mã tự động (fallback)
+  if (!nextCode) {
+    const { data: customer, error: customerError } = await supabase
+      .from('Customer')
+      .select('*, orders:Order(id)')
+      .eq('id', data.customerId)
+      .single();
 
-  const nextCode = `${customerCode}-HD${formattedNumber}-${dateStr}`;
+    if (customerError || !customer) throw new Error('Customer not found');
+    
+    const customerCode = customer.customer_code || customer.name.substring(0, 3).toUpperCase();
+    const nextNumber = (customer.orders?.length || 0) + 1;
+    const formattedNumber = nextNumber.toString().padStart(4, '0');
+    
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const dateStr = `${mm}${dd}${yyyy}`;
+
+    nextCode = `${customerCode}-HD${formattedNumber}-${dateStr}`;
+  } else {
+    // Nếu có mã truyền vào, kiểm tra xem đã tồn tại chưa
+    const isDuplicate = await checkContractCodeDuplicate(nextCode);
+    if (isDuplicate) {
+      throw new Error(`Số hợp đồng ${nextCode} đã tồn tại trong hệ thống.`);
+    }
+  }
 
   // 1. Tạo Đơn hàng (Order)
   const { data: order, error: orderError } = await supabase
@@ -77,6 +103,7 @@ export async function createSalesOrder(data: {
       customer_id: data.customerId,
       contract_code: nextCode,
       deadline_delivery: data.deadlineDelivery,
+      estimated_stages: data.estimated_stages,
       status: 'new'
     })
     .select()
@@ -148,6 +175,8 @@ export async function getOrders() {
       orderDate: order.order_date,
       deadlineDelivery: order.deadline_delivery,
       status: order.status,
+      estimatedStages: order.estimated_stages || [],
+      notes: order.notes,
       isAllocated,
       customer: order.customer ? {
         id: order.customer.id,
@@ -260,6 +289,9 @@ export async function getOrderById(id: string) {
     orderDate: order.order_date,
     deadlineDelivery: order.deadline_delivery,
     status: order.status,
+    estimatedStages: order.estimated_stages || [],
+    notes: order.notes,
+    logs: order.logs || [],
     customer: order.customer,
     orderItems: (order.orderItems || []).map((oi: any) => ({
       ...oi,
@@ -302,14 +334,43 @@ export async function getOrderById(id: string) {
  * Cập nhật thông tin đơn hàng (Status, Deadline, Notes...)
  */
 export async function updateOrder(id: string, data: any) {
-  const { orderItems, customerId, contractCode, deadlineDelivery, orderDate, ...updateData } = data;
+  const { 
+    orderItems,
+    status, 
+    notes, 
+    logs, 
+    newLog,
+    customerId,
+    contractCode,
+    deadlineDelivery,
+    orderDate,
+    estimatedStages,
+    estimated_stages
+  } = data;
   
-  // Transform to snake_case
-  const dbData = { ...updateData };
+  const dbData: any = {};
+  if (status) dbData.status = status;
+  if (notes !== undefined) dbData.notes = notes;
   if (customerId) dbData.customer_id = customerId;
   if (contractCode) dbData.contract_code = contractCode;
   if (deadlineDelivery) dbData.deadline_delivery = deadlineDelivery;
   if (orderDate) dbData.order_date = orderDate;
+  
+  // Ưu tiên estimated_stages nếu có, nếu không lấy estimatedStages
+  const stagesToSave = estimated_stages || estimatedStages;
+  if (stagesToSave !== undefined) {
+    dbData.estimated_stages = stagesToSave;
+  }
+
+  // Handle Logs (Append new log if provided)
+  if (newLog) {
+    const { data: currentOrder } = await supabase.from('Order').select('logs').eq('id', id).single();
+    const currentLogs = currentOrder?.logs || [];
+    dbData.logs = [...currentLogs, newLog];
+  } else if (logs) {
+    // If logs are passed directly, overwrite (used if we want to sync the whole array)
+    dbData.logs = logs;
+  }
 
   const { data: updated, error } = await supabase
     .from('Order')
@@ -324,12 +385,40 @@ export async function updateOrder(id: string, data: any) {
 
   if (error) throw error;
 
+  // Sync Order Items if provided
+  if (orderItems) {
+    // 1. Delete items that are no longer in the list
+    const currentItemIds = orderItems.filter((i: any) => !String(i.id).startsWith('new-')).map((i: any) => i.id);
+    if (currentItemIds.length > 0) {
+      await supabase.from('OrderItem').delete().eq('order_id', id).not('id', 'in', `(${currentItemIds.join(',')})`);
+    } else {
+      await supabase.from('OrderItem').delete().eq('order_id', id);
+    }
+
+    // 2. Upsert items
+    const itemsToUpsert = orderItems.map((i: any) => ({
+      ...(String(i.id).startsWith('new-') ? {} : { id: i.id }),
+      order_id: id,
+      product_id: i.productId || null,
+      quantity: i.quantity,
+      price: i.price,
+      cogs_at_order: i.cogsAtOrder || 0,
+      bom_snapshot: i.bomSnapshot || []
+    }));
+
+    if (itemsToUpsert.length > 0) {
+      const { error: upsertError } = await supabase.from('OrderItem').upsert(itemsToUpsert);
+      if (upsertError) console.error('OrderItem Sync Error:', upsertError);
+    }
+  }
+
   return {
     ...updated,
     customerId: updated.customer_id,
     contractCode: updated.contract_code,
     deadlineDelivery: updated.deadline_delivery,
-    orderDate: updated.order_date
+    orderDate: updated.order_date,
+    logs: updated.logs || []
   };
 }
 

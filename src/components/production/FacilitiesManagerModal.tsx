@@ -92,26 +92,38 @@ export default function FacilitiesManagerModal({ isOpen, onClose }: FacilitiesMa
                     shadow-neo overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
         
         {/* Header Section */}
-        <div className="flex justify-between items-center p-8 border-b-neo border-black bg-neo-mint shrink-0">
-          <div>
-            <nav className="flex items-center gap-2 text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1">
-               <Settings size={14} strokeWidth={3} />
-               <span>Danh mục sản xuất</span>
-            </nav>
-            <h1 className="text-2xl font-black text-black tracking-tight uppercase font-space">
-              Quản lý <span className="text-purple-600">Cơ sở sản xuất</span>
-            </h1>
+        <div className="px-10 py-8 border-b-[3px] border-black flex justify-between items-center bg-black text-white relative overflow-hidden shrink-0">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-neo-purple/20 to-transparent pointer-events-none" />
+          
+          <div className="flex items-center gap-6 relative z-10">
+            <div className="w-14 h-14 bg-neo-purple/20 border-2 border-neo-purple/30 rounded-2xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(139,92,246,0.3)]">
+              <Factory size={28} strokeWidth={3} className="text-neo-purple" />
+            </div>
+            <div>
+              <nav className="flex items-center gap-2 text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-2">
+                <span>Danh mục Master</span>
+                <ChevronRight size={10} strokeWidth={3} />
+                <span className="text-neo-purple">Cơ sở sản xuất</span>
+              </nav>
+              <h1 className="text-3xl font-black italic uppercase tracking-tighter leading-none text-white">
+                Quản lý <span className="text-neo-purple underline decoration-[3px] underline-offset-4">Cơ sở sản xuất</span>
+              </h1>
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mt-2 italic flex items-center gap-2">
+                Quản lý Xưởng nội bộ và Cơ sở Gia công ngoài
+              </p>
+            </div>
           </div>
-          <div className="flex gap-4">
+          
+          <div className="flex items-center gap-4 relative z-10">
              <button 
                onClick={() => { setEditingItem(null); setIsEditingModalOpen(true); }}
-               className="btn-primary h-12 flex items-center gap-2 px-6 shadow-neo hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+               className="h-12 px-6 bg-neo-purple border-[2.5px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:text-black transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2 text-black"
              >
                <Plus size={18} strokeWidth={3} />
-               <span className="text-[10px] font-black uppercase tracking-widest">Thêm mới</span>
+               <span>Thêm mới</span>
              </button>
-             <button onClick={onClose} className="w-12 h-12 rounded-xl border-neo border-black bg-white flex items-center justify-center hover:bg-neo-red transition-all">
-               <X size={20} strokeWidth={3} />
+             <button onClick={onClose} className="w-12 h-12 bg-white border-[2.5px] border-black rounded-xl flex items-center justify-center text-black hover:bg-neo-red transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+               <X size={24} strokeWidth={3} />
              </button>
           </div>
         </div>

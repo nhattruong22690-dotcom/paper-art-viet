@@ -1,19 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  DollarSign, 
-  Package, 
-  Layers, 
-  Plus, 
-  ArrowUpRight, 
-  Clock, 
-  Loader2, 
-  ChevronRight, 
-  Tag, 
-  Calculator, 
-  Store, 
+import {
+  X,
+  DollarSign,
+  Package,
+  Layers,
+  Plus,
+  ArrowUpRight,
+  Clock,
+  Loader2,
+  ChevronRight,
+  Tag,
+  Calculator,
+  Store,
   Globe,
   Search,
   ChevronDown,
@@ -70,15 +70,15 @@ interface ProductFormModalProps {
 }
 
 // Internal SearchableSelect Component
-function SearchableSelect({ 
-  options, 
-  onSelect, 
-  placeholder, 
+function SearchableSelect({
+  options,
+  onSelect,
+  placeholder,
   icon: Icon,
   disabledIds = []
-}: { 
-  options: any[], 
-  onSelect: (opt: any) => void, 
+}: {
+  options: any[],
+  onSelect: (opt: any) => void,
   placeholder: string,
   icon: any,
   disabledIds?: string[]
@@ -153,10 +153,10 @@ function SearchableSelect({
                   >
                     <span className="font-black text-xs uppercase italic">{opt.specification || opt.name}</span>
                     <div className="flex justify-between items-center mt-1">
-                       <span className="text-[9px] font-black text-black/40 uppercase tracking-tighter">
-                         {opt.type || 'Standard'} • {opt.unit || 'Lần'}
-                       </span>
-                       <span className="text-[10px] font-black text-purple-600">{(opt.price || 0).toLocaleString()}đ</span>
+                      <span className="text-[9px] font-black text-black/40 uppercase tracking-tighter">
+                        {opt.type || 'Standard'} • {opt.unit || 'Lần'}
+                      </span>
+                      <span className="text-[10px] font-black text-purple-600">{(opt.price || 0).toLocaleString()}đ</span>
                     </div>
                   </button>
                 );
@@ -178,7 +178,7 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
   const [activeTab, setActiveTab] = useState<'general' | 'bom' | 'cogs'>('general');
   const [loading, setLoading] = useState(false);
   const [materials, setMaterials] = useState<any[]>([]);
-  
+
   const [formData, setFormData] = useState<Partial<Product>>({
     sku: '',
     name: '',
@@ -211,24 +211,24 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
           exportPrice: Number(initialData.exportPrice || 0),
         });
         if (initialData.bomItems) {
-            setBomItems(initialData.bomItems.map(item => ({
-                materialId: item.materialId,
-                material: {
-                    specification: item.material.specification || item.material.name,
-                    type: item.material.type || item.material.sku,
-                    unit: item.material.unit,
-                    unitPrice: Number(item.material.price || item.material.unitPrice || item.material.referencePrice || 0),
-                    referencePrice: Number(item.material.price || item.material.referencePrice || 0),
-                    name: item.material.specification || item.material.name,
-                    sku: item.material.type || item.material.sku
-                },
-                quantity: Number(item.quantity)
-            })));
+          setBomItems(initialData.bomItems.map(item => ({
+            materialId: item.materialId,
+            material: {
+              specification: item.material.specification || item.material.name,
+              type: item.material.type || item.material.sku,
+              unit: item.material.unit,
+              unitPrice: Number(item.material.price || item.material.unitPrice || item.material.referencePrice || 0),
+              referencePrice: Number(item.material.price || item.material.referencePrice || 0),
+              name: item.material.specification || item.material.name,
+              sku: item.material.type || item.material.sku
+            },
+            quantity: Number(item.quantity)
+          })));
         }
         if (initialData.cogsConfig) {
-            setWasteRatio(initialData.cogsConfig.wasteRatio || 0.05);
-            setCustomCosts(initialData.cogsConfig.customCosts || []);
-            setProductionNotes(initialData.cogsConfig.productionNotes || []);
+          setWasteRatio(initialData.cogsConfig.wasteRatio || 0.05);
+          setCustomCosts(initialData.cogsConfig.customCosts || []);
+          setProductionNotes(initialData.cogsConfig.productionNotes || []);
         }
       } else {
         // Default custom costs for new product
@@ -339,35 +339,35 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
   const handleSubmit = async () => {
     setLoading(true);
     try {
-        const calculatedBasePrice = totalCOGS;
-        const calculatedWholesalePrice = totalCOGS * 1.3;
-        const calculatedExportPrice = totalCOGS * 2.4;
+      const calculatedBasePrice = totalCOGS;
+      const calculatedWholesalePrice = totalCOGS * 1.3;
+      const calculatedExportPrice = totalCOGS * 2.4;
 
-        const payload = {
-            ...formData,
-            basePrice: calculatedBasePrice,
-            wholesalePrice: calculatedWholesalePrice,
-            exportPrice: calculatedExportPrice,
-            cogsConfig: {
-                wasteRatio,
-                customCosts,
-                productionNotes,
-                totalCOGS: calculatedBasePrice
-            },
-            bomItems: bomItems.map(item => ({
-                materialId: item.materialId,
-                quantity: item.quantity
-            })),
-            bomOperations: bomOperations.map(op => ({
-                operationId: op.operationId,
-                sequence: op.sequence
-            })),
-            costPrice: totalCOGS
-        };
-        await onSubmit(payload);
-        showToast('success', initialData ? 'Đã cập nhật sản phẩm' : 'Đã tạo sản phẩm mới');
+      const payload = {
+        ...formData,
+        basePrice: calculatedBasePrice,
+        wholesalePrice: calculatedWholesalePrice,
+        exportPrice: calculatedExportPrice,
+        cogsConfig: {
+          wasteRatio,
+          customCosts,
+          productionNotes,
+          totalCOGS: calculatedBasePrice
+        },
+        bomItems: bomItems.map(item => ({
+          materialId: item.materialId,
+          quantity: item.quantity
+        })),
+        bomOperations: bomOperations.map(op => ({
+          operationId: op.operationId,
+          sequence: op.sequence
+        })),
+        costPrice: totalCOGS
+      };
+      await onSubmit(payload);
+      showToast('success', initialData ? 'Đã cập nhật sản phẩm' : 'Đã tạo sản phẩm mới');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -382,21 +382,21 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-      
+
       <div className="relative w-full max-w-5xl h-[90vh] bg-white rounded-xl border-neo border-black shadow-neo flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">
-        
+
         {/* HEADER */}
         <div className="px-6 py-4 md:px-8 md:py-6 border-b-neo border-black flex justify-between items-center bg-neo-purple/10 shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-               <Package size={24} className="text-black" />
+              <Package size={24} className="text-black" />
             </div>
             <div>
               <h3 className="text-xl font-black text-black tracking-tight uppercase italic">
-                 {mode === 'new_version' ? 'Tạo Phiên bản mới' : initialData ? 'Hiệu đính Sản phẩm' : 'Khai báo Sản phẩm'}
+                {mode === 'new_version' ? 'Tạo Phiên bản mới' : initialData ? 'Hiệu đính Sản phẩm' : 'Khai báo Sản phẩm'}
               </h3>
               <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1">
-                 {mode === 'edit' ? 'Cập nhật thông tin Master' : 'Danh mục Master & Thông số Kỹ thuật'}
+                {mode === 'edit' ? 'Cập nhật thông tin Master' : 'Danh mục Master & Thông số Kỹ thuật'}
               </p>
             </div>
           </div>
@@ -416,8 +416,8 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
                 "flex items-center gap-2 py-4 px-1 text-[10px] font-black uppercase tracking-widest transition-all border-b-4 relative",
-                activeTab === tab.id 
-                  ? "border-black text-black" 
+                activeTab === tab.id
+                  ? "border-black text-black"
                   : "border-transparent text-black/40 hover:text-black"
               )}
             >
@@ -428,12 +428,12 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 md:p-10 scrollbar-hide">
-          
+
           {/* TAB 1: GENERAL */}
           {activeTab === 'general' && (
             <div className="space-y-10 animate-in fade-in duration-500 pb-10">
               <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-10 items-start">
-                
+
                 {/* Left Column: Pricing & Time Metrics */}
                 <div className="flex flex-col gap-6">
                   <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
@@ -450,9 +450,9 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                           <Calculator size={24} strokeWidth={3} className="text-black" />
                         </div>
                         <div className="flex-1">
-                          <NumericInput 
-                            value={formData.basePrice} 
-                            onChange={val => setFormData({...formData, basePrice: val})}
+                          <NumericInput
+                            value={formData.basePrice}
+                            onChange={val => setFormData({ ...formData, basePrice: val })}
                             className="bg-transparent border-none shadow-none text-4xl p-0 h-auto font-black italic tracking-tighter"
                             placeholder="0"
                           />
@@ -469,9 +469,9 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                           <Store size={24} strokeWidth={3} className="text-black" />
                         </div>
                         <div className="flex-1">
-                          <NumericInput 
-                            value={formData.wholesalePrice} 
-                            onChange={val => setFormData({...formData, wholesalePrice: val})}
+                          <NumericInput
+                            value={formData.wholesalePrice}
+                            onChange={val => setFormData({ ...formData, wholesalePrice: val })}
                             className="bg-transparent border-none shadow-none text-4xl p-0 h-auto font-black italic tracking-tighter"
                             placeholder="0"
                           />
@@ -488,9 +488,9 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                           <Globe size={24} strokeWidth={3} className="text-black" />
                         </div>
                         <div className="flex-1">
-                          <NumericInput 
-                            value={formData.exportPrice} 
-                            onChange={val => setFormData({...formData, exportPrice: val})}
+                          <NumericInput
+                            value={formData.exportPrice}
+                            onChange={val => setFormData({ ...formData, exportPrice: val })}
                             className="bg-transparent border-none shadow-none text-4xl p-0 h-auto font-black italic tracking-tighter"
                             placeholder="0"
                           />
@@ -507,10 +507,10 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                           <Clock size={24} strokeWidth={3} />
                         </div>
                         <div className="flex-1 border-b-[2.5px] border-black/10 focus-within:border-black transition-colors">
-                          <input 
-                            type="number" 
+                          <input
+                            type="number"
                             value={formData.productionTimeStd || ''}
-                            onChange={e => setFormData({...formData, productionTimeStd: Number(e.target.value)})}
+                            onChange={e => setFormData({ ...formData, productionTimeStd: Number(e.target.value) })}
                             className="w-full text-4xl font-black text-black bg-transparent outline-none tabular-nums tracking-tighter italic"
                             placeholder="0"
                           />
@@ -522,73 +522,77 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                 </div>
 
                 {/* Right Column: Identification & Preview */}
-                <div className="space-y-10">
+                <div className="flex flex-col h-full space-y-10 min-h-0">
                   <div className="space-y-6">
                     <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
-                       Định danh & Nhận diện
+                      Định danh & Nhận diện
                     </div>
-                    
-                    <div className="bg-white border-[2.5px] border-black rounded-2xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Tên Sản phẩm</label>
-                          <div className="relative group/field">
-                            <Tag size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
-                            <input 
-                              required
-                              type="text" 
-                              value={formData.name || ''}
-                              onChange={e => setFormData({...formData, name: e.target.value})}
-                              className="form-input pl-12 h-14 bg-[#FAF7F2] focus:bg-white transition-colors"
-                              placeholder="Nhập tên SP..."
-                            />
-                          </div>
-                       </div>
 
-                       <div className="space-y-2">
+                    <div className="bg-white border-[2.5px] border-black rounded-2xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-1 gap-8">
+                      {/* ROW 1: FULL WIDTH NAME */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Tên Sản phẩm</label>
+                        <div className="relative group/field">
+                          <Tag size={24} className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
+                          <input
+                            required
+                            type="text"
+                            value={formData.name || ''}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            className="form-input pl-16 h-20 bg-[#FAF7F2] focus:bg-white transition-colors text-xl font-black"
+                            placeholder="Nhập tên sản phẩm chính thức..."
+                          />
+                        </div>
+                      </div>
+
+                      {/* ROW 2: SPLIT SKU & UNIT */}
+                      <div className="grid grid-cols-2 gap-8">
+                        <div className="space-y-2">
                           <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Mã SKU</label>
                           <div className="relative group/field">
-                            <Layers size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
-                            <input 
+                            <Layers size={24} className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
+                            <input
                               required
-                              type="text" 
+                              type="text"
                               value={formData.sku || ''}
-                              onChange={e => setFormData({...formData, sku: e.target.value.toUpperCase()})}
-                              className="form-input pl-12 h-14 bg-neo-purple/10 border-solid text-black font-black tracking-widest text-center"
+                              onChange={e => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
+                              className="form-input pl-16 h-20 bg-neo-purple/10 border-solid text-black font-black tracking-widest text-center text-lg"
                               placeholder="MÃ-SP-001"
                             />
                           </div>
-                       </div>
+                        </div>
 
-                       <div className="space-y-2">
+                        <div className="space-y-2">
                           <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Đơn vị (Unit)</label>
                           <div className="relative group/field">
-                            <Package size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
-                            <input 
+                            <Package size={24} className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" />
+                            <input
                               required
-                              type="text" 
+                              type="text"
                               value={formData.unit || ''}
-                              onChange={e => setFormData({...formData, unit: e.target.value})}
-                              className="form-input pl-12 h-14 bg-[#F0FDF4] focus:bg-white transition-colors text-center font-black"
+                              onChange={e => setFormData({ ...formData, unit: e.target.value })}
+                              className="form-input pl-16 h-20 bg-[#F0FDF4] focus:bg-white transition-colors text-center font-black text-lg"
                               placeholder="Cái/Bộ..."
                             />
                           </div>
-                       </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
-                       Mô phỏng Nhận diện
+                  <div className="space-y-6 flex-1 flex flex-col min-h-0">
+                    <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic shrink-0">
+                      Mô phỏng Nhận diện
                     </div>
-                    
-                    <div className="aspect-video bg-white border-[2.5px] border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden relative group">
-                       <div className="absolute inset-0 bg-black/5 flex items-center justify-center group-hover:bg-transparent transition-all">
-                          <Package size={80} strokeWidth={1} className="text-black opacity-10" />
-                       </div>
-                       <div className="text-center group-hover:scale-105 transition-transform duration-500">
-                          <p className="text-[10px] font-black uppercase text-black/20 tracking-[0.5em] mb-2 italic">Image Placeholder</p>
-                          <p className="text-[8px] font-bold text-black/10 uppercase tracking-widest">Master Studio Preview (Soon)</p>
-                       </div>
+
+                    <div className="flex-1 bg-white border-[2.5px] border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden relative group min-h-[300px]">
+                      <div className="absolute inset-0 bg-black/5 flex items-center justify-center group-hover:bg-transparent transition-all">
+                        <Package size={120} strokeWidth={1} className="text-black opacity-10" />
+                      </div>
+                      <div className="text-center group-hover:scale-105 transition-transform duration-500">
+                        <p className="text-[12px] font-black uppercase text-black/20 tracking-[0.5em] mb-3 italic">Image Placeholder (Full Height)</p>
+                        <p className="text-[10px] font-bold text-black/10 uppercase tracking-widest">Master Studio Preview (Soon)</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -600,289 +604,289 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
           {/* TAB 2: BOM */}
           {activeTab === 'bom' && (
             <div className="space-y-8 animate-in fade-in duration-500 h-full flex flex-col pb-10">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-[50]">
-                  <SearchableSelect 
-                    options={materials}
-                    onSelect={handleAddMaterial}
-                    placeholder="-- Phân bổ Vật tư --"
-                    icon={Search}
-                    disabledIds={bomItems.map(bi => bi.materialId)}
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-[50]">
+                <SearchableSelect
+                  options={materials}
+                  onSelect={handleAddMaterial}
+                  placeholder="-- Phân bổ Vật tư --"
+                  icon={Search}
+                  disabledIds={bomItems.map(bi => bi.materialId)}
+                />
 
-                  <SearchableSelect 
-                    options={allOperations}
-                    onSelect={handleAddOperation}
-                    placeholder="-- Thêm Công đoạn --"
-                    icon={Cpu}
-                    disabledIds={bomOperations.map(bo => bo.operationId)}
-                  />
-               </div>
+                <SearchableSelect
+                  options={allOperations}
+                  onSelect={handleAddOperation}
+                  placeholder="-- Thêm Công đoạn --"
+                  icon={Cpu}
+                  disabledIds={bomOperations.map(bo => bo.operationId)}
+                />
+              </div>
 
-               <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 overflow-hidden min-h-0">
-                  {/* MATERIALS TABLE */}
-                  <div className="overflow-hidden flex flex-col border-[2.5px] border-black rounded-xl bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                     <div className="px-6 py-4 bg-[#F8FAFC] border-b-[2px] border-black flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase tracking-widest italic">Vật tư (Materials)</span>
-                        <span className="badge-primary text-[10px] px-2 py-0.5">{bomItems.length} items</span>
-                     </div>
-                     <div className="flex-1 overflow-y-auto">
-                        <table className="w-full text-left border-collapse">
-                           <thead className="sticky top-0 z-10 bg-white border-b-[2px] border-black/5">
-                              <tr className="text-[10px] font-black text-black/40 uppercase tracking-widest">
-                                 <th className="px-6 py-4">Tên vật tư</th>
-                                 <th className="px-6 py-4 text-center">Số lượng</th>
-                                 <th className="px-6 py-4 text-right">Đơn giá</th>
-                                 <th className="px-6 py-4 w-12"></th>
-                              </tr>
-                           </thead>
-                           <tbody className="divide-y divide-black/5">
-                              {bomItems.map((item) => (
-                                 <tr key={item.materialId} className="group hover:bg-neo-purple/5">
-                                    <td className="px-6 py-4">
-                                       <p className="font-black text-black text-xs uppercase italic">{item.material.specification || item.material.name}</p>
-                                       <p className="text-[9px] text-black/40 font-black uppercase tracking-tighter mt-0.5">{item.material.type || item.material.sku || 'N/A'}</p>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                       <div className="flex items-center gap-2 bg-white border border-black/20 rounded px-2 py-1">
-                                          <input
-                                             type="text"
-                                             value={formatNumber(item.quantity)}
-                                             onChange={(e) => {
-                                                const val = parseNumber(e.target.value);
-                                                handleUpdateQuantity(item.materialId, val);
-                                             }}
-                                             className="w-16 bg-transparent text-center font-black text-black outline-none tabular-nums text-xs"
-                                          />
-                                          <span className="text-[9px] font-black text-black/30 uppercase">{item.material.unit}</span>
-                                       </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right tabular-nums text-black/40 font-black italic text-xs">{formatNumber(item.material.unitPrice || 0)}</td>
-                                    <td className="px-6 py-4">
-                                       <button onClick={() => handleRemoveMaterial(item.materialId)} className="text-black/20 hover:text-rose-500 transition-colors">
-                                          <Trash2 size={16} strokeWidth={3} />
-                                       </button>
-                                    </td>
-                                 </tr>
-                              ))}
-                           </tbody>
-                        </table>
-                     </div>
+              <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 overflow-hidden min-h-0">
+                {/* MATERIALS TABLE */}
+                <div className="overflow-hidden flex flex-col border-[2.5px] border-black rounded-xl bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="px-6 py-4 bg-[#F8FAFC] border-b-[2px] border-black flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-widest italic">Vật tư (Materials)</span>
+                    <span className="badge-primary text-[10px] px-2 py-0.5">{bomItems.length} items</span>
                   </div>
-
-                  {/* OPERATIONS LIST */}
-                  <div className="overflow-hidden flex flex-col border-[2.5px] border-black rounded-xl bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                     <div className="px-6 py-4 bg-[#F8FAFC] border-b-[2px] border-black flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase tracking-widest italic">Công đoạn (Operations)</span>
-                     </div>
-                     <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                        {bomOperations.map((op, idx) => (
-                           <div key={op.id} className="p-4 bg-[#FAF7F2] border-[2px] border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3">
-                              <div className="flex justify-between items-start">
-                                 <div className="flex items-center gap-3">
-                                    <div className="w-6 h-6 bg-black text-white text-[10px] font-black rounded flex items-center justify-center italic">#{idx + 1}</div>
-                                    <p className="font-black text-black text-xs uppercase italic">{op.operation.name}</p>
-                                 </div>
-                                 <button onClick={() => handleRemoveOperation(op.id)} className="text-black/20 hover:text-rose-500 transition-colors">
-                                    <Trash2 size={14} strokeWidth={3} />
-                                 </button>
+                  <div className="flex-1 overflow-y-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="sticky top-0 z-10 bg-white border-b-[2px] border-black/5">
+                        <tr className="text-[10px] font-black text-black/40 uppercase tracking-widest">
+                          <th className="px-6 py-4">Tên vật tư</th>
+                          <th className="px-6 py-4 text-center">Số lượng</th>
+                          <th className="px-6 py-4 text-right">Đơn giá</th>
+                          <th className="px-6 py-4 w-12"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-black/5">
+                        {bomItems.map((item) => (
+                          <tr key={item.materialId} className="group hover:bg-neo-purple/5">
+                            <td className="px-6 py-4">
+                              <p className="font-black text-black text-xs uppercase italic">{item.material.specification || item.material.name}</p>
+                              <p className="text-[9px] text-black/40 font-black uppercase tracking-tighter mt-0.5">{item.material.type || item.material.sku || 'N/A'}</p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2 bg-white border border-black/20 rounded px-2 py-1">
+                                <input
+                                  type="text"
+                                  value={formatNumber(item.quantity)}
+                                  onChange={(e) => {
+                                    const val = parseNumber(e.target.value);
+                                    handleUpdateQuantity(item.materialId, val);
+                                  }}
+                                  className="w-16 bg-transparent text-center font-black text-black outline-none tabular-nums text-xs"
+                                />
+                                <span className="text-[9px] font-black text-black/30 uppercase">{item.material.unit}</span>
                               </div>
-                              <div className="flex justify-between items-center bg-white border border-black/10 rounded-lg p-3">
-                                  <div className="flex flex-col">
-                                     <span className="text-[8px] font-black text-black/40 uppercase italic">Chi phí/SP</span>
-                                     <span className="text-xs font-black text-black italic">{formatNumber(op.operation.price || 0)} VNĐ</span>
-                                  </div>
-                                 <div className="flex flex-col items-end text-right">
-                                    <span className="text-[8px] font-black text-black/40 uppercase italic">Thứ tự</span>
-                                    <span className="text-xs font-black text-black italic tabular-nums">{op.sequence}</span>
-                                 </div>
-                              </div>
-                           </div>
+                            </td>
+                            <td className="px-6 py-4 text-right tabular-nums text-black/40 font-black italic text-xs">{formatNumber(item.material.unitPrice || 0)}</td>
+                            <td className="px-6 py-4">
+                              <button onClick={() => handleRemoveMaterial(item.materialId)} className="text-black/20 hover:text-rose-500 transition-colors">
+                                <Trash2 size={16} strokeWidth={3} />
+                              </button>
+                            </td>
+                          </tr>
                         ))}
-                        {bomOperations.length === 0 && (
-                           <div className="py-12 text-center opacity-20">
-                              <Cpu size={32} className="mx-auto mb-3" />
-                              <p className="text-[10px] font-black uppercase italic tracking-widest">N/A Operations</p>
-                           </div>
-                        )}
-                     </div>
+                      </tbody>
+                    </table>
                   </div>
-               </div>
+                </div>
 
-               <div className="p-8 bg-black/5 border-[2.5px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-xl flex justify-between items-center mt-auto shrink-0">
-                  <div className="flex gap-12">
-                     <div>
-                        <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Vật tư</p>
-                        <p className="text-2xl font-black text-black italic tabular-nums">{formatNumber(totalMaterialCost)} <span className="text-[10px] not-italic text-black/30">VNĐ</span></p>
-                     </div>
-                     <div className="w-px h-full bg-black/10" />
-                     <div>
-                        <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Gia công</p>
-                        <p className="text-2xl font-black text-black italic tabular-nums">{formatNumber(totalOperationCost)} <span className="text-[10px] not-italic text-black/30">VNĐ</span></p>
-                     </div>
+                {/* OPERATIONS LIST */}
+                <div className="overflow-hidden flex flex-col border-[2.5px] border-black rounded-xl bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="px-6 py-4 bg-[#F8FAFC] border-b-[2px] border-black flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-widest italic">Công đoạn (Operations)</span>
                   </div>
-                  <div className="badge-success flex items-center gap-2 px-6 py-4 h-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
-                     <Calculator size={20} strokeWidth={3} />
-                     <div className="text-left">
-                        <p className="text-[8px] font-black uppercase italic opacity-50 leading-none">Tổng BOM Sản xuất</p>
-                        <p className="text-lg font-black italic tabular-nums leading-none mt-1">{formatNumber(totalMaterialCost + totalOperationCost)} VNĐ</p>
-                     </div>
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {bomOperations.map((op, idx) => (
+                      <div key={op.id} className="p-4 bg-[#FAF7F2] border-[2px] border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 bg-black text-white text-[10px] font-black rounded flex items-center justify-center italic">#{idx + 1}</div>
+                            <p className="font-black text-black text-xs uppercase italic">{op.operation.name}</p>
+                          </div>
+                          <button onClick={() => handleRemoveOperation(op.id)} className="text-black/20 hover:text-rose-500 transition-colors">
+                            <Trash2 size={14} strokeWidth={3} />
+                          </button>
+                        </div>
+                        <div className="flex justify-between items-center bg-white border border-black/10 rounded-lg p-3">
+                          <div className="flex flex-col">
+                            <span className="text-[8px] font-black text-black/40 uppercase italic">Chi phí/SP</span>
+                            <span className="text-xs font-black text-black italic">{formatNumber(op.operation.price || 0)} VNĐ</span>
+                          </div>
+                          <div className="flex flex-col items-end text-right">
+                            <span className="text-[8px] font-black text-black/40 uppercase italic">Thứ tự</span>
+                            <span className="text-xs font-black text-black italic tabular-nums">{op.sequence}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {bomOperations.length === 0 && (
+                      <div className="py-12 text-center opacity-20">
+                        <Cpu size={32} className="mx-auto mb-3" />
+                        <p className="text-[10px] font-black uppercase italic tracking-widest">N/A Operations</p>
+                      </div>
+                    )}
                   </div>
-               </div>
+                </div>
+              </div>
+
+              <div className="p-8 bg-black/5 border-[2.5px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-xl flex justify-between items-center mt-auto shrink-0">
+                <div className="flex gap-12">
+                  <div>
+                    <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Vật tư</p>
+                    <p className="text-2xl font-black text-black italic tabular-nums">{formatNumber(totalMaterialCost)} <span className="text-[10px] not-italic text-black/30">VNĐ</span></p>
+                  </div>
+                  <div className="w-px h-full bg-black/10" />
+                  <div>
+                    <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Gia công</p>
+                    <p className="text-2xl font-black text-black italic tabular-nums">{formatNumber(totalOperationCost)} <span className="text-[10px] not-italic text-black/30">VNĐ</span></p>
+                  </div>
+                </div>
+                <div className="badge-success flex items-center gap-2 px-6 py-4 h-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                  <Calculator size={20} strokeWidth={3} />
+                  <div className="text-left">
+                    <p className="text-[8px] font-black uppercase italic opacity-50 leading-none">Tổng BOM Sản xuất</p>
+                    <p className="text-lg font-black italic tabular-nums leading-none mt-1">{formatNumber(totalMaterialCost + totalOperationCost)} VNĐ</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
           {/* TAB 3: COGS */}
           {activeTab === 'cogs' && (
-             <div className="space-y-8 animate-in fade-in duration-500 pb-10">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                   <div className="lg:col-span-2 p-10 bg-black text-white rounded-xl shadow-neo relative overflow-hidden flex flex-col justify-between min-h-[220px] border-2 border-black">
-                      <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none scale-150">
-                         <Calculator size={160} />
-                      </div>
-                      <div className="relative z-10">
-                         <p className="text-[11px] font-black uppercase tracking-[0.3em] text-neo-purple mb-3 italic">Giá thành dự kiến (COGS)</p>
-                         <h3 className="text-6xl font-black tracking-tighter tabular-nums text-[#FACC15] italic">
-                            {formatNumber(Math.round(totalCOGS))} <span className="text-2xl font-black text-white ml-2 uppercase">VNĐ/SP</span>
-                         </h3>
-                      </div>
-                      <div className="relative z-10 flex gap-10 pt-8 border-t-2 border-white/10">
-                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase text-white/40 tracking-widest mb-1.5 font-space">Vật tư Trực tiếp</span>
-                            <span className="text-lg font-black text-white italic">{formatNumber(totalMaterialCost)}</span>
-                         </div>
-                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase text-white/40 tracking-widest mb-1.5 font-space">Vận hành & Chi phí chung</span>
-                            <span className="text-lg font-black text-white italic">{formatNumber(wasteCost + customTotal)}</span>
-                         </div>
-                      </div>
-                   </div>
+            <div className="space-y-8 animate-in fade-in duration-500 pb-10">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 p-10 bg-black text-white rounded-xl shadow-neo relative overflow-hidden flex flex-col justify-between min-h-[220px] border-2 border-black">
+                  <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none scale-150">
+                    <Calculator size={160} />
+                  </div>
+                  <div className="relative z-10">
+                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-neo-purple mb-3 italic">Giá thành dự kiến (COGS)</p>
+                    <h3 className="text-6xl font-black tracking-tighter tabular-nums text-[#FACC15] italic">
+                      {formatNumber(Math.round(totalCOGS))} <span className="text-2xl font-black text-white ml-2 uppercase">VNĐ/SP</span>
+                    </h3>
+                  </div>
+                  <div className="relative z-10 flex gap-10 pt-8 border-t-2 border-white/10">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black uppercase text-white/40 tracking-widest mb-1.5 font-space">Vật tư Trực tiếp</span>
+                      <span className="text-lg font-black text-white italic">{formatNumber(totalMaterialCost)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black uppercase text-white/40 tracking-widest mb-1.5 font-space">Vận hành & Chi phí chung</span>
+                      <span className="text-lg font-black text-white italic">{formatNumber(wasteCost + customTotal)}</span>
+                    </div>
+                  </div>
+                </div>
 
-                   <div className="p-10 bg-neo-yellow/10 border-neo border-black rounded-xl shadow-neo flex flex-col justify-between">
-                      <div>
-                         <p className="text-[11px] font-black text-black/40 uppercase tracking-widest mb-4">Hệ số hao hụt (%)</p>
-                         <div className="flex items-center gap-4">
-                            <input 
-                               type="number"
-                               value={Math.round(wasteRatio * 100)}
-                               onChange={(e) => setWasteRatio(Number(e.target.value) / 100)}
-                               className="w-24 text-5xl font-black text-black bg-transparent outline-none tabular-nums italic"
+                <div className="p-10 bg-neo-yellow/10 border-neo border-black rounded-xl shadow-neo flex flex-col justify-between">
+                  <div>
+                    <p className="text-[11px] font-black text-black/40 uppercase tracking-widest mb-4">Hệ số hao hụt (%)</p>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        value={Math.round(wasteRatio * 100)}
+                        onChange={(e) => setWasteRatio(Number(e.target.value) / 100)}
+                        className="w-24 text-5xl font-black text-black bg-transparent outline-none tabular-nums italic"
+                      />
+                      <span className="text-2xl font-black text-black/20">%</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-black/60 font-black uppercase italic mt-6 leading-tight tracking-widest">
+                    Phòng ngừa sai số trong quá trình sản xuất.
+                  </p>
+                </div>
+              </div>
+
+              <div className="neo-card !p-0 overflow-hidden">
+                <div className="px-8 py-5 bg-neo-purple/10 border-b-neo border-black flex justify-between items-center sm:flex-row flex-col gap-4">
+                  <h4 className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Chi phí nhân công & vận hành (Overhead)</h4>
+                  <button onClick={() => setCustomCosts([...customCosts, { id: Date.now().toString(), name: '', details: '', amount: 0 }])} className="btn-secondary !h-10 !px-6 text-[10px]">
+                    <Plus size={14} strokeWidth={2.5} />
+                    Thêm chi phí
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full !mt-0 text-left">
+                    <thead>
+                      <tr className="bg-black/5 text-[9px] font-black text-black/40 uppercase tracking-widest">
+                        <th className="px-8 py-4 border-b-neo border-black">Tên mục</th>
+                        <th className="px-8 py-4 border-b-neo border-black">Mô tả chi tiết</th>
+                        <th className="px-8 py-4 text-right w-48 border-b-neo border-black">Số tiền (VNĐ)</th>
+                        <th className="px-8 py-4 w-12 border-b-neo border-black"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/5">
+                      {/* Row: Direct Materials (BOM) */}
+                      <tr className="bg-neo-purple/5">
+                        <td className="px-6 py-4">
+                          <span className="font-black text-black italic text-sm">Định mức vật tư (BOM)</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-black/60 font-medium text-xs">Theo định mức nguyên vật liệu BOM</span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="relative group/input max-w-[180px] ml-auto">
+                            <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-4 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
+                              {formatNumber(totalMaterialCost)}
+                            </div>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black/20 uppercase pointer-events-none">VNĐ</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4"></td>
+                      </tr>
+
+                      {/* Row: Waste Contingency */}
+                      <tr className="bg-neo-yellow/5">
+                        <td className="px-6 py-4">
+                          <span className="font-black text-black italic text-sm">Hao hụt & Dự phòng</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-black/60 font-medium text-xs">{Math.round(wasteRatio * 100)}% trên tổng vật tư</span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="relative group/input max-w-[180px] ml-auto">
+                            <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-4 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
+                              {formatNumber(wasteCost)}
+                            </div>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black/20 uppercase pointer-events-none">VNĐ</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4"></td>
+                      </tr>
+                      {customCosts.map(cost => (
+                        <tr key={cost.id} className="group hover:bg-black/5 transition-all">
+                          <td className="px-6 py-4">
+                            <input
+                              value={cost.name}
+                              onChange={(e) => updateCustomCost(cost.id, 'name', e.target.value)}
+                              className="w-full bg-transparent font-black text-black outline-none text-sm italic"
+                              placeholder="VD: Nhân công..."
                             />
-                            <span className="text-2xl font-black text-black/20">%</span>
-                         </div>
-                      </div>
-                      <p className="text-[10px] text-black/60 font-black uppercase italic mt-6 leading-tight tracking-widest">
-                        Phòng ngừa sai số trong quá trình sản xuất.
-                      </p>
-                   </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <input
+                              value={cost.details}
+                              onChange={(e) => updateCustomCost(cost.id, 'details', e.target.value)}
+                              className="w-full bg-transparent text-black/60 font-medium outline-none text-xs"
+                              placeholder="Mô tả công việc..."
+                            />
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <NumericInput
+                              value={cost.amount}
+                              onChange={val => updateCustomCost(cost.id, 'amount', val)}
+                              className="h-12 bg-white border-[2.5px] border-black rounded-xl pl-10 pr-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:border-neo-purple"
+                              suffix="VNĐ"
+                            />
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button onClick={() => setCustomCosts(customCosts.filter(c => c.id !== cost.id))} className="w-10 h-10 flex items-center justify-center bg-[#FEE2E2] border-[2.5px] border-black rounded-xl text-black hover:bg-rose-500 hover:text-white transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ml-auto">
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-
-                <div className="neo-card !p-0 overflow-hidden">
-                   <div className="px-8 py-5 bg-neo-purple/10 border-b-neo border-black flex justify-between items-center sm:flex-row flex-col gap-4">
-                      <h4 className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em]">Chi phí nhân công & vận hành (Overhead)</h4>
-                      <button onClick={() => setCustomCosts([...customCosts, { id: Date.now().toString(), name: '', details: '', amount: 0 }])} className="btn-secondary !h-10 !px-6 text-[10px]">
-                         <Plus size={14} strokeWidth={2.5} /> 
-                         Thêm chi phí
-                      </button>
-                   </div>
-                   <div className="overflow-x-auto">
-                    <table className="w-full !mt-0 text-left">
-                       <thead>
-                          <tr className="bg-black/5 text-[9px] font-black text-black/40 uppercase tracking-widest">
-                             <th className="px-8 py-4 border-b-neo border-black">Tên mục</th>
-                             <th className="px-8 py-4 border-b-neo border-black">Mô tả chi tiết</th>
-                             <th className="px-8 py-4 text-right w-48 border-b-neo border-black">Số tiền (VNĐ)</th>
-                             <th className="px-8 py-4 w-12 border-b-neo border-black"></th>
-                          </tr>
-                       </thead>
-                       <tbody className="divide-y divide-black/5">
-                           {/* Row: Direct Materials (BOM) */}
-                           <tr className="bg-neo-purple/5">
-                              <td className="px-6 py-4">
-                                 <span className="font-black text-black italic text-sm">Định mức vật tư (BOM)</span>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <span className="text-black/60 font-medium text-xs">Theo định mức nguyên vật liệu BOM</span>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                 <div className="relative group/input max-w-[180px] ml-auto">
-                                    <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-4 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
-                                       {formatNumber(totalMaterialCost)}
-                                    </div>
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black/20 uppercase pointer-events-none">VNĐ</span>
-                                 </div>
-                              </td>
-                              <td className="px-6 py-4"></td>
-                           </tr>
-
-                           {/* Row: Waste Contingency */}
-                           <tr className="bg-neo-yellow/5">
-                              <td className="px-6 py-4">
-                                 <span className="font-black text-black italic text-sm">Hao hụt & Dự phòng</span>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <span className="text-black/60 font-medium text-xs">{Math.round(wasteRatio * 100)}% trên tổng vật tư</span>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                 <div className="relative group/input max-w-[180px] ml-auto">
-                                    <div className="w-full h-12 bg-black/5 border-[2px] border-black/10 rounded-xl px-4 flex items-center justify-end font-black text-black/40 tabular-nums text-base italic">
-                                       {formatNumber(wasteCost)}
-                                    </div>
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black/20 uppercase pointer-events-none">VNĐ</span>
-                                 </div>
-                              </td>
-                              <td className="px-6 py-4"></td>
-                           </tr>
-                           {customCosts.map(cost => (
-                              <tr key={cost.id} className="group hover:bg-black/5 transition-all">
-                                 <td className="px-6 py-4">
-                                    <input 
-                                       value={cost.name}
-                                       onChange={(e) => updateCustomCost(cost.id, 'name', e.target.value)}
-                                       className="w-full bg-transparent font-black text-black outline-none text-sm italic"
-                                       placeholder="VD: Nhân công..."
-                                    />
-                                 </td>
-                                 <td className="px-6 py-4">
-                                    <input 
-                                       value={cost.details}
-                                       onChange={(e) => updateCustomCost(cost.id, 'details', e.target.value)}
-                                       className="w-full bg-transparent text-black/60 font-medium outline-none text-xs"
-                                       placeholder="Mô tả công việc..."
-                                    />
-                                 </td>
-                                 <td className="px-6 py-4 text-right">
-                                    <NumericInput 
-                                       value={cost.amount}
-                                       onChange={val => updateCustomCost(cost.id, 'amount', val)}
-                                       className="h-12 bg-white border-[2.5px] border-black rounded-xl pl-10 pr-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:border-neo-purple"
-                                       suffix="VNĐ"
-                                    />
-                                 </td>
-                                 <td className="px-6 py-4 text-right">
-                                    <button onClick={() => setCustomCosts(customCosts.filter(c => c.id !== cost.id))} className="w-10 h-10 flex items-center justify-center bg-[#FEE2E2] border-[2.5px] border-black rounded-xl text-black hover:bg-rose-500 hover:text-white transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ml-auto">
-                                       <Trash2 size={14} />
-                                    </button>
-                                 </td>
-                              </tr>
-                           ))}
-                       </tbody>
-                    </table>
-                   </div>
-                </div>
-             </div>
+              </div>
+            </div>
           )}
         </div>
 
         {/* FIXED FOOTER */}
         <div className="p-8 border-t-neo border-black bg-white flex flex-col md:flex-row gap-6 shrink-0 mt-auto">
-          <button 
+          <button
             type="button"
             onClick={onClose}
             className="flex-1 h-14 rounded-xl text-[10px] font-black uppercase tracking-widest text-black/40 hover:text-black hover:bg-black/5 transition-all active:translate-x-[2px] active:translate-y-[2px]"
           >
             Hủy thao tác
           </button>
-          <button 
+          <button
             onClick={handleSubmit}
             disabled={loading}
             className="btn-primary btn-confirm-flash flex-[2] h-14 text-[11px] uppercase tracking-[0.2em]"

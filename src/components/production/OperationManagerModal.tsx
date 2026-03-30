@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, Search, Plus, Trash2, Edit2, Package, FileSpreadsheet, Download, Loader2, Database, Tag, Save, Hammer, Beaker, HardDrive, Cpu, Settings, Activity, Store } from 'lucide-react';
+import { X, Search, Plus, Trash2, Edit2, Package, FileSpreadsheet, Download, Loader2, Database, Tag, Save, Hammer, Beaker, HardDrive, Cpu, Settings, Activity, Store, ChevronRight } from 'lucide-react';
 import { getAllOperations, upsertOperation, bulkUpsertOperations } from '@/services/operation.service';
 import * as XLSX from 'xlsx';
 import { Card } from '@/components/ui/Card';
@@ -115,18 +115,29 @@ export default function OperationManagerModal({ isOpen, onClose }: OperationMana
       <div className="w-full max-w-5xl h-[85vh] bg-[#FAF7F2] border-[3px] border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden">
 
         {/* HEADER */}
-        <div className="px-8 py-6 border-b-neo border-black flex justify-between items-center bg-neo-purple/10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-neo-sm">
-              <Cpu size={24} />
+        <div className="px-10 py-8 border-b-[3px] border-black flex justify-between items-center bg-black text-white relative overflow-hidden shrink-0">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-neo-purple/20 to-transparent pointer-events-none" />
+          
+          <div className="flex items-center gap-6 relative z-10">
+            <div className="w-14 h-14 bg-neo-purple/20 border-2 border-neo-purple/30 rounded-2xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(139,92,246,0.3)]">
+              <Cpu size={28} strokeWidth={3} className="text-neo-purple" />
             </div>
             <div>
-              <h3 className="text-xl font-black italic uppercase tracking-tight">Quản lý Danh mục Công đoạn</h3>
-              <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mt-1">Hệ thống Master Data 5 cột tiêu chuẩn</p>
+              <nav className="flex items-center gap-2 text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-2">
+                <span>Cấu hình Master</span>
+                <ChevronRight size={10} strokeWidth={3} />
+                <span className="text-neo-purple">Danh mục Công đoạn</span>
+              </nav>
+              <h1 className="text-3xl font-black italic uppercase tracking-tighter leading-none text-white">
+                Quản lý <span className="text-neo-purple underline decoration-[3px] underline-offset-4">Danh mục Công đoạn</span>
+              </h1>
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mt-2 italic flex items-center gap-2">
+                Hệ thống Master Data 5 cột tiêu chuẩn
+              </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 relative z-10">
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -136,21 +147,21 @@ export default function OperationManagerModal({ isOpen, onClose }: OperationMana
             />
             <button 
               onClick={downloadTemplate}
-              className="px-4 h-10 border-2 border-black rounded-xl flex items-center gap-2 font-black text-[10px] uppercase bg-white hover:bg-black/5 transition-all shadow-neo-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+              className="px-6 h-12 bg-white border-[2.5px] border-black rounded-xl flex items-center gap-2 font-black text-[11px] uppercase bg-white hover:bg-neo-purple transition-all shadow-[4px_4px_0px_0px_rgba(139,92,246,0.5)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-black"
             >
-              <Download size={14} strokeWidth={3} />
+              <Download size={18} strokeWidth={3} />
               Mẫu Excel
             </button>
             <button 
               onClick={() => fileInputRef.current?.click()}
               disabled={importing}
-              className="px-4 h-10 border-2 border-black rounded-xl flex items-center gap-2 font-black text-[10px] uppercase bg-[#E0F2FE] hover:bg-[#BAE6FD] transition-all shadow-neo-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+              className="px-6 h-12 bg-neo-purple border-[2.5px] border-black rounded-xl flex items-center gap-2 font-black text-[11px] uppercase transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-black"
             >
-              {importing ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} strokeWidth={3} />}
+              {importing ? <Loader2 size={18} className="animate-spin" /> : <FileSpreadsheet size={18} strokeWidth={3} />}
               Nhập Excel
             </button>
-            <button onClick={onClose} className="p-2 hover:bg-neo-red rounded-xl border-2 border-transparent hover:border-black transition-all">
-              <X size={24} />
+            <button onClick={onClose} className="w-12 h-12 bg-white border-[2.5px] border-black rounded-xl flex items-center justify-center text-black hover:bg-neo-red transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+              <X size={24} strokeWidth={3} />
             </button>
           </div>
         </div>

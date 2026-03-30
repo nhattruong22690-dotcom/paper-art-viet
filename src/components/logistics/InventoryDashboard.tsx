@@ -124,14 +124,14 @@ export default function InventoryDashboard() {
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-             <Box size={28} className="text-black" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-black text-black tracking-tight uppercase italic">Quản lý Kho Vật tư</h1>
-            <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Real-time Stock Monitoring & FIFO Audit</p>
-          </div>
-        </div>
+           <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <Box size={28} className="text-black" />
+           </div>
+           <div>
+             <h1 className="text-3xl font-black text-black tracking-tight uppercase italic">Quản lý Kho Vật tư</h1>
+             <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Real-time Stock Monitoring & FIFO Audit</p>
+           </div>
+         </div>
         <div className="flex items-center gap-4">
            <button className="btn-secondary h-12 px-6 text-[10px] uppercase tracking-widest">
               <History size={16} strokeWidth={2.5} /> Lịch sử biến động
@@ -199,16 +199,16 @@ export default function InventoryDashboard() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
-                <th className="px-8 py-5 border-b-2 border-black text-neo-purple">Mã Vật Tư</th>
-                <th className="px-8 py-5 border-b-2 border-black text-neo-purple">Tên Vật Tư</th>
-                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Tồn Hiện Tại</th>
-                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Định Mức Min</th>
-                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Trạng Thái</th>
-                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple w-20"></th>
-              </tr>
-            </thead>
+                    <thead>
+                       <tr className="bg-black text-[10px] font-black uppercase tracking-widest">
+                          <th className="px-6 py-4 border-b-2 border-black !text-white">Vật tư / Kho</th>
+                          <th className="px-6 py-4 border-b-2 border-black !text-white">Loại</th>
+                          <th className="px-6 py-4 text-center border-b-2 border-black !text-white">Đơn vị</th>
+                          <th className="px-6 py-4 text-center border-b-2 border-black !text-white">Số lượng</th>
+                          <th className="px-6 py-4 text-center border-b-2 border-black !text-white">Trạng thái</th>
+                          <th className="px-6 py-4 text-center border-b-2 border-black !text-white w-32">Quản lý</th>
+                       </tr>
+                    </thead>
             <tbody className="divide-y-2 divide-black/5">
               {filteredMaterials.map((m) => {
                 const isUnderStock = m.stockQuantity < m.minStock;
@@ -222,7 +222,7 @@ export default function InventoryDashboard() {
                       isExpanded && "bg-neo-purple/10"
                     )} onClick={() => toggleExpand(m.id)}>
                       <td className="px-8 py-6">
-                         <span className="px-3 py-1 bg-black text-neo-purple text-[10px] font-black rounded-lg uppercase tracking-widest italic">
+                         <span className="px-3 py-1 bg-black text-white text-[10px] font-black rounded-lg uppercase tracking-widest italic">
                             {m.sku}
                          </span>
                       </td>
@@ -299,7 +299,7 @@ export default function InventoryDashboard() {
                                         <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1.5 leading-none">Mã Lô</p>
                                         <p className="text-sm font-black text-black tracking-widest italic">{batch.batchCode}</p>
                                       </div>
-                                      <div className="px-3 py-1 bg-black text-neo-purple rounded-lg text-[8px] font-black uppercase tracking-widest italic">
+                                      <div className="px-3 py-1 bg-black text-white rounded-lg text-[8px] font-black uppercase tracking-widest italic">
                                         FIFO Stack
                                       </div>
                                     </div>

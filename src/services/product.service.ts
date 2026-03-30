@@ -282,3 +282,28 @@ export async function upsertProduct(data: any) {
     exportPrice: Number(result.export_price || 0)
   };
 }
+
+/**
+ * Thêm hoặc cập nhật hàng loạt sản phẩm (dành cho Import Excel).
+ */
+export async function batchUpsertProducts(productsData: any[]) {
+  const dbData = productsData.map(p => ({
+    code: p.sku,
+    name: p.name,
+    unit: p.unit || 'Sản phẩm',
+    base_price: p.basePrice || 0,
+    wholesale_price: p.wholesalePrice || 0,
+    export_price: p.exportPrice || 0,
+    cost_price: p.costPrice || 0,
+    production_time_std: p.productionTimeStd || 0,
+    cogs_config: p.cogsConfig || {}
+  }));
+
+  const { data, error } = await supabase
+    .from('products')
+    .upsert(dbData, { onConflict: 'code' })
+    .select();
+
+  if (error) throw error;
+  return data;
+}

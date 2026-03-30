@@ -150,13 +150,13 @@ export default function PurchaseOrderList({ onAddNew }: { onAddNew: () => void }
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
-                <th className="px-8 py-5 border-b-2 border-black">Mã đơn PO</th>
-                <th className="px-8 py-5 border-b-2 border-black">Nhà Cung Ứng</th>
-                <th className="px-8 py-5 border-b-2 border-black">Ngày đặt</th>
-                <th className="px-8 py-5 text-right border-b-2 border-black">Tổng giá trị</th>
-                <th className="px-8 py-5 text-center border-b-2 border-black">Trạng Thái</th>
-                <th className="px-8 py-5 text-right border-b-2 border-black w-24"></th>
+              <tr className="bg-black text-[10px] font-black uppercase tracking-widest">
+                <th className="px-8 py-5 border-b-2 border-black text-white">Mã đơn PO</th>
+                <th className="px-8 py-5 border-b-2 border-black text-white">Nhà Cung Ứng</th>
+                <th className="px-8 py-5 border-b-2 border-black text-white">Ngày đặt</th>
+                <th className="px-8 py-5 text-right border-b-2 border-black text-white">Tổng giá trị</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black text-white">Trạng Thái</th>
+                <th className="px-8 py-5 text-right border-b-2 border-black w-24 text-white"></th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-black/5">

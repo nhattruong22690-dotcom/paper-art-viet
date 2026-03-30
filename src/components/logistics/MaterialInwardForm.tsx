@@ -291,14 +291,14 @@ export default function MaterialInwardForm() {
              <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
-                       <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
-                          <th className="px-8 py-5 border-b-2 border-black">Vật tư / Mã hiệu</th>
-                          <th className="px-4 py-5 text-center border-b-2 border-black w-32">Số Lượng</th>
-                          <th className="px-4 py-5 text-center border-b-2 border-black w-24">/ Lô</th>
-                          <th className="px-4 py-5 text-center border-b-2 border-black w-32">Thực nhận</th>
-                          <th className="px-8 py-5 text-right border-b-2 border-black w-44">Thành Tiền</th>
-                          <th className="px-4 py-5 text-center border-b-2 border-black w-32">Xếp kho</th>
-                          <th className="px-8 py-5 w-16 text-center border-b-2 border-black"></th>
+                       <tr className="bg-black text-[10px] font-black uppercase tracking-widest">
+                          <th className="px-8 py-5 border-b-2 border-black text-white">Vật tư / Mã hiệu</th>
+                          <th className="px-4 py-5 text-center border-b-2 border-black w-32 text-white">Số Lượng</th>
+                          <th className="px-4 py-5 text-center border-b-2 border-black w-24 text-white">/ Lô</th>
+                          <th className="px-4 py-5 text-center border-b-2 border-black w-32 text-white">Thực nhận</th>
+                          <th className="px-8 py-5 text-right border-b-2 border-black w-44 text-white">Thành Tiền</th>
+                          <th className="px-4 py-5 text-center border-b-2 border-black w-32 text-white">Xếp kho</th>
+                          <th className="px-8 py-5 w-16 text-center border-b-2 border-black text-white"></th>
                        </tr>
                     </thead>
                     <tbody className="divide-y-2 divide-black/5">

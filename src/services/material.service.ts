@@ -4,7 +4,7 @@ import { Material } from '@/types/bom';
 // --- NEW BOM SYSTEM (materials table) ---
 
 /**
- * Láy danh sách toàn bộ vật tư từ hệ thống BOM mới.
+ * Lấy danh sách toàn bộ vật tư từ hệ thống BOM mới.
  */
 export async function getAllMaterials() {
   const { data, error } = await supabase
@@ -13,7 +13,11 @@ export async function getAllMaterials() {
     .order('type', { ascending: true });
 
   if (error) throw error;
-  return data as Material[];
+  
+  return (data || []).map(m => ({
+    ...m,
+    price: Number(m.price || 0)
+  })) as Material[];
 }
 
 /**

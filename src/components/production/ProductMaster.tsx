@@ -18,12 +18,17 @@ import {
   Activity,
   Box,
   Database,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  FileDown,
+  FileUp,
+  Download,
+  AlertCircle
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { getAllProducts, upsertProduct, updateProductBOM } from '@/services/product.service';
+import { getAllProducts, upsertProduct, updateProductBOM, batchUpsertProducts } from '@/services/product.service';
 import ProductDetailModal from './ProductDetailModal';
 import ProductFormModal from './ProductFormModal';
 import MaterialManagerModal from './MaterialManagerModal';
@@ -148,6 +153,137 @@ export default function ProductMaster() {
     }
   };
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        'Mã SKU (*)': 'SKU-SAMPLE-001',
+        'Tên Sản phẩm (*)': 'Sản phẩm Mẫu Excel',
+        'Đơn vị tính': 'Cái',
+        'Giá gốc (COGS)': 0,
+        'Thời gian SX (Phút)': 15,
+        'Ghi chú': 'Hàng mẫu từ Excel'
+      }
+    ];
+
+    const bomTemplateData = [
+      {
+        'Mã Sản phẩm (*)': 'SKU-SAMPLE-001',
+        'Mã Vật tư (*)': 'VT-SAMPLE-001',
+        'Số lượng': 1.5,
+        'Ghi chú': 'Dùng cho khâu cắt'
+      }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.json_to_sheet(templateData);
+    XLSX.utils.book_append_sheet(wb, ws1, "Danh sách Sản phẩm");
+    
+    const ws2 = XLSX.utils.json_to_sheet(bomTemplateData);
+    XLSX.utils.book_append_sheet(wb, ws2, "Định mức Vật tư");
+
+    XLSX.writeFile(wb, "Mau_Khai_Bao_SanPham_BOM.xlsx");
+    showToast('success', 'Đã tải xuống file mẫu đa bảng');
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // 1. Read Product Sheet
+        const productSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const productJson = XLSX.utils.sheet_to_json(productSheet);
+
+        // 2. Read BOM Sheet if exists
+        const bomSheet = workbook.SheetNames.length > 1 ? workbook.Sheets[workbook.SheetNames[1]] : null;
+        const bomJson = bomSheet ? XLSX.utils.sheet_to_json(bomSheet) : [];
+
+        if (productJson.length === 0) {
+          showToast('error', 'File Excel không có dữ liệu sản phẩm');
+          setIsLoading(false);
+          return;
+        }
+
+        // Fetch materials to map codes to IDs
+        const { getAllMaterials } = await import('@/services/material.service');
+        const allMaterials = await getAllMaterials();
+        const materialMap = new Map(allMaterials.map((m: any) => [m.code?.toString().toUpperCase() || m.id, m.id]));
+
+        const productsToImport = productJson.map((row: any) => {
+          const sku = row['Mã SKU (*)']?.toString().toUpperCase();
+          const name = row['Tên Sản phẩm (*)'];
+          const cost = Number(row['Giá gốc (COGS)'] || 0);
+
+          if (!sku || !name) return null;
+
+          return {
+            sku,
+            name,
+            unit: row['Đơn vị tính'] || 'Cái',
+            costPrice: cost,
+            basePrice: cost,
+            wholesalePrice: cost * 1.3,
+            exportPrice: cost * 2.4,
+            productionTimeStd: Number(row['Thời gian SX (Phút)'] || 0),
+            cogsConfig: {
+              importedAt: new Date().toISOString(),
+              note: row['Ghi chú'] || ''
+            }
+          };
+        }).filter(Boolean);
+
+        if (productsToImport.length === 0) {
+          showToast('error', 'Không tìm thấy dòng sản phẩm hợp lệ');
+          setIsLoading(false);
+          return;
+        }
+
+        // 3. Upsert Products
+        const savedProducts = await batchUpsertProducts(productsToImport);
+        
+        // 4. Update BOMs if provided
+        if (bomJson.length > 0) {
+          for (const product of savedProducts) {
+            const productBOMItems = bomJson
+              .filter((row: any) => row['Mã Sản phẩm (*)']?.toString().toUpperCase() === product.code)
+              .map((row: any) => {
+                const matCode = row['Mã Vật tư (*)']?.toString().toUpperCase();
+                const matId = materialMap.get(matCode);
+                if (!matId) return null;
+                return {
+                  materialId: matId,
+                  quantity: Number(row['Số lượng'] || 0)
+                };
+              })
+              .filter(Boolean);
+
+            if (productBOMItems.length > 0) {
+              await updateProductBOM(product.id, productBOMItems as any, []);
+            }
+          }
+        }
+
+        showToast('success', `Đã import thành công ${savedProducts.length} sản phẩm và định mức kèm theo`);
+        fetchProducts();
+      } catch (error) {
+        console.error('Import Error:', error);
+        showToast('error', 'Lỗi khi xử lý dữ liệu Import');
+      } finally {
+        setIsLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   const filteredProducts = products.filter(p => 
     (p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
      p.sku?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -157,49 +293,79 @@ export default function ProductMaster() {
     <div className="space-y-10 animate-in fade-in duration-500 pb-24">
       
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 bg-neo-purple/5 p-8 rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <div>
-          <nav className="flex items-center gap-2 text-[10px] font-black text-black/40 uppercase tracking-[0.2em] mb-3">
-            <Package size={12} strokeWidth={3} className="text-black" />
-            <span>Sản xuất</span>
-            <ChevronRight size={10} strokeWidth={3} />
-            <span className="text-black italic">Danh sách Sản phẩm</span>
-          </nav>
-          <h1 className="text-4xl font-black text-black tracking-tighter uppercase italic">
-            Danh mục <span className="text-neo-purple underline decoration-[4px] decoration-black underline-offset-4">Sản phẩm</span>
-          </h1>
-          <p className="text-[11px] text-black/60 font-black uppercase tracking-[0.1em] mt-3 italic leading-relaxed">
-             Quản lý hồ sơ định danh, định mức vật tư (BOM) và cơ cấu giá thành Master.
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          <button 
-            onClick={() => setShowMaterialManager(true)}
-            className="px-6 py-4 bg-white border-[2.5px] border-black rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-          >
-            <Database size={16} strokeWidth={3} />
-            Vật tư
-          </button>
-          <button 
-            onClick={() => setShowOperationManager(true)}
-            className="px-6 py-4 bg-white border-[2.5px] border-black rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-          >
-            <SettingsIcon size={16} strokeWidth={3} />
-            Công đoạn
-          </button>
-          <button 
-            onClick={() => {
-              setEditingProduct(null);
-              setFormMode('create');
-              setIsFormOpen(true);
-            }}
-            className="px-8 py-4 bg-black text-white rounded-xl border-[2.5px] border-black font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-purple hover:text-black transition-all active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
-          >
-            <Plus size={20} strokeWidth={3} />
-            <span>Sản phẩm mới</span>
-          </button>
-        </div>
+      <div className="px-12 py-10 border-b-[3.5px] border-black bg-black text-white relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-10 shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] rounded-[3rem] mb-12">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(139,92,246,0.15),transparent)] pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-1/2 h-full bg-gradient-to-l from-neo-purple/5 to-transparent pointer-events-none" />
+          
+          <div className="flex items-center gap-10 relative z-10">
+             <div className="w-24 h-24 bg-neo-purple/20 border-[3px] border-neo-purple/30 rounded-[2.5rem] flex items-center justify-center shadow-[8px_8px_0px_0px_rgba(139,92,246,0.2)] hover:rotate-6 transition-transform shrink-0">
+                <Box size={44} strokeWidth={2.5} className="text-neo-purple" />
+             </div>
+             <div>
+                <nav className="flex items-center gap-3 text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mb-4">
+                   <Database size={14} strokeWidth={3} className="text-neo-purple" />
+                   <span>Management Console</span>
+                   <ChevronRight size={12} strokeWidth={3} />
+                   <span className="text-neo-purple italic underline decoration-[2px] underline-offset-4 decoration-neo-purple/30">Catalogue</span>
+                </nav>
+                <h1 className="text-5xl font-black text-white tracking-tighter uppercase italic leading-none">
+                   Master <span className="text-neo-purple">Boutique</span>
+                </h1>
+                <div className="flex items-center gap-4 mt-6">
+                   <span className="px-4 py-1.5 bg-neo-mint/20 text-neo-mint text-[9px] font-black uppercase tracking-widest rounded-lg border border-neo-mint/30 italic">Enterprise Edition 2026</span>
+                   <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                      <span className="w-2 h-2 bg-neo-green rounded-full shadow-[0_0_12px_rgba(16,185,129,0.8)] animate-pulse" />
+                      <span className="text-[8px] font-black text-neo-green uppercase tracking-widest">System Active</span>
+                   </div>
+                </div>
+             </div>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-4 relative z-10">
+            <button 
+              onClick={() => setShowMaterialManager(true)}
+              className="px-6 py-4 bg-white border-[2.5px] border-black rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(139,92,246,0.5)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-black"
+            >
+              <Database size={16} strokeWidth={3} />
+              Vật tư
+            </button>
+            <button 
+               onClick={() => setShowOperationManager(true)}
+               className="px-6 py-4 bg-white border-[2.5px] border-black rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(139,92,246,0.5)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-black"
+            >
+              <SettingsIcon size={16} strokeWidth={3} />
+              Công đoạn
+            </button>
+            
+            <div className="flex gap-2">
+              <button 
+                onClick={handleDownloadTemplate}
+                className="w-14 h-14 bg-white border-[2.5px] border-black rounded-xl flex items-center justify-center text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-blue transition-all"
+                title="Tải file mẫu"
+              >
+                <FileDown size={20} />
+              </button>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-14 h-14 bg-white border-[2.5px] border-black rounded-xl flex items-center justify-center text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FACC15] transition-all"
+                title="Import Excel"
+              >
+                <FileUp size={20} />
+              </button>
+            </div>
+
+            <button 
+              onClick={() => {
+                setEditingProduct(null);
+                setFormMode('create');
+                setIsFormOpen(true);
+              }}
+              className="px-8 py-4 bg-neo-purple text-black rounded-xl border-[2.5px] border-black font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:text-black transition-all active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+            >
+              <Plus size={20} strokeWidth={3} />
+              <span>Sản phẩm mới</span>
+            </button>
+          </div>
       </div>
 
       {/* FILTER / SEARCH BAR */}

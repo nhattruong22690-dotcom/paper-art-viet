@@ -10,6 +10,8 @@ import {
   Box,
   Trash2,
   Edit2,
+  Database,
+  ChevronRight,
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -110,14 +112,20 @@ export default function MaterialMasterList() {
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-20">
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-white border-2 border-black rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-             <Package size={28} className="text-black" />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-12">
+        <div className="flex items-center gap-8">
+          <div className="w-20 h-20 bg-neo-purple border-[3.5px] border-black rounded-[2rem] flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:scale-110 transition-transform">
+            <Database size={36} strokeWidth={3} className="text-black" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-black tracking-tight uppercase italic">Từ điển Vật tư</h1>
-            <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Master Specification & Inventory Baseline</p>
+            <nav className="flex items-center gap-3 text-[10px] font-black text-black/20 uppercase tracking-[0.4em] mb-3">
+              <span>Logistics Suite</span>
+              <ChevronRight size={12} strokeWidth={3} />
+              <span className="text-neo-purple italic">Master Registry</span>
+            </nav>
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter leading-none text-black">
+              Từ điển <span className="text-neo-purple underline decoration-[3px] underline-offset-4 font-normal">Vật tư NVL</span>
+            </h1>
           </div>
         </div>
 
@@ -168,13 +176,13 @@ export default function MaterialMasterList() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-black text-[10px] font-black text-neo-purple uppercase tracking-widest">
-                <th className="px-8 py-5 border-b-2 border-black text-neo-purple">Vật tư / SKU</th>
-                <th className="px-8 py-5 border-b-2 border-black text-neo-purple">Phân loại</th>
-                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Đơn vị</th>
-                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple">Tồn kho</th>
-                <th className="px-8 py-5 text-right border-b-2 border-black text-neo-purple">Đơn giá tham chiếu</th>
-                <th className="px-8 py-5 text-center border-b-2 border-black text-neo-purple w-32">Quản lý</th>
+              <tr className="bg-black text-[10px] font-black uppercase tracking-widest">
+                <th className="px-8 py-5 border-b-2 border-black !text-white">Vật tư / SKU</th>
+                <th className="px-8 py-5 border-b-2 border-black !text-white">Phân loại</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black !text-white">Đơn vị</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black !text-white">Tồn kho</th>
+                <th className="px-8 py-5 text-right border-b-2 border-black !text-white">Đơn giá tham chiếu</th>
+                <th className="px-8 py-5 text-center border-b-2 border-black !text-white w-32">Quản lý</th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-black/5">
