@@ -51,7 +51,9 @@ export default function EmployeeFormModal({ isOpen, onClose, onSuccess, employee
     status: 'active',
     joinDate: new Date().toISOString().split('T')[0],
     salaryType: 'monthly',
-    baseSalary: 0
+    baseSalary: 0,
+    isKPI: false,
+    isNew: true
   });
 
   useEffect(() => {
@@ -70,7 +72,9 @@ export default function EmployeeFormModal({ isOpen, onClose, onSuccess, employee
           status: employee.status || 'active',
           joinDate: employee.joinDate ? employee.joinDate.split('T')[0] : new Date().toISOString().split('T')[0],
           salaryType: employee.salaryType || 'monthly',
-          baseSalary: employee.baseSalary || 0
+          baseSalary: employee.baseSalary || 0,
+          isKPI: employee.isKPI || false,
+          isNew: employee.isNew !== undefined ? employee.isNew : true
         });
       } else {
         // Create mode: Reset and fetch next code
@@ -93,7 +97,9 @@ export default function EmployeeFormModal({ isOpen, onClose, onSuccess, employee
       status: 'active',
       joinDate: new Date().toISOString().split('T')[0],
       salaryType: 'monthly',
-      baseSalary: 0
+      baseSalary: 0,
+      isKPI: false,
+      isNew: true
     });
   };
 
@@ -396,7 +402,49 @@ export default function EmployeeFormModal({ isOpen, onClose, onSuccess, employee
 
                   <div className="p-4 bg-neo-yellow/10 border-2 border-black rounded-xl text-[10px] font-bold text-black flex items-center gap-3">
                     <div className="w-6 h-6 bg-neo-yellow border-2 border-black rounded flex items-center justify-center shrink-0">!</div>
-                    <span>Nhân viên có phòng ban "Sản xuất" hoặc chức vụ "Công nhân" sẽ tự động xuất hiện trong các tác vụ sản xuất.</span>
+                    <span>Nhân viên có tích "Tính KPI" mới xuất hiện trong các tác vụ ghi nhận sản xuất.</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="p-4 bg-white border-2 border-black rounded-xl flex items-center justify-between shadow-neo-sm">
+                        <div className="flex flex-col">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-black">Tính KPI</span>
+                           <span className="text-[8px] font-bold text-black/40 uppercase">Xuất hiện ghi sản lượng</span>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => setFormData({...formData, isKPI: !formData.isKPI})}
+                          className={cn(
+                            "w-12 h-6 rounded-full border-2 border-black relative transition-all",
+                            formData.isKPI ? "bg-neo-green" : "bg-black/10"
+                          )}
+                        >
+                           <div className={cn(
+                             "absolute top-0.5 w-4 h-4 rounded-full bg-white border-2 border-black transition-all",
+                             formData.isKPI ? "left-6" : "left-0.5"
+                           )} />
+                        </button>
+                     </div>
+
+                     <div className="p-4 bg-white border-2 border-black rounded-xl flex items-center justify-between shadow-neo-sm">
+                        <div className="flex flex-col">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-black">Nhân viên mới</span>
+                           <span className="text-[8px] font-bold text-black/40 uppercase">Gắn nhãn nhận diện</span>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => setFormData({...formData, isNew: !formData.isNew})}
+                          className={cn(
+                            "w-12 h-6 rounded-full border-2 border-black relative transition-all",
+                            formData.isNew ? "bg-neo-blue" : "bg-black/10"
+                          )}
+                        >
+                           <div className={cn(
+                             "absolute top-0.5 w-4 h-4 rounded-full bg-white border-2 border-black transition-all",
+                             formData.isNew ? "left-6" : "left-0.5"
+                           )} />
+                        </button>
+                     </div>
                   </div>
 
                 </div>

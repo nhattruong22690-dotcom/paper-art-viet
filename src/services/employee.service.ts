@@ -100,6 +100,8 @@ export async function getEmployees() {
     department: emp.department,
     position: emp.position,
     status: emp.status,
+    isKPI: emp.is_kpi,
+    isNew: emp.is_new,
     joinDate: emp.join_date,
     salaryType: emp.salary_type,
     baseSalary: Number(emp.base_salary || 0),
@@ -129,6 +131,8 @@ export async function getEmployeeById(id: string) {
     name: data.full_name,
     idCard: data.id_card,
     joinDate: data.join_date,
+    isKPI: data.is_kpi,
+    isNew: data.is_new,
     salaryType: data.salary_type,
     baseSalary: Number(data.base_salary || 0),
     hasAccount: data.users && data.users.length > 0,
@@ -178,7 +182,9 @@ export async function createEmployee(data: any) {
     status: data.status || 'active',
     join_date: data.joinDate,
     salary_type: data.salaryType,
-    base_salary: data.baseSalary
+    base_salary: data.baseSalary,
+    is_kpi: data.isKPI,
+    is_new: data.isNew
   };
   
   const { data: newEmp, error } = await supabase
@@ -211,6 +217,8 @@ export async function updateEmployee(id: string, data: any) {
   if (data.joinDate) dbData.join_date = data.joinDate;
   if (data.salaryType) dbData.salary_type = data.salaryType;
   if (data.baseSalary !== undefined) dbData.base_salary = data.baseSalary;
+  if (data.isKPI !== undefined) dbData.is_kpi = data.isKPI;
+  if (data.isNew !== undefined) dbData.is_new = data.isNew;
 
   const { data: updated, error } = await supabase
     .from('Employees')
@@ -373,14 +381,17 @@ export async function getUserById(id: string) {
 export async function getProductionWorkers() {
   const { data, error } = await supabase
     .from('Employees')
-    .select('id, full_name, employee_code, department, position')
+    .select('id, full_name, employee_code, department, position, is_kpi')
     .eq('status', 'active')
-    .or('department.eq.SX,position.eq.Sản xuất')
+    .eq('is_kpi', true)
     .order('full_name', { ascending: true });
 
   if (error) throw error;
   
-  return (data || []).map(emp => ({
+  // Lọc thêm một lần nữa bằng code để đảm bảo tuyệt đối không có sai sót
+  const filteredData = (data || []).filter(emp => emp.is_kpi === true);
+  
+  return filteredData.map(emp => ({
     id: emp.id,
     name: emp.full_name,
     code: emp.employee_code,

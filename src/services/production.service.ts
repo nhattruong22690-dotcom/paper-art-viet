@@ -118,11 +118,15 @@ export async function getWorkerPerformance() {
         productionOrder:ProductionOrder(*)
       )
     `)
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .eq('is_kpi', true);
 
   if (error) throw error;
 
-  return (employees || []).map(emp => {
+  // JS-side safeguard filter
+  const filteredEmployees = (employees || []).filter(emp => emp.is_kpi === true);
+
+  return filteredEmployees.map(emp => {
     const logs = emp.workLogs || [];
     const totalQty = logs.reduce((sum: number, log: any) => sum + (log.quantity || 0), 0);
     const techErrors = logs.reduce((sum: number, log: any) => sum + (log.technical_error_count || 0), 0);

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getWorkerPerformance } from '@/services/production.service';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const performance = await getWorkerPerformance();

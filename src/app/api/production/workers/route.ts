@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getProductionWorkers } from '@/services/employee.service';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const workers = await getProductionWorkers();
