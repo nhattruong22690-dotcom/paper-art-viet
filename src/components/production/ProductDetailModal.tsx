@@ -105,7 +105,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    const [customCosts, setCustomCosts] = useState<any[]>([]);
    const [productionNotes, setProductionNotes] = useState<string[]>([]);
    const [noteInput, setNoteInput] = useState<string>('');
-   
+
    const [bomVersions, setBomVersions] = useState<BOMVersion[]>([]);
    const [selectedVersionId, setSelectedVersionId] = useState<string>('');
    const [bomOperations, setBomOperations] = useState<any[]>([]);
@@ -137,10 +137,10 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
             setProductionTimeStd(data.productionTimeStd || 0);
             setWholesalePrice(Number(data.wholesalePrice || 0));
             setExportPrice(Number(data.exportPrice || 0));
-            
+
             const versions = data.bomVersions || [];
             setBomVersions(versions);
-            
+
             const active = versions.find((v: any) => v.is_active) || versions[0];
             if (active) {
                setSelectedVersionId(active.id);
@@ -166,25 +166,34 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
       try {
          const { getBOMDetail } = await import('@/services/bom.service');
          const bom = await getBOMDetail(versionId);
-         
-         if (bom) {
-            setBomItems((bom.bom_materials || []).map((item: any) => ({
-               id: item.id,
-               materialId: item.material_id,
-               quantity: Number(item.qty),
-               material: {
-                  ...item.materials,
-                  unitPrice: Number(item.materials.price || 0),
-                  referencePrice: Number(item.materials.price || 0)
-               }
-            })) as any);
 
-            setBomOperations((bom.bom_operations || []).map((op: any) => ({
-               id: op.id,
-               operationId: op.operation_id,
-               sequence: op.sequence,
-               operation: op.operations
-            })));
+         if (bom) {
+            setBomItems((bom.bom_materials || []).map((item: any) => {
+               const definedCustomPrice = product.cogsConfig?.customPrices?.[item.material_id];
+               return {
+                  id: item.id,
+                  materialId: item.material_id,
+                  quantity: Number(item.qty),
+                  material: {
+                     ...item.materials,
+                     unitPrice: typeof definedCustomPrice === 'number' ? definedCustomPrice : Number(item.materials.price || 0),
+                     referencePrice: Number(item.materials.price || 0)
+                  }
+               };
+            }) as any);
+
+            setBomOperations((bom.bom_operations || []).map((op: any) => {
+               const definedCustomPrice = product.cogsConfig?.customPrices?.[op.operation_id];
+               return {
+                  id: op.id,
+                  operationId: op.operation_id,
+                  sequence: op.sequence,
+                  operation: {
+                     ...op.operations,
+                     price: typeof definedCustomPrice === 'number' ? definedCustomPrice : Number(op.operations.price || 0)
+                  }
+               };
+            }));
          }
       } catch (error) {
          console.error('Failed to load BOM version:', error);
@@ -261,19 +270,31 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
       ));
    };
 
+   const handleUpdateMaterialPrice = (materialId: string, price: number) => {
+      setBomItems(bomItems.map(item =>
+         item.materialId === materialId ? { ...item, material: { ...item.material, unitPrice: price } } : item
+      ));
+   };
+
+   const handleUpdateOperationPrice = (id: string, price: number) => {
+      setBomOperations(bomOperations.map(op =>
+         op.id === id ? { ...op, operation: { ...op.operation, price: price } } : op
+      ));
+   };
+
    const handleSaveBOM = async () => {
       if (!selectedVersionId) return;
       setIsSavingBOM(true);
       try {
          const { upsertBOM } = await import('@/services/bom.service');
-         
+
          // Lấy thông tin BOM hiện tại để giữ version và product_id
          const currentVersion = bomVersions.find(v => v.id === selectedVersionId);
          if (!currentVersion) return;
 
          await upsertBOM(
-            { 
-               id: selectedVersionId, 
+            {
+               id: selectedVersionId,
                product_id: product.id,
                version: currentVersion.version,
                is_active: currentVersion.is_active
@@ -288,7 +309,25 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                sequence: op.sequence
             }))
          );
-         
+
+         const customPrices: Record<string, number> = {};
+         bomItems.forEach(item => {
+            if (item.material.unitPrice !== item.material.referencePrice) {
+               customPrices[item.materialId] = item.material.unitPrice;
+            }
+         });
+         bomOperations.forEach(op => {
+            customPrices[op.operationId] = op.operation.price;
+         });
+
+         await upsertProduct({
+            id: product.id,
+            cogsConfig: {
+               ...(product.cogsConfig || {}),
+               customPrices
+            }
+         } as any);
+
          await recalculateProductCostPrice(product.id);
          onUpdate();
          showToast('success', `Đã cập nhật BOM v${currentVersion.version} thành công`);
@@ -303,10 +342,21 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    const handleSaveCOGS = async () => {
       setIsSavingCOGS(true);
       try {
+         const customPrices: Record<string, number> = {};
+         bomItems.forEach(item => {
+            if (item.material.unitPrice !== item.material.referencePrice) {
+               customPrices[item.materialId] = item.material.unitPrice;
+            }
+         });
+         bomOperations.forEach(op => {
+            customPrices[op.operationId] = op.operation.price;
+         });
+
          const cogsConfig = {
             wasteRatio,
             customCosts,
-            productionNotes
+            productionNotes,
+            customPrices
          };
 
          const calculatedBasePrice = totalCOGS;
@@ -430,11 +480,11 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                      <div className="flex items-center gap-3 mt-2">
                         <span className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] leading-none">{product.sku || 'N/A'}</span>
                         <span className="w-1.5 h-1.5 bg-black/10 rounded-full" />
-                        
+
                         {/* VERSION SWITCHER */}
                         <div className="flex items-center gap-2 bg-neo-purple/5 px-2 py-1 rounded border border-black/10">
                            <History size={10} className="text-neo-purple" />
-                           <select 
+                           <select
                               value={selectedVersionId}
                               onChange={(e) => {
                                  const vid = e.target.value;
@@ -454,26 +504,26 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                   </div>
                </div>
 
-                <div className="flex items-center gap-4">
-                   <button 
+               <div className="flex items-center gap-4">
+                  <button
                      onClick={handleDeleteProduct}
                      className="w-12 h-12 bg-red-50 border-[2px] border-black rounded-xl flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                      title="Xóa sản phẩm"
-                   >
-                      <Trash2 size={20} strokeWidth={3} />
-                   </button>
+                  >
+                     <Trash2 size={20} strokeWidth={3} />
+                  </button>
 
-                   <button 
-                    onClick={() => onEdit?.(product)}
-                    className="h-12 px-6 bg-white border-[2px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2"
+                  <button
+                     onClick={() => onEdit?.(product)}
+                     className="h-12 px-6 bg-white border-[2px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2"
                   >
                      <Edit2 size={16} strokeWidth={3} />
                      <span>Hiệu đính Master</span>
                   </button>
 
-                  <button 
-                    onClick={() => onCreateVersion?.(product)}
-                    className="h-12 px-6 bg-[#D8B4FE] border-[2px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-purple transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2"
+                  <button
+                     onClick={() => onCreateVersion?.(product)}
+                     className="h-12 px-6 bg-[#D8B4FE] border-[2px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-purple transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2"
                   >
                      <Layers size={16} strokeWidth={3} />
                      <span>Phiên bản mới</span>
@@ -529,7 +579,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                {activeTab === 'general' ? (
                   <div className="space-y-12 animate-in fade-in duration-500 pb-10">
                      <div className="grid grid-cols-1 lg:grid-cols-[450px_1fr] gap-12 items-start text-black">
-                        
+
                         {/* Left Column: Metrics (Index Cards Stacked) */}
                         <div className="flex flex-col gap-6">
                            <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
@@ -546,7 +596,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                        <Clock size={28} strokeWidth={3} />
                                     </div>
                                     <div className="flex-1 border-b-[2.5px] border-black/10 focus-within:border-black transition-colors">
-                                       <input 
+                                       <input
                                           type="number"
                                           value={productionTimeStd || ''}
                                           onChange={(e) => setProductionTimeStd(Number(e.target.value))}
@@ -562,15 +612,15 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                               <div className="w-full p-8 rounded-xl bg-[#D8B4FE] border-[2.5px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                                  <div className="flex justify-between items-center mb-6">
                                     <p className="text-[10px] font-black text-black uppercase tracking-widest italic">Giá vốn (Base)</p>
-                                    <button 
-                                      onClick={async () => {
-                                        const module = await import('@/services/product.service');
-                                        const res = await module.recalculateProductCostPrice(product.id);
-                                        if (res) onUpdate();
-                                      }}
-                                      className="px-3 py-1 bg-white text-black border-[1.5px] border-black text-[9px] font-black uppercase tracking-widest rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+                                    <button
+                                       onClick={async () => {
+                                          const module = await import('@/services/product.service');
+                                          const res = await module.recalculateProductCostPrice(product.id);
+                                          if (res) onUpdate();
+                                       }}
+                                       className="px-3 py-1 bg-white text-black border-[1.5px] border-black text-[9px] font-black uppercase tracking-widest rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
                                     >
-                                      Re-calc
+                                       Re-calc
                                     </button>
                                  </div>
                                  <div className="flex items-center gap-6">
@@ -642,10 +692,10 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                               <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
                                  <History size={14} strokeWidth={3} /> Nhật ký & Yêu cầu Kỹ thuật
                               </div>
-                              
+
                               <div className="bg-white border-[2.5px] border-black rounded-2xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-8">
                                  <div className="flex gap-4">
-                                    <input 
+                                    <input
                                        value={noteInput}
                                        onChange={(e) => setNoteInput(e.target.value)}
                                        onKeyDown={(e) => e.key === 'Enter' && addNote()}
@@ -656,14 +706,14 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                        <Plus size={24} strokeWidth={4} />
                                     </button>
                                  </div>
-                                 
+
                                  <div className="space-y-4 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
                                     {productionNotes.map((note, idx) => (
                                        <div key={idx} className="group relative flex items-start gap-5 p-6 bg-[#FAF7F2] border-[2px] border-black rounded-xl hover:bg-neo-yellow/10 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                                           <div className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                              <span className="text-[12px] font-black italic">{idx + 1}</span>
                                           </div>
-                                          <textarea 
+                                          <textarea
                                              rows={1}
                                              value={note}
                                              onChange={(e) => updateNote(idx, e.target.value)}
@@ -686,7 +736,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                         </div>
                      </div>
                   </div>
-                              ) : activeTab === 'bom' ? (
+               ) : activeTab === 'bom' ? (
                   <div className="space-y-10 animate-in fade-in duration-500 h-full flex flex-col pb-10">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="relative group/field">
@@ -742,8 +792,9 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                  <thead className="sticky top-0 z-10 bg-white border-b-[2px] border-black/5">
                                     <tr className="text-[10px] font-black text-black/40 uppercase tracking-widest">
                                        <th className="px-6 py-4">Tên vật tư</th>
-                                       <th className="px-6 py-4 text-center">Số lượng</th>
+                                       <th className="px-6 py-4 text-center">Định mức</th>
                                        <th className="px-6 py-4 text-right">Đơn giá</th>
+                                       <th className="px-6 py-4 text-right">Thành tiền</th>
                                        <th className="px-6 py-4 w-12"></th>
                                     </tr>
                                  </thead>
@@ -756,16 +807,26 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                           </td>
                                           <td className="px-6 py-4">
                                              <div className="flex items-center gap-2 bg-white border border-black/20 rounded px-2 py-1">
-                                                <input
-                                                   type="number"
+                                                <NumericInput
                                                    value={item.quantity}
-                                                   onChange={(e) => handleUpdateQuantity(item.materialId, Number(e.target.value))}
-                                                   className="w-12 bg-transparent text-center font-black text-black outline-none tabular-nums text-xs"
+                                                   onChange={(val) => handleUpdateQuantity(item.materialId, val)}
+                                                   className="w-16 bg-transparent text-center font-black text-black outline-none tabular-nums text-xs border-none p-0 !pl-0 !pr-0"
                                                 />
                                                 <span className="text-[9px] font-black text-black/30 uppercase">{item.material.unit}</span>
                                              </div>
                                           </td>
-                                           <td className="px-6 py-4 text-right tabular-nums text-black/40 font-black italic text-xs">{formatNumber(item.material.unitPrice || 0)}</td>
+                                          <td className="px-6 py-4 text-right tabular-nums text-black/40 font-black italic text-xs">
+                                             <div className="w-[100px] ml-auto">
+                                                <NumericInput
+                                                   value={item.material.unitPrice}
+                                                   onChange={(val) => handleUpdateMaterialPrice(item.materialId, val)}
+                                                   className="w-full bg-white border border-black/20 rounded px-2 py-1 text-right font-black text-black outline-none tabular-nums text-xs !pl-2 !pr-2 shadow-none focus:border-neo-purple"
+                                                />
+                                             </div>
+                                          </td>
+                                          <td className="px-6 py-4 text-right tabular-nums text-black font-black italic text-sm">
+                                             {formatNumber(item.quantity * (item.material.unitPrice || 0))}đ
+                                          </td>
                                           <td className="px-6 py-4">
                                              <button onClick={() => handleRemoveMaterial(item.materialId)} className="text-black/20 hover:text-rose-500 transition-colors">
                                                 <Trash2 size={16} strokeWidth={3} />
@@ -792,19 +853,22 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                     <div className="flex justify-between items-start">
                                        <div className="flex items-center gap-3">
                                           <div className="w-6 h-6 bg-black text-white text-[10px] font-black rounded flex items-center justify-center italic">#{idx + 1}</div>
-                                          <p className="font-black text-black text-xs uppercase italic">{op.operation.name}</p>
+                                          <p className="font-black text-black text-xs uppercase italic">{op.operation.specification}</p>
                                        </div>
                                        <button onClick={() => handleRemoveOperation(op.id)} className="text-black/20 hover:text-rose-500 transition-colors">
                                           <Trash2 size={14} strokeWidth={3} />
                                        </button>
                                     </div>
                                     <div className="flex justify-between items-center bg-white border border-black/10 rounded-lg p-3">
-                                       <div className="flex flex-col">
-                                          <span className="text-[8px] font-black text-black/40 uppercase italic">Chi phí/SP</span>
-                                          <span className="text-xs font-black text-black italic">{(op.operation.price || 0).toLocaleString()} VNĐ</span>
+                                       <div className="flex flex-col w-[120px]">
+                                          <span className="text-[8px] font-black text-black/40 uppercase italic mb-1">Chi phí/SP (VNĐ)</span>
+                                          <NumericInput
+                                             value={op.operation.price}
+                                             onChange={(val) => handleUpdateOperationPrice(op.id, val)}
+                                             className="w-full bg-white border border-black/20 rounded px-2 py-1 text-left font-black text-black outline-none tabular-nums text-xs !pl-2 !pr-2 shadow-none focus:border-neo-purple"
+                                          />
                                        </div>
-                                       <div className="w-px h-6 bg-black/5" />
-                                       <div className="flex flex-col items-end">
+                                       <div className="flex flex-col items-end text-right">
                                           <span className="text-[8px] font-black text-black/40 uppercase italic">Thứ tự</span>
                                           <span className="text-xs font-black text-black italic tabular-nums">{op.sequence}</span>
                                        </div>

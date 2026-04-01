@@ -16,6 +16,7 @@ export interface Product {
   code: string;
   name: string;
   unit: string;
+  cogs_config?: any;
   created_at?: string;
 }
 

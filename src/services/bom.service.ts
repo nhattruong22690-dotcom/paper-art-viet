@@ -46,12 +46,15 @@ export async function calculateBOMCost(bomId: string) {
   const bom = await getBOMDetail(bomId);
   
   const materialCost = bom.bom_materials.reduce((total, item) => {
-    const cost = item.material?.price || 0;
+    const customPrices = bom.product?.cogs_config?.customPrices || {};
+    const cost = customPrices[item.material_id] ?? (item.material?.price || 0);
     return total + (item.qty * cost * (1 + item.scrap_rate));
   }, 0);
 
   const operationCost = bom.bom_operations.reduce((total, item) => {
-    return total + (item.operation?.price || 0);
+    const customPrices = bom.product?.cogs_config?.customPrices || {};
+    const cost = customPrices[item.operation_id] ?? (item.operation?.price || 0);
+    return total + cost;
   }, 0);
 
   const totalCost = materialCost + operationCost;

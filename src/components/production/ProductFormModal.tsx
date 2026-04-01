@@ -59,6 +59,7 @@ interface Product {
   unit: string | null;
   cogsConfig?: any;
   bomItems?: any[];
+  bomOperations?: any[];
 }
 
 interface ProductFormModalProps {
@@ -211,19 +212,34 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
           exportPrice: Number(initialData.exportPrice || 0),
         });
         if (initialData.bomItems) {
-          setBomItems(initialData.bomItems.map(item => ({
-            materialId: item.materialId,
-            material: {
-              specification: item.material.specification || item.material.name,
-              type: item.material.type || item.material.sku,
-              unit: item.material.unit,
-              unitPrice: Number(item.material.price || item.material.unitPrice || item.material.referencePrice || 0),
-              referencePrice: Number(item.material.price || item.material.referencePrice || 0),
-              name: item.material.specification || item.material.name,
-              sku: item.material.type || item.material.sku
-            },
-            quantity: Number(item.quantity)
-          })));
+          setBomItems(initialData.bomItems.map(item => {
+            const definedCustomPrice = initialData.cogsConfig?.customPrices?.[item.materialId];
+            return {
+              materialId: item.materialId,
+              material: {
+                specification: item.material.specification || item.material.name,
+                type: item.material.type || item.material.sku,
+                unit: item.material.unit,
+                unitPrice: typeof definedCustomPrice === 'number' ? definedCustomPrice : Number(item.material.price || item.material.unitPrice || item.material.referencePrice || 0),
+                referencePrice: Number(item.material.price || item.material.referencePrice || 0),
+                name: item.material.specification || item.material.name,
+                sku: item.material.type || item.material.sku
+              },
+              quantity: Number(item.quantity)
+            };
+          }));
+        }
+        if (initialData.bomOperations) {
+          setBomOperations(initialData.bomOperations.map(op => {
+            const definedCustomPrice = initialData.cogsConfig?.customPrices?.[op.operationId];
+            return {
+              ...op,
+              operation: {
+                ...op.operation,
+                price: typeof definedCustomPrice === 'number' ? definedCustomPrice : Number(op.operation.price || 0)
+              }
+            };
+          }));
         }
         if (initialData.cogsConfig) {
           setWasteRatio(initialData.cogsConfig.wasteRatio || 0.05);
@@ -290,6 +306,12 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
     setBomItems(bomItems.filter(item => item.materialId !== materialId));
   };
 
+  const handleUpdateMaterialPrice = (materialId: string, price: number) => {
+    setBomItems(bomItems.map(item =>
+      item.materialId === materialId ? { ...item, material: { ...item.material, unitPrice: price } } : item
+    ));
+  };
+
   const handleAddOperation = (op: any) => {
     if (bomOperations.some(item => item.operationId === op.id)) return;
     setBomOperations([
@@ -305,6 +327,12 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
 
   const handleRemoveOperation = (id: string) => {
     setBomOperations(bomOperations.filter(op => op.id !== id));
+  };
+
+  const handleUpdateOperationPrice = (id: string, price: number) => {
+    setBomOperations(bomOperations.map(op =>
+      op.id === id ? { ...op, operation: { ...op.operation, price: price } } : op
+    ));
   };
 
   const totalMaterialCost = bomItems.reduce((acc, item) => {
@@ -343,6 +371,16 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
       const calculatedWholesalePrice = totalCOGS * 1.3;
       const calculatedExportPrice = totalCOGS * 2.4;
 
+      const customPrices: Record<string, number> = {};
+      bomItems.forEach(item => {
+        if (item.material.unitPrice !== item.material.referencePrice) {
+          customPrices[item.materialId] = item.material.unitPrice;
+        }
+      });
+      bomOperations.forEach(op => {
+        customPrices[op.operationId] = op.operation.price; // or track reference price, but for now just save it
+      });
+
       const payload = {
         ...formData,
         basePrice: calculatedBasePrice,
@@ -352,6 +390,7 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
           wasteRatio,
           customCosts,
           productionNotes,
+          customPrices, // Include overridden prices
           totalCOGS: calculatedBasePrice
         },
         bomItems: bomItems.map(item => ({
@@ -634,8 +673,9 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                       <thead className="sticky top-0 z-10 bg-white border-b-[2px] border-black/5">
                         <tr className="text-[10px] font-black text-black/40 uppercase tracking-widest">
                           <th className="px-6 py-4">Tên vật tư</th>
-                          <th className="px-6 py-4 text-center">Số lượng</th>
+                          <th className="px-6 py-4 text-center">Định mức</th>
                           <th className="px-6 py-4 text-right">Đơn giá</th>
+                          <th className="px-6 py-4 text-right">Thành tiền</th>
                           <th className="px-6 py-4 w-12"></th>
                         </tr>
                       </thead>
@@ -648,19 +688,26 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2 bg-white border border-black/20 rounded px-2 py-1">
-                                <input
-                                  type="text"
-                                  value={formatNumber(item.quantity)}
-                                  onChange={(e) => {
-                                    const val = parseNumber(e.target.value);
-                                    handleUpdateQuantity(item.materialId, val);
-                                  }}
-                                  className="w-16 bg-transparent text-center font-black text-black outline-none tabular-nums text-xs"
+                                <NumericInput
+                                  value={item.quantity}
+                                  onChange={(val) => handleUpdateQuantity(item.materialId, val)}
+                                  className="w-16 bg-transparent text-center font-black text-black outline-none tabular-nums text-xs border-none p-0 !pl-0 !pr-0"
                                 />
                                 <span className="text-[9px] font-black text-black/30 uppercase">{item.material.unit}</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-right tabular-nums text-black/40 font-black italic text-xs">{formatNumber(item.material.unitPrice || 0)}</td>
+                            <td className="px-6 py-4 text-right tabular-nums text-black/40 font-black italic text-xs">
+                              <div className="w-[100px] ml-auto">
+                                <NumericInput
+                                  value={item.material.unitPrice}
+                                  onChange={(val) => handleUpdateMaterialPrice(item.materialId, val)}
+                                  className="w-full bg-white border border-black/20 rounded px-2 py-1 text-right font-black text-black outline-none tabular-nums text-xs !pl-2 !pr-2 shadow-none focus:border-neo-purple"
+                                />
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-right tabular-nums text-black font-black italic text-sm">
+                               {formatNumber(item.quantity * (item.material.unitPrice || 0))}đ
+                            </td>
                             <td className="px-6 py-4">
                               <button onClick={() => handleRemoveMaterial(item.materialId)} className="text-black/20 hover:text-rose-500 transition-colors">
                                 <Trash2 size={16} strokeWidth={3} />
@@ -684,16 +731,20 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-3">
                             <div className="w-6 h-6 bg-black text-white text-[10px] font-black rounded flex items-center justify-center italic">#{idx + 1}</div>
-                            <p className="font-black text-black text-xs uppercase italic">{op.operation.name}</p>
+                            <p className="font-black text-black text-xs uppercase italic">{op.operation.specification}</p>
                           </div>
                           <button onClick={() => handleRemoveOperation(op.id)} className="text-black/20 hover:text-rose-500 transition-colors">
                             <Trash2 size={14} strokeWidth={3} />
                           </button>
                         </div>
                         <div className="flex justify-between items-center bg-white border border-black/10 rounded-lg p-3">
-                          <div className="flex flex-col">
-                            <span className="text-[8px] font-black text-black/40 uppercase italic">Chi phí/SP</span>
-                            <span className="text-xs font-black text-black italic">{formatNumber(op.operation.price || 0)} VNĐ</span>
+                          <div className="flex flex-col w-[120px]">
+                            <span className="text-[8px] font-black text-black/40 uppercase italic mb-1">Chi phí/SP (VNĐ)</span>
+                            <NumericInput
+                              value={op.operation.price}
+                              onChange={(val) => handleUpdateOperationPrice(op.id, val)}
+                              className="w-full bg-white border border-black/20 rounded px-2 py-1 text-left font-black text-black outline-none tabular-nums text-xs !pl-2 !pr-2 shadow-none focus:border-neo-purple"
+                            />
                           </div>
                           <div className="flex flex-col items-end text-right">
                             <span className="text-[8px] font-black text-black/40 uppercase italic">Thứ tự</span>

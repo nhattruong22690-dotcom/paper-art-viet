@@ -221,7 +221,10 @@ export default function BOMDetailModal({ bomId, isOpen, onClose }: BOMDetailModa
                            </tr>
                         </thead>
                         <tbody className="text-sm font-bold text-black border-t-2 border-black">
-                           {bom?.bom_materials?.map((item, i) => (
+                           {bom?.bom_materials?.map((item, i) => {
+                             const customPrices = bom?.product?.cogs_config?.customPrices || {};
+                             const materialPrice = customPrices[item.material_id] ?? (item.material?.price || 0);
+                             return (
                               <tr key={i} className="border-b-2 border-black/5 hover:bg-[#D8B4FE]/5 transition-colors">
                                  <td className="px-6 py-4 border-r-2 border-black/5">
                                     <div className="flex flex-col">
@@ -234,12 +237,16 @@ export default function BOMDetailModal({ bomId, isOpen, onClose }: BOMDetailModa
                                  </td>
                                  <td className="px-6 py-4 border-r-2 border-black/5 text-center">{item.qty} {item.material?.unit}</td>
                                  <td className="px-6 py-4 border-r-2 border-black/5 text-center text-rose-500">{(item.scrap_rate * 100).toFixed(1)}%</td>
-                                 <td className="px-6 py-4 border-r-2 border-black/5 text-right tabular-nums">{formatNumber(item.material?.price)}đ</td>
+                                 <td className="px-6 py-4 border-r-2 border-black/5 text-right tabular-nums">
+                                    {formatNumber(materialPrice)}đ
+                                    {customPrices[item.material_id] && <span className="ml-1 text-[8px] text-rose-500 italic uppercase">(*Tùy chỉnh)</span>}
+                                 </td>
                                  <td className="px-6 py-4 text-right tabular-nums font-black">
-                                    {formatNumber(item.qty * (item.material?.price || 0) * (1 + item.scrap_rate))}đ
+                                    {formatNumber(item.qty * materialPrice * (1 + item.scrap_rate))}đ
                                  </td>
                               </tr>
-                           ))}
+                             );
+                           })}
                         </tbody>
                      </table>
                   </div>
@@ -265,13 +272,20 @@ export default function BOMDetailModal({ bomId, isOpen, onClose }: BOMDetailModa
                            </tr>
                         </thead>
                         <tbody className="text-sm font-bold text-black">
-                           {bom?.bom_operations?.sort((a,b) => a.sequence - b.sequence).map((item, i) => (
+                           {bom?.bom_operations?.sort((a,b) => a.sequence - b.sequence).map((item, i) => {
+                             const customPrices = bom?.product?.cogs_config?.customPrices || {};
+                             const operationPrice = customPrices[item.operation_id] ?? (item.operation?.price || 0);
+                             return (
                               <tr key={i} className="border-b-2 border-black/5 hover:bg-[#D1FAE5]/10">
                                  <td className="px-6 py-4 border-r-2 border-black/5 text-center font-space text-lg italic text-purple-600">#{item.sequence}</td>
                                  <td className="px-6 py-4 border-r-2 border-black/5 uppercase tracking-tight">{item.operation?.specification}</td>
-                                 <td className="px-6 py-4 text-right tabular-nums">{formatNumber(item.operation?.price)}đ</td>
+                                 <td className="px-6 py-4 text-right tabular-nums">
+                                    {formatNumber(operationPrice)}đ
+                                    {customPrices[item.operation_id] && <span className="ml-1 text-[8px] text-rose-500 italic uppercase">(*Tùy chỉnh)</span>}
+                                 </td>
                               </tr>
-                           ))}
+                             );
+                           })}
                         </tbody>
                      </table>
                   </div>

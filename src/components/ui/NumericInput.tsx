@@ -82,6 +82,8 @@ export function NumericInput({
         type="text" 
         value={displayValue}
         onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         className={cn(
           "form-input pl-12 pr-12 font-black tabular-nums transition-all",
           disabled && "opacity-50 cursor-not-allowed bg-black/5",
