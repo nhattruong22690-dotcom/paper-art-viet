@@ -10,13 +10,15 @@ export default function MobileHeader() {
 
   return (
     <>
-      <header className="lg:hidden sticky top-0 z-[100] w-full bg-background border-b-[3px] border-black px-4 py-3 flex items-center justify-between shadow-[0px_4px_0px_0px_rgba(0,0,0,1)]">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-[100] bg-background border-b-[3px] border-black px-4 py-3 flex items-center justify-between shadow-[0px_4px_0px_0px_rgba(0,0,0,1)]">
         <div className="flex items-center gap-3">
+          {/* NÚT MENU */}
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="w-10 h-10 bg-white rounded-xl border-2 border-black flex items-center justify-center text-black active:translate-x-[1px] active:translate-y-[1px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all"
+            className="w-10 h-10 bg-neo-yellow rounded-xl border-[2.5px] border-black flex items-center justify-center text-black active:translate-x-[2px] active:translate-y-[2px] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all"
+            aria-label="Nhấn để mở Menu"
           >
-            <Menu size={22} strokeWidth={2.5} />
+            <Menu size={22} strokeWidth={3} />
           </button>
           
           <Link href="/" className="flex items-center gap-3 active:scale-95 transition-transform group">

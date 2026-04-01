@@ -26,10 +26,10 @@ export default function DashboardShell({ children }: DashboardShellProps) {
     <div className="flex min-h-screen bg-background relative overflow-x-hidden font-sans">
       <Sidebar />
       
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         <MobileHeader />
         
-        <main className="flex-1 p-4 lg:p-8 pb-8 relative z-0">
+        <main className="flex-1 p-4 pt-20 lg:p-8 pb-32 relative z-0">
           {children}
         </main>
       </div>
