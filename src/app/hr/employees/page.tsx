@@ -21,10 +21,13 @@ import {
   Trash2,
   UserCog,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  Settings2,
+  Pencil
 } from 'lucide-react';
 import { getEmployees, deleteEmployee } from '@/services/employee.service';
-import AddEmployeeModal from '@/components/hr/AddEmployeeModal';
+import EmployeeFormModal from '@/components/hr/EmployeeFormModal';
+import HRConfigModal from '@/components/hr/HRConfigModal';
 import { useNotification } from '@/context/NotificationContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -55,6 +58,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
@@ -121,13 +125,26 @@ export default function EmployeesPage() {
            </div>
         </div>
         
-        <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="btn-primary h-14 px-10 text-xs uppercase tracking-widest gap-4"
-        >
-          <UserPlus size={20} strokeWidth={3} />
-          <span>Thêm nhân viên mới</span>
-        </button>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setIsConfigModalOpen(true)}
+            className="btn-secondary h-14 px-8 text-xs uppercase tracking-widest gap-3"
+          >
+            <Settings2 size={20} strokeWidth={3} />
+            <span>Cơ cấu tổ chức</span>
+          </button>
+          
+          <button 
+            onClick={() => {
+              setSelectedEmployee(null);
+              setIsAddModalOpen(true);
+            }}
+            className="btn-primary h-14 px-10 text-xs uppercase tracking-widest gap-4"
+          >
+            <UserPlus size={20} strokeWidth={3} />
+            <span>Thêm nhân viên mới</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter / Search Bar */}
@@ -221,6 +238,16 @@ export default function EmployeesPage() {
                        <button 
                          onClick={() => {
                            setSelectedEmployee(emp);
+                           setIsAddModalOpen(true);
+                         }}
+                         className="w-10 h-10 border-2 border-black rounded-xl flex items-center justify-center text-black/20 hover:text-black hover:bg-black/5 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none bg-white"
+                         title="Chỉnh sửa hồ sơ"
+                       >
+                          <Pencil size={18} strokeWidth={3} />
+                       </button>
+                       <button 
+                         onClick={() => {
+                           setSelectedEmployee(emp);
                            setIsGrantModalOpen(true);
                          }}
                          className="w-10 h-10 border-2 border-black rounded-xl flex items-center justify-center text-black/20 hover:text-black hover:bg-black/5 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none bg-white"
@@ -261,13 +288,22 @@ export default function EmployeesPage() {
          </span>
       </div>
 
-      <AddEmployeeModal 
+      <EmployeeFormModal 
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        employee={selectedEmployee}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setSelectedEmployee(null);
+        }}
         onSuccess={() => {
           loadEmployees();
-          showToast('success', 'Đã thêm nhân viên mới thành công');
+          showToast('success', selectedEmployee ? 'Đã cập nhật hồ sơ thành công' : 'Đã thêm nhân viên mới thành công');
         }}
+      />
+
+      <HRConfigModal 
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
       />
     </div>
   );

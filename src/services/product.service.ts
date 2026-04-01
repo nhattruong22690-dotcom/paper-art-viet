@@ -307,3 +307,20 @@ export async function batchUpsertProducts(productsData: any[]) {
   if (error) throw error;
   return data;
 }
+
+/**
+ * Xóa một sản phẩm khỏi danh mục.
+ * Ràng buộc DB (BOM) được cấu hình CASCADE để xóa sạch dữ liệu liên quan.
+ * Snapshot trong đơn hàng không bị ảnh hưởng nhờ logic snapshot.
+ */
+export async function deleteProduct(id: string) {
+  const { data, error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}

@@ -1,6 +1,81 @@
 import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 /**
+ * Organizational Management (Departments & Positions)
+ */
+export async function getHRDepartments() {
+  const { data, error } = await supabase.from('hr_departments').select('*').order('name');
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createHRDepartment(name: string) {
+  const { data, error } = await supabase.from('hr_departments').insert({ name }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateHRDepartment(id: string, name: string) {
+  const { data, error } = await supabase.from('hr_departments').update({ name }).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteHRDepartment(id: string) {
+  const { error } = await supabase.from('hr_departments').delete().eq('id', id);
+  if (error) throw error;
+  return true;
+}
+
+export async function getHRPositions() {
+  const { data, error } = await supabase.from('hr_positions').select('*').order('name');
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createHRPosition(name: string) {
+  const { data, error } = await supabase.from('hr_positions').insert({ name }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateHRPosition(id: string, name: string) {
+  const { data, error } = await supabase.from('hr_positions').update({ name }).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteHRPosition(id: string) {
+  const { error } = await supabase.from('hr_positions').delete().eq('id', id);
+  if (error) throw error;
+  return true;
+}
+
+/**
+ * Auto-generation of Employee Code (NV + 3 digits)
+ */
+export async function getNextEmployeeCode() {
+  const { data, error } = await supabase
+    .from('Employees')
+    .select('employee_code')
+    .ilike('employee_code', 'NV%')
+    .order('employee_code', { ascending: false })
+    .limit(1);
+
+  if (error) throw error;
+
+  if (!data || data.length === 0) return 'NV001';
+
+  const lastCode = data[0].employee_code;
+  const lastNum = parseInt(lastCode.replace('NV', ''), 10);
+  
+  if (isNaN(lastNum)) return 'NV001';
+
+  const nextNum = lastNum + 1;
+  return `NV${nextNum.toString().padStart(3, '0')}`;
+}
+
+/**
  * Lấy danh sách toàn bộ nhân viên từ bảng Employees, kèm theo trạng thái tài khoản.
  */
 export async function getEmployees() {
@@ -86,9 +161,14 @@ export async function getEmployeeStats() {
  * Thêm một nhân viên mới.
  */
 export async function createEmployee(data: any) {
+  let finalCode = data.employeeCode;
+  if (!finalCode) {
+    finalCode = await getNextEmployeeCode();
+  }
+
   const dbData: any = {
     full_name: data.name,
-    employee_code: data.employeeCode,
+    employee_code: finalCode,
     id_card: data.idCard,
     phone: data.phone,
     email: data.email,

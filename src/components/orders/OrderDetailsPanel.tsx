@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, Edit3, Save, Calendar, User, FileText, CheckCircle2, ChevronRight, Plus, Factory, Zap, Briefcase, UserCheck, History, RotateCcw } from 'lucide-react';
+import { X, Trash2, Edit3, Save, Calendar, User, FileText, CheckCircle2, ChevronRight, Plus, Factory, Zap, Briefcase, UserCheck, History, RotateCcw, Activity, Layers } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
 import SplitProductionModal from './SplitProductionModal';
@@ -20,6 +20,7 @@ interface OrderDetailsPanelProps {
 export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete }: OrderDetailsPanelProps) {
   const { showToast, showModal, confirm: customConfirm } = useNotification();
   const { profile } = useAuth();
+  
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -28,8 +29,18 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
   const [activeItemForSplit, setActiveItemForSplit] = useState<any>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [expandedSnapshotItems, setExpandedSnapshotItems] = useState<Record<string, boolean>>({});
+
+  const toggleSnapshot = (itemId: string) => {
+    setExpandedSnapshotItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+  };
 
   useEffect(() => {
+    // Luôn tắt chế độ chỉnh sửa khi đơn hàng thay đổi hoặc bảng bị đóng
+    setIsEditing(false);
     if (orderId) {
       document.body.style.overflow = 'hidden';
       fetchOrder();
@@ -75,16 +86,9 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
         return;
       }
       
-      const { 
-        id: _id,
-        customer,
-        productionOrders,
-        packages,
-        overallProgress,
-        ...rest 
-      } = data;
       setOrder(data);
-      // Initialize editData with all fields from rest (which includes orderItems, status, notes, etc.)
+      // Initialize editData without relational objects that shouldn't be in update payload
+      const { id, customer, productionOrders, packages, overallProgress, ...rest } = data;
       setEditData(rest);
     } catch (error: any) {
       console.error('Fetch error:', error);
@@ -100,18 +104,14 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
       
       const payload: any = {
         ...editData,
-        estimated_stages: editData.estimatedStages // Map back to snake_case for DB
+        estimated_stages: editData.estimatedStages // Map back to snake_case
       };
 
       if (changes.length > 0) {
         const timestamp = new Intl.DateTimeFormat('vi-VN', {
           timeZone: 'Asia/Ho_Chi_Minh',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
         }).format(new Date());
 
         payload.newLog = {
@@ -177,7 +177,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
         }
       }
     });
-    
+
     oldItems.forEach((oi: any) => {
       if (!newItems.find((ni: any) => ni.id === oi.id)) {
         changes.push(`Xóa SP: ${oi.product?.name}`);
@@ -236,8 +236,6 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
     return { percent, totalDone, totalAllocated, remaining, pos: itemPOs };
   };
 
-  if (!orderId) return null;
-
   return (
     <div className={`fixed inset-0 z-50 transition-opacity ${orderId ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -271,7 +269,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
             <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-white shrink-0">
               <div>
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <span className="bg-primary text-white px-2 py-0.5 rounded text-xs">#{order.contractCode || orderId.slice(-6).toUpperCase()}</span>
+                  <span className="bg-primary text-white px-2 py-0.5 rounded text-xs">#{order.contractCode || (orderId ? orderId.slice(-6).toUpperCase() : '---')}</span>
                   Chi tiết đơn hàng
                 </h2>
                 <div className="flex items-center gap-3 mt-1.5 overflow-hidden">
@@ -284,8 +282,8 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
               <div className="flex items-center gap-2">
                 {!isEditing && (
                    <button 
-                    onClick={() => setIsEditing(true)} 
-                    className="flex items-center gap-2 px-3 py-1.5 bg-neo-purple/10 text-primary border border-primary/20 rounded-lg hover:bg-neo-purple/20 transition-all font-bold text-[10px] uppercase tracking-widest"
+                     onClick={() => setIsEditing(true)} 
+                     className="flex items-center gap-2 px-3 py-1.5 bg-neo-purple/10 text-primary border border-primary/20 rounded-lg hover:bg-neo-purple/20 transition-all font-bold text-[10px] uppercase tracking-widest"
                   >
                     <Edit3 size={14} /> Chỉnh sửa
                   </button>
@@ -363,10 +361,10 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                               getStatusColor(order.status)
                             )}>
                               {order.status === 'new' ? 'Mới' : 
-                               order.status === 'in_production' ? 'Sản xuất' : 
-                               order.status === 'packing' ? 'Đóng gói' : 
-                               order.status === 'shipping' ? 'Giao hàng' : 
-                               order.status === 'completed' ? 'Hoàn tất' : order.status}
+                                order.status === 'in_production' ? 'Sản xuất' : 
+                                order.status === 'packing' ? 'Đóng gói' : 
+                                order.status === 'shipping' ? 'Giao hàng' : 
+                                order.status === 'completed' ? 'Hoàn tất' : order.status}
                            </span>
                         </div>
                       )}
@@ -375,14 +373,13 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                 </div>
               </div>
 
-
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-l-4 border-primary pl-3">
                   <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mục sản xuất</h3>
                   {isEditing && (
                     <div className="flex items-center gap-2">
                        <button 
-                         onClick={() => {
+                          onClick={() => {
                            const newItems = [
                              ...(editData.orderItems || []),
                              { id: 'new-' + Math.random().toString(36).substr(2, 9), productId: '', quantity: 1, price: 0, product: { name: 'Sản phẩm mới...', sku: 'NEW' } }
@@ -394,7 +391,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                           <Plus size={14} strokeWidth={3} />
                        </button>
                        <button 
-                         onClick={async () => {
+                          onClick={async () => {
                            if (await customConfirm('Bạn có chắc muốn xóa tất cả sản phẩm trong danh sách chỉnh sửa?')) {
                              setEditData({ ...editData, orderItems: [] });
                            }
@@ -406,6 +403,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                     </div>
                   )}
                 </div>
+
                 <div className="space-y-4">
                   {(isEditing ? editData.orderItems : order.orderItems || []).map((item: any) => {
                     const stats = getItemProgress(item.productId, item.quantity);
@@ -447,23 +445,47 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                       item.product?.name
                                     )}
                                  </h4>
-                                 <div className="flex items-center gap-4 mt-1.5">
-                                    <div className="flex flex-col">
-                                      <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Tổng đơn</span>
-                                      <span className="text-[11px] font-bold text-foreground">{item.quantity}</span>
+                                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-2">
+                                     <div className="flex flex-col">
+                                       <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">S.Lượng</span>
+                                       <span className="text-[11px] font-bold text-foreground">{item.quantity} {item.product?.unit || 'Cái'}</span>
+                                     </div>
+                                     <div className="w-px h-6 bg-gray-100 hidden md:block" />
+                                     <div className="flex flex-col">
+                                       <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá vốn (Chốt)</span>
+                                       <span className="text-[11px] font-bold text-amber-600">{(item.cogsAtOrder || 0).toLocaleString()}đ</span>
+                                     </div>
+                                     <div className="w-px h-6 bg-gray-100 hidden md:block" />
+                                     <div className="flex flex-col">
+                                       <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá Deal</span>
+                                       <span className="text-[11px] font-bold text-primary">{(item.price || 0).toLocaleString()}đ</span>
+                                     </div>
+                                     <div className="w-px h-6 bg-gray-100 hidden md:block" />
+                                     <div className="flex flex-col">
+                                       <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">TG Sản xuất</span>
+                                       <span className="text-[11px] font-bold text-foreground">{item.productionTimeStd || 0} Phút</span>
+                                     </div>
+                                     <div className="w-px h-6 bg-gray-100 hidden md:block" />
+                                     <div className="flex flex-col">
+                                       <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Thành tiền</span>
+                                       <span className="text-[11px] font-black text-foreground">{(item.price * item.quantity).toLocaleString()}đ</span>
+                                     </div>
+                                  </div>
+
+                                  {!isEditing && (
+                                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-dashed border-gray-100">
+                                       <div className="flex flex-col">
+                                         <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Đã phân bổ</span>
+                                         <span className="text-[11px] font-bold text-green-600">{isNewItem ? '---' : stats.totalAllocated}</span>
+                                       </div>
+                                       <div className="w-px h-6 bg-gray-100" />
+                                       <div className="flex flex-col">
+                                         <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Đã xong</span>
+                                         <span className="text-[11px] font-bold text-blue-600">{isNewItem ? '---' : stats.totalDone}</span>
+                                       </div>
                                     </div>
-                                    <div className="w-px h-6 bg-gray-100" />
-                                    <div className="flex flex-col">
-                                      <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Đã phân bổ</span>
-                                      <span className="text-[11px] font-bold text-green-600">{isNewItem ? '---' : stats.totalAllocated}</span>
-                                    </div>
-                                    <div className="w-px h-6 bg-gray-100" />
-                                    <div className="flex flex-col">
-                                      <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Đã xong</span>
-                                      <span className="text-[11px] font-bold text-blue-600">{isNewItem ? '---' : stats.totalDone}</span>
-                                    </div>
-                                 </div>
-                              </div>
+                                  )}
+                               </div>
                            </div>
                            
                            <div className="flex items-center gap-4">
@@ -527,51 +549,126 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                            </div>
                         </div>
 
-                        {/* Sub-Production Orders */}
-                        {!isEditing && (
-                          <div className="px-5 py-3 bg-gray-50/50">
-                             {stats.pos.length > 0 ? (
-                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                 {stats.pos.map((po: any) => (
-                                   <div key={po.id} className="bg-white p-3 rounded border border-border flex items-center justify-between shadow-sm">
-                                      <div className="flex items-center gap-3">
-                                         <div className={`w-7 h-7 rounded flex items-center justify-center text-[9px] font-bold uppercase ${
-                                           po.allocationType === 'internal' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-amber-50 text-amber-600 border border-amber-100'
-                                         }`}>
-                                            {po.allocationType === 'internal' ? 'X' : 'GC'}
+                         {/* Snapshot Details Section */}
+                         {!isEditing && item.snapshot && (
+                           <div className="px-5 py-3 bg-gray-50/50">
+                              <div className="flex flex-col gap-3">
+                                {item.snapshot && (
+                                  <div className="border-b border-gray-200 pb-3 mb-1">
+                                    <button 
+                                      onClick={() => toggleSnapshot(item.id)}
+                                      className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary hover:text-primary/70 transition-all"
+                                    >
+                                      {expandedSnapshotItems[item.id] ? <Activity size={12} /> : <FileText size={12} />}
+                                      {expandedSnapshotItems[item.id] ? 'Ẩn định mức snapshot' : 'Xem định mức & công đoạn đã chốt'}
+                                    </button>
+
+                                    {expandedSnapshotItems[item.id] && (
+                                      <div className="mt-3 p-4 bg-white border border-primary/20 rounded-xl shadow-inner animate-in slide-in-from-top-2 duration-300">
+                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* BOM Snapshot */}
+                                            <div className="space-y-3">
+                                               <h5 className="text-[10px] font-black text-foreground flex items-center gap-2 uppercase tracking-tight">
+                                                  <Layers size={12} /> Định mức vật tư (BOM)
+                                               </h5>
+                                               <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                                                  {item.snapshot.bom_data?.length > 0 ? (
+                                                    item.snapshot.bom_data.map((m: any, idx: number) => (
+                                                      <div key={idx} className="flex justify-between items-center text-[11px] p-2 bg-gray-50 rounded border border-gray-100">
+                                                         <span className="font-bold text-gray-600">[{m.material_sku}] {m.material_name}</span>
+                                                         <span className="font-black text-primary">{m.qty} {m.unit}</span>
+                                                      </div>
+                                                    ))
+                                                  ) : <p className="text-[10px] italic text-muted-foreground">Không có dữ liệu BOM</p>}
+                                               </div>
+                                            </div>
+
+                                            {/* Operations Snapshot */}
+                                            <div className="space-y-3">
+                                               <h5 className="text-[10px] font-black text-foreground flex items-center gap-2 uppercase tracking-tight">
+                                                  <Zap size={12} /> Công đoạn sản xuất
+                                               </h5>
+                                               <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                                                  {item.snapshot.operations_data?.length > 0 ? (
+                                                    item.snapshot.operations_data.map((o: any, idx: number) => (
+                                                      <div key={idx} className="flex justify-between items-center text-[11px] p-2 bg-gray-50 rounded border border-gray-100">
+                                                         <span className="font-bold text-gray-600 italic">#{o.sequence} {o.name}</span>
+                                                         <span className="font-black text-emerald-600">{(o.price || 0).toLocaleString('vi-VN')} đ</span>
+                                                      </div>
+                                                    ))
+                                                  ) : <p className="text-[10px] italic text-muted-foreground">Không có dữ liệu công đoạn</p>}
+                                               </div>
+                                            </div>
                                          </div>
-                                         <div>
-                                            <p className="text-[10px] font-bold text-foreground uppercase">
-                                              {po.workshop?.name || po.outsourcer?.name || po.assignedTo || 'Chưa gán'}
-                                            </p>
-                                            <p className="text-[9px] text-muted-foreground font-bold tracking-tight">
-                                              HT: {po.quantityCompleted || 0} / {po.quantityTarget}
-                                            </p>
+                                         
+                                         {/* Financial & Production Snapshot */}
+                                         <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div className="flex flex-col">
+                                               <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá vốn (Chốt)</span>
+                                               <span className="text-[11px] font-bold text-amber-600">{(item.snapshot.prices?.cost || 0).toLocaleString()}đ</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                               <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá Niêm yết</span>
+                                               <span className="text-[11px] font-bold text-foreground">{(item.snapshot.prices?.base || 0).toLocaleString()}đ</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                               <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">TG Sản xuất (Std)</span>
+                                               <span className="text-[11px] font-bold text-foreground">{(item.snapshot.production_time_std || 0)} Phút</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                               <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá Deal chốt</span>
+                                               <span className="text-[11px] font-bold text-primary font-black">{(item.price || 0).toLocaleString()}đ</span>
+                                            </div>
                                          </div>
                                       </div>
-                                      <div className="text-right shrink-0">
-                                         <span className={`text-[10px] font-bold ${
-                                           po.currentStatus === 'completed' ? 'text-green-600' : 'text-primary'
-                                         }`}>
-                                           {Math.round((po.quantityCompleted / po.quantityTarget) * 100)}%
-                                         </span>
-                                         <div className="w-12 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
-                                            <div 
-                                              className={`h-full ${po.currentStatus === 'completed' ? 'bg-green-600' : 'bg-primary'}`}
-                                              style={{ width: `${Math.min(100, (po.quantityCompleted / po.quantityTarget) * 100)}%` }}
-                                            />
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Production Orders Grid */}
+                                {stats.pos.length > 0 ? (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {stats.pos.map((po: any) => (
+                                      <div key={po.id} className="bg-white p-3 rounded border border-border flex items-center justify-between shadow-sm">
+                                         <div className="flex items-center gap-3">
+                                            <div className={`w-7 h-7 rounded flex items-center justify-center text-[9px] font-bold uppercase ${
+                                              po.allocationType === 'internal' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-amber-50 text-amber-600 border border-amber-100'
+                                            }`}>
+                                               {po.allocationType === 'internal' ? 'X' : 'GC'}
+                                            </div>
+                                            <div>
+                                               <p className="text-[10px] font-bold text-foreground uppercase">
+                                                 {po.workshop?.name || po.outsourcer?.name || po.assignedTo || 'Chưa gán'}
+                                               </p>
+                                               <p className="text-[9px] text-muted-foreground font-bold tracking-tight">
+                                                 HT: {po.quantityCompleted || 0} / {po.quantityTarget}
+                                               </p>
+                                            </div>
+                                         </div>
+                                         <div className="text-right shrink-0">
+                                            <span className={`text-[10px] font-bold ${
+                                              po.currentStatus === 'completed' ? 'text-green-600' : 'text-primary'
+                                            }`}>
+                                              {Math.round((po.quantityCompleted / po.quantityTarget) * 100)}%
+                                            </span>
+                                            <div className="w-12 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
+                                               <div 
+                                                  className={`h-full ${po.currentStatus === 'completed' ? 'bg-green-600' : 'bg-primary'}`}
+                                                 style={{ width: `${Math.min(100, (po.quantityCompleted / po.quantityTarget) * 100)}%` }}
+                                               />
+                                            </div>
                                          </div>
                                       </div>
-                                   </div>
-                                 ))}
-                               </div>
-                             ) : (
-                               <div className="text-center py-2 opacity-50">
-                                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest italic">Sản phẩm này chưa gán lệnh sản xuất</p>
-                               </div>
-                             )}
-                          </div>
-                        )}
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-2 opacity-50">
+                                     <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest italic">Sản phẩm này chưa gán lệnh sản xuất</p>
+                                  </div>
+                                )}
+                              </div>
+                           </div>
+                         )}
                       </div>
                     );
                   })}
@@ -584,7 +681,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                    {isEditing && (
                      <div className="flex items-center gap-2">
                         <button 
-                          onClick={() => {
+                           onClick={() => {
                             const newMilestones = [
                               ...(editData.estimatedStages || []),
                               { id: Math.random().toString(36).substr(2, 9), label: '', deadline: '', isCompleted: false }
@@ -596,7 +693,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                           <Plus size={14} strokeWidth={3} />
                         </button>
                         <button 
-                          onClick={async () => {
+                           onClick={async () => {
                             if (await customConfirm('Bạn có chắc muốn xóa tất cả các khâu dự tính?')) {
                               setEditData({ ...editData, estimatedStages: [] });
                             }
@@ -625,13 +722,13 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                               <td className="px-4 py-3 font-bold text-foreground">
                                  {isEditing ? (
                                    <input 
-                                     type="text"
+                                      type="text"
                                      className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-bold"
                                      value={m.label}
                                      placeholder="Tên khâu..."
                                      onChange={(e) => {
                                        const newMilestones = editData.estimatedStages.map((ms: any) => 
-                                         ms.id === m.id ? { ...ms, label: e.target.value } : ms
+                                          ms.id === m.id ? { ...ms, label: e.target.value } : ms
                                        );
                                        setEditData({ ...editData, estimatedStages: newMilestones });
                                      }}
@@ -641,12 +738,12 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                               <td className="px-4 py-3 text-center tabular-nums font-bold text-muted-foreground">
                                  {isEditing ? (
                                     <input 
-                                      type="date"
+                                       type="date"
                                       className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-bold text-center"
                                       value={m.deadline}
                                       onChange={(e) => {
                                         const newMilestones = editData.estimatedStages.map((ms: any) => 
-                                          ms.id === m.id ? { ...ms, deadline: e.target.value } : ms
+                                           ms.id === m.id ? { ...ms, deadline: e.target.value } : ms
                                         );
                                         setEditData({ ...editData, estimatedStages: newMilestones });
                                       }}
@@ -656,7 +753,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                               <td className="px-4 py-3">
                                  <div className="flex justify-center">
                                     <button 
-                                      onClick={() => !isEditing && toggleMilestone(m.id)}
+                                       onClick={() => !isEditing && toggleMilestone(m.id)}
                                       disabled={isEditing}
                                       className={cn(
                                         "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
@@ -670,7 +767,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                               {isEditing && (
                                 <td className="px-4 py-3 text-center">
                                    <button 
-                                     onClick={() => {
+                                      onClick={() => {
                                        const newMilestones = editData.estimatedStages.filter((ms: any) => ms.id !== m.id);
                                        setEditData({ ...editData, estimatedStages: newMilestones });
                                      }}
@@ -714,7 +811,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-l-4 border-gray-300 pl-3">Ghi chú hợp đồng</label>
                 <textarea 
-                  className="w-full bg-gray-50 border-gray-100 rounded-2xl p-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary-100 min-h-[100px]"
+                   className="w-full bg-gray-50 border-gray-100 rounded-2xl p-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary-100 min-h-[100px]"
                   placeholder="Nhập ghi chú quan trọng cho đơn hàng này..."
                   value={editData.notes || ''}
                   onChange={(e) => setEditData({...editData, notes: e.target.value})}
@@ -799,7 +896,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
           fetchOrder();
           onUpdate();
         }}
-        orderId={orderId}
+        orderId={orderId || ''}
         orderItem={activeItemForSplit}
       />
     </div>

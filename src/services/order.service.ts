@@ -113,7 +113,7 @@ export async function createSalesOrder(data: {
 
   // 2. Tạo Order Items
   if (data.items.length > 0) {
-    const { error: itemsError } = await supabase
+    const { data: insertedItems, error: itemsError } = await supabase
       .from('OrderItem')
       .insert(data.items.map(item => ({
         order_id: order.id,
@@ -121,11 +121,17 @@ export async function createSalesOrder(data: {
         quantity: item.quantity,
         price: item.dealPrice,
         cogs_at_order: item.cogsAtOrder,
-        bom_snapshot: item.bomSnapshot,
+        bom_snapshot: item.bomSnapshot, // legacy field
         note: item.note
-      })));
+      })))
+      .select();
     
     if (itemsError) throw itemsError;
+
+    // 3. Tạo Snapshots chi tiết cho từng OrderItem
+    if (insertedItems) {
+      await createOrderItemSnapshots(order.id, insertedItems);
+    }
   }
 
   return { order: { ...order, customerId: order.customer_id, contractCode: order.contract_code, deadlineDelivery: order.deadline_delivery } };
@@ -142,7 +148,8 @@ export async function getOrders() {
       customer:Customer(*),
       orderItems:OrderItem(
         *,
-        product:products(*)
+        product:products(*),
+        snapshot:OrderItemSnapshot(*)
       ),
       productionOrders:ProductionOrder(*),
       packages:Package(*)
@@ -183,17 +190,29 @@ export async function getOrders() {
         name: order.customer.name,
         customerCode: order.customer.customer_code
       } : null,
-      orderItems: (order.orderItems || []).map((oi: any) => ({
-        id: oi.id,
-        productId: oi.product_id,
-        quantity: oi.quantity,
-        price: oi.price,
-        product: oi.product ? {
-          id: oi.product.id,
-          name: oi.product.name,
-          sku: oi.product.code
-        } : null
-      })),
+      orderItems: (order.orderItems || []).map((oi: any) => {
+        const snap = oi.snapshot?.[0];
+        return {
+          id: oi.id,
+          productId: oi.product_id,
+          quantity: oi.quantity,
+          price: oi.price,
+          cogsAtOrder: snap ? (snap.prices?.cost || 0) : (oi.cogs_at_order || 0),
+          productionTimeStd: snap ? (snap.production_time_std || 0) : (oi.product?.production_time_std || 0),
+          snapshot: snap,
+          product: snap ? {
+            id: oi.product_id,
+            name: snap.name,
+            sku: snap.sku,
+            unit: snap.unit
+          } : (oi.product ? {
+            id: oi.product.id,
+            name: oi.product.name,
+            sku: oi.product.code,
+            unit: oi.product.unit
+          } : null)
+        };
+      }),
       productionOrders: (order.productionOrders || []).map((po: any) => ({
         id: po.id,
         quantityTarget: po.quantity_target,
@@ -260,7 +279,8 @@ export async function getOrderById(id: string) {
       customer:Customer(*),
       orderItems:OrderItem(
         *,
-        product:products(*)
+        product:products(*),
+        snapshot:OrderItemSnapshot(*)
       ),
       productionOrders:ProductionOrder(
         *,
@@ -293,16 +313,26 @@ export async function getOrderById(id: string) {
     notes: order.notes,
     logs: order.logs || [],
     customer: order.customer,
-    orderItems: (order.orderItems || []).map((oi: any) => ({
-      ...oi,
-      productId: oi.product_id,
-      cogsAtOrder: oi.cogs_at_order,
-      bomSnapshot: oi.bom_snapshot,
-      product: oi.product ? {
-        ...oi.product,
-        sku: oi.product.code
-      } : null
-    })),
+    orderItems: (order.orderItems || []).map((oi: any) => {
+      const snap = oi.snapshot?.[0];
+      return {
+        ...oi,
+        productId: oi.product_id,
+        cogsAtOrder: oi.cogs_at_order,
+        bomSnapshot: snap ? snap.bom_data : oi.bom_snapshot,
+        snapshot: snap,
+        product: snap ? {
+          id: oi.product_id,
+          name: snap.name,
+          sku: snap.sku,
+          unit: snap.unit,
+          ...snap.prices
+        } : (oi.product ? {
+          ...oi.product,
+          sku: oi.product.code
+        } : null)
+      };
+    }),
     productionOrders: (order.productionOrders || []).map((po: any) => ({
       ...po,
       orderId: po.order_id,
@@ -407,8 +437,16 @@ export async function updateOrder(id: string, data: any) {
     }));
 
     if (itemsToUpsert.length > 0) {
-      const { error: upsertError } = await supabase.from('OrderItem').upsert(itemsToUpsert);
+      const { data: upsertedItems, error: upsertError } = await supabase
+        .from('OrderItem')
+        .upsert(itemsToUpsert)
+        .select();
+      
       if (upsertError) console.error('OrderItem Sync Error:', upsertError);
+
+      if (upsertedItems) {
+        await createOrderItemSnapshots(id, upsertedItems);
+      }
     }
   }
 
@@ -420,6 +458,78 @@ export async function updateOrder(id: string, data: any) {
     orderDate: updated.order_date,
     logs: updated.logs || []
   };
+}
+
+/**
+ * Helper: Tạo Snapshot chi tiết cho các OrderItem.
+ * Sẽ fetch dữ liệu sản phẩm hiện tại và lưu vào bảng OrderItemSnapshot.
+ */
+async function createOrderItemSnapshots(orderId: string, insertedItems: any[]) {
+  if (!insertedItems || insertedItems.length === 0) return;
+  
+  const productIds = insertedItems.map(i => i.product_id).filter(Boolean);
+  if (productIds.length === 0) return;
+
+  const { data: fullProducts } = await supabase
+    .from('products')
+    .select(`
+      *,
+      bom (
+        *,
+        bom_materials (*, materials (*)),
+        bom_operations (*, operations (*))
+      )
+    `)
+    .in('id', productIds);
+
+  const productMap = new Map((fullProducts || []).map(p => [p.id, p]));
+
+  const snapshots = insertedItems.map(oi => {
+    const p = productMap.get(oi.product_id);
+    if (!p) return null;
+
+    const activeBom = (p.bom || []).find((b: any) => b.is_active) || p.bom?.[0];
+    
+    return {
+      order_item_id: oi.id,
+      order_id: orderId,
+      product_id: oi.product_id,
+      name: p.name || 'Sản phẩm mới...',
+      sku: p.code || 'N/A',
+      unit: p.unit || 'Cái',
+      prices: {
+        base: p.base_price || 0,
+        cost: p.cost_price || 0,
+        wholesale: p.wholesale_price || 0,
+        export: p.export_price || 0
+      },
+      production_time_std: p.production_time_std || 0,
+      bom_data: activeBom?.bom_materials?.map((bm: any) => ({
+        material_id: bm.material_id,
+        qty: bm.qty,
+        material_name: bm.materials?.specification || bm.materials?.name,
+        material_sku: bm.materials?.type || bm.materials?.code,
+        unit: bm.materials?.unit,
+        price: bm.materials?.price
+      })) || [],
+      operations_data: activeBom?.bom_operations?.map((bo: any) => ({
+        operation_id: bo.operation_id,
+        sequence: bo.sequence,
+        name: bo.operations?.specification || bo.operations?.name,
+        price: bo.operations?.price
+      })) || [],
+      cogs_config: p.cogs_config || {}
+    };
+  }).filter(Boolean);
+
+  if (snapshots.length === 0) return;
+
+  // Sử dụng upsert để tránh trùng lặp snapshot nếy updateOrder gọi lại
+  const { error: snapshotError } = await supabase
+    .from('OrderItemSnapshot')
+    .upsert(snapshots, { onConflict: 'order_item_id' });
+    
+  if (snapshotError) console.error('Snapshot Sync Error:', snapshotError);
 }
 
 /**

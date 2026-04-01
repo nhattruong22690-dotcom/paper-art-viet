@@ -28,7 +28,7 @@ import * as XLSX from 'xlsx';
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { getAllProducts, upsertProduct, updateProductBOM, batchUpsertProducts } from '@/services/product.service';
+import { getAllProducts, upsertProduct, updateProductBOM, batchUpsertProducts, deleteProduct } from '@/services/product.service';
 import ProductDetailModal from './ProductDetailModal';
 import ProductFormModal from './ProductFormModal';
 import MaterialManagerModal from './MaterialManagerModal';
@@ -56,7 +56,7 @@ interface Product {
 }
 
 export default function ProductMaster() {
-  const { showToast, showModal } = useNotification();
+  const { showToast, showModal, confirm } = useNotification();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -150,6 +150,24 @@ export default function ProductMaster() {
       showToast('error', 'Không thể tải chi tiết sản phẩm để tạo phiên bản mới');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (p: Product) => {
+    const confirmed = await confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${p.name}"? Dữ liệu này sẽ bị xóa vĩnh viễn khỏi danh mục. Các đơn hàng cũ không bị ảnh hưởng.`);
+
+    if (confirmed) {
+      try {
+        setIsLoading(true);
+        await deleteProduct(p.id);
+        showToast('success', 'Đã xóa sản phẩm thành công');
+        fetchProducts();
+      } catch (error) {
+        console.error('Delete error:', error);
+        showToast('error', 'Không thể xóa sản phẩm này');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -426,11 +444,25 @@ export default function ProductMaster() {
                    <Package size={32} className="text-black" />
                 </div>
 
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-3 pr-10">
                    <p className="text-[11px] text-black/40 font-black uppercase tracking-[0.3em] italic">{p.sku || 'NO-REF'}</p>
                    <h3 className="text-xl font-black text-black tracking-tighter leading-tight italic uppercase line-clamp-2">
                      {p.name || 'Sản phẩm chưa đặt tên'}
                    </h3>
+                   
+                   {/* Actions */}
+                   <div className="absolute bottom-8 right-8 flex items-center gap-2">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProduct(p);
+                        }}
+                        className="p-3 bg-red-50 text-red-500 border-[2px] border-black rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+                        title="Xóa vĩnh viễn"
+                      >
+                        <Trash2 size={16} strokeWidth={3} />
+                      </button>
+                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-8 mt-8 border-t-[2.5px] border-black">

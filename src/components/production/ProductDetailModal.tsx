@@ -30,7 +30,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { getAllMaterials } from '@/services/material.service';
-import { updateProductBOM, getProductDetail, upsertProduct, recalculateProductCostPrice } from '@/services/product.service';
+import { updateProductBOM, getProductDetail, upsertProduct, recalculateProductCostPrice, deleteProduct } from '@/services/product.service';
 import { useNotification } from "@/context/NotificationContext";
 import { getAllOperations } from '@/services/operation.service';
 import { formatNumber, parseNumber } from '@/utils/format';
@@ -100,7 +100,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    const [productionTimeStd, setProductionTimeStd] = useState<number>(0);
    const [wholesalePrice, setWholesalePrice] = useState<number>(0);
    const [exportPrice, setExportPrice] = useState<number>(0);
-   const { showToast, showModal } = useNotification();
+   const { showToast, showModal, confirm } = useNotification();
    const [wasteRatio, setWasteRatio] = useState<number>(0.05);
    const [customCosts, setCustomCosts] = useState<any[]>([]);
    const [productionNotes, setProductionNotes] = useState<string[]>([]);
@@ -191,6 +191,21 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
       }
    };
 
+
+   const handleDeleteProduct = async () => {
+      const confirmed = await confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"? Dữ liệu lịch sử đơn hàng sẽ được bảo toàn nhờ hệ thống Snapshot.`);
+      if (confirmed) {
+         try {
+            await deleteProduct(product.id);
+            showToast('success', 'Đã xóa sản phẩm thành công');
+            onUpdate();
+            onClose();
+         } catch (error) {
+            console.error('Delete error:', error);
+            showToast('error', 'Không thể xóa sản phẩm này');
+         }
+      }
+   };
 
    const loadMaterials = async () => {
       try {
@@ -439,8 +454,16 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                   </div>
                </div>
 
-               <div className="flex items-center gap-4">
-                  <button 
+                <div className="flex items-center gap-4">
+                   <button 
+                     onClick={handleDeleteProduct}
+                     className="w-12 h-12 bg-red-50 border-[2px] border-black rounded-xl flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                     title="Xóa sản phẩm"
+                   >
+                      <Trash2 size={20} strokeWidth={3} />
+                   </button>
+
+                   <button 
                     onClick={() => onEdit?.(product)}
                     className="h-12 px-6 bg-white border-[2px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-neo-yellow transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2"
                   >
