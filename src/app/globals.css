@@ -149,16 +149,23 @@ tr.bg-black th,
   color: #FFFFFF !important;
 }
 
-/* Scrollbar styling */
+/* Ultra-Visible Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-200/50 rounded-full hover:bg-slate-300 transition-colors;
+  background-color: #000000; /* Black for max visibility */
+  border: 1px solid white;
+  border-radius: 99px;
+  transition: opacity 0.3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #FEF3C7; /* Neo-Yellow */
+  border: 1px solid black;
 }
 
 .glass-card {
