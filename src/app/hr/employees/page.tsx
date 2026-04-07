@@ -28,6 +28,7 @@ import {
 import { getEmployees, deleteEmployee } from '@/services/employee.service';
 import EmployeeFormModal from '@/components/hr/EmployeeFormModal';
 import HRConfigModal from '@/components/hr/HRConfigModal';
+import GrantAccountModal from '@/components/hr/GrantAccountModal';
 import { useNotification } from '@/context/NotificationContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -332,6 +333,19 @@ export default function EmployeesPage() {
       <HRConfigModal 
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}
+      />
+
+      <GrantAccountModal 
+        isOpen={isGrantModalOpen}
+        employee={selectedEmployee}
+        onClose={() => {
+          setIsGrantModalOpen(false);
+          setSelectedEmployee(null);
+        }}
+        onSuccess={() => {
+          loadEmployees();
+          showToast('success', 'Đã cập nhật tài khoản thành công');
+        }}
       />
     </div>
   );
