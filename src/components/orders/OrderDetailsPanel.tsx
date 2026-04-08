@@ -10,6 +10,18 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+function formatMoney(amount: number, currency: string = 'VND') {
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount);
+  }
+  return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
+}
+
 interface OrderDetailsPanelProps {
   orderId: string | null;
   onClose: () => void;
@@ -104,7 +116,8 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
       
       const payload: any = {
         ...editData,
-        estimated_stages: editData.estimatedStages // Map back to snake_case
+        estimated_stages: editData.estimatedStages, // Map back to snake_case
+        currency: editData.currency || 'VND'
       };
 
       if (changes.length > 0) {
@@ -149,6 +162,10 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
       const statusMap: any = { new: 'Mới', in_production: 'Sản xuất', packing: 'Đóng gói', shipping: 'Giao hàng', completed: 'Hoàn tất' };
       changes.push(`Trạng thái: ${statusMap[oldData.status] || oldData.status} -> ${statusMap[newData.status] || newData.status}`);
     }
+
+    if (oldData.currency !== newData.currency) {
+      changes.push(`Tiền tệ: ${oldData.currency || 'VND'} -> ${newData.currency}`);
+    }
     
     const oldDeadline = oldData.deadlineDelivery?.slice(0, 10);
     const newDeadline = newData.deadlineDelivery?.slice(0, 10);
@@ -173,7 +190,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
           changes.push(`SL [${ni.product?.name || '?' }]: ${oi.quantity} -> ${ni.quantity}`);
         }
         if (Number(oi.price) !== Number(ni.price)) {
-          changes.push(`Giá [${ni.product?.name || '?' }]: ${Number(oi.price).toLocaleString()} -> ${Number(ni.price).toLocaleString()}`);
+          changes.push(`Giá [${ni.product?.name || '?' }]: ${formatMoney(Number(oi.price), oldData.currency)} -> ${formatMoney(Number(ni.price), newData.currency)}`);
         }
       }
     });
@@ -274,8 +291,9 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                 </h2>
                 <div className="flex items-center gap-3 mt-1.5 overflow-hidden">
                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest bg-gray-50 px-2 py-0.5 rounded border border-gray-100 shrink-0">Trạng thái: {order.status}</p>
+                   <p className="text-[10px] text-primary uppercase font-bold tracking-widest bg-primary/5 px-2 py-0.5 rounded border border-primary/10 shrink-0">{order.currency || 'VND'}</p>
                     {order.contractCode && (
-                      <p className="text-[10px] text-primary font-bold tracking-widest truncate">Số hợp đồng: {order.contractCode}</p>
+                       <p className="text-[10px] text-primary font-bold tracking-widest truncate">Số hợp đồng: {order.contractCode}</p>
                     )}
                 </div>
               </div>
@@ -339,6 +357,24 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                       {order.contractCode || '---'}
                     </p>
                   </div>
+                  <div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-none mb-1">Tiền tệ</span>
+                      {isEditing ? (
+                        <select 
+                          value={editData.currency || 'VND'}
+                          onChange={(e) => setEditData({...editData, currency: e.target.value})}
+                          className="text-xs font-black px-2 py-1 rounded-md border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-white outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold uppercase tracking-widest"
+                        >
+                          <option value="VND">VND</option>
+                          <option value="USD">USD</option>
+                        </select>
+                      ) : (
+                        <span className="text-sm font-bold text-foreground">{order.currency || 'VND'}</span>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-none mb-1">Trạng thái</span>
@@ -453,12 +489,12 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                      <div className="w-px h-6 bg-gray-100 hidden md:block" />
                                      <div className="flex flex-col">
                                        <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá vốn (Chốt)</span>
-                                       <span className="text-[11px] font-bold text-amber-600">{(item.cogsAtOrder || 0).toLocaleString()}đ</span>
+                                       <span className="text-[11px] font-bold text-amber-600">{formatMoney(item.cogsAtOrder || 0, order.currency)}</span>
                                      </div>
                                      <div className="w-px h-6 bg-gray-100 hidden md:block" />
                                      <div className="flex flex-col">
                                        <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá Deal</span>
-                                       <span className="text-[11px] font-bold text-primary">{(item.price || 0).toLocaleString()}đ</span>
+                                       <span className="text-[11px] font-bold text-primary">{formatMoney(item.price || 0, order.currency)}</span>
                                      </div>
                                      <div className="w-px h-6 bg-gray-100 hidden md:block" />
                                      <div className="flex flex-col">
@@ -468,7 +504,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                      <div className="w-px h-6 bg-gray-100 hidden md:block" />
                                      <div className="flex flex-col">
                                        <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Thành tiền</span>
-                                       <span className="text-[11px] font-black text-foreground">{(item.price * item.quantity).toLocaleString()}đ</span>
+                                       <span className="text-[11px] font-black text-foreground">{formatMoney(item.price * item.quantity, order.currency)}</span>
                                      </div>
                                   </div>
 
@@ -498,13 +534,31 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                        className="w-16 bg-gray-50 border border-border rounded p-1 text-[11px] font-bold text-right"
                                        value={item.quantity}
                                        onChange={(e) => {
+                                         const value = parseFloat(e.target.value);
                                          const newItems = editData.orderItems.map((oi: any) => 
-                                           oi.id === item.id ? { ...oi, quantity: parseInt(e.target.value) || 0 } : oi
+                                           oi.id === item.id ? { ...oi, quantity: isNaN(value) ? 0 : value } : oi
                                          );
                                          setEditData({ ...editData, orderItems: newItems });
                                        }}
                                      />
                                   </div>
+                                   <div className="flex flex-col gap-1">
+                                      <span className="text-[8px] text-muted-foreground font-bold uppercase">Giá vốn</span>
+                                      <input 
+                                        type="number"
+                                        step="any"
+                                        className="w-24 bg-gray-50 border border-border rounded p-1 text-[11px] font-bold text-right text-amber-600/60 italic"
+                                        value={item.cogsAtOrder}
+                                        onChange={(e) => {
+                                          const value = parseFloat(e.target.value);
+                                          const newItems = editData.orderItems.map((oi: any) => 
+                                            oi.id === item.id ? { ...oi, cogsAtOrder: isNaN(value) ? 0 : value } : oi
+                                          );
+                                          setEditData({ ...editData, orderItems: newItems });
+                                        }}
+                                        placeholder="0.00"
+                                      />
+                                   </div>
                                   <div className="flex flex-col gap-1">
                                      <span className="text-[8px] text-muted-foreground font-bold uppercase">Giá Deal</span>
                                      <input 
@@ -512,8 +566,9 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                        className="w-24 bg-gray-50 border border-border rounded p-1 text-[11px] font-bold text-right"
                                        value={item.price}
                                        onChange={(e) => {
+                                         const value = parseFloat(e.target.value);
                                          const newItems = editData.orderItems.map((oi: any) => 
-                                           oi.id === item.id ? { ...oi, price: parseInt(e.target.value) || 0 } : oi
+                                           oi.id === item.id ? { ...oi, price: isNaN(value) ? 0 : value } : oi
                                          );
                                          setEditData({ ...editData, orderItems: newItems });
                                        }}
@@ -605,11 +660,11 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                          <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <div className="flex flex-col">
                                                <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá vốn (Chốt)</span>
-                                               <span className="text-[11px] font-bold text-amber-600">{(item.snapshot.prices?.cost || 0).toLocaleString()}đ</span>
+                                               <span className="text-[11px] font-bold text-amber-600">{formatMoney(item.snapshot.prices?.cost || 0, order.currency)}</span>
                                             </div>
                                             <div className="flex flex-col">
                                                <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá Niêm yết</span>
-                                               <span className="text-[11px] font-bold text-foreground">{(item.snapshot.prices?.base || 0).toLocaleString()}đ</span>
+                                               <span className="text-[11px] font-bold text-foreground">{formatMoney(item.snapshot.prices?.base || 0, order.currency)}</span>
                                             </div>
                                             <div className="flex flex-col">
                                                <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">TG Sản xuất (Std)</span>
@@ -617,7 +672,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                             </div>
                                             <div className="flex flex-col">
                                                <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Giá Deal chốt</span>
-                                               <span className="text-[11px] font-bold text-primary font-black">{(item.price || 0).toLocaleString()}đ</span>
+                                               <span className="text-[11px] font-bold text-primary font-black">{formatMoney(item.price || 0, order.currency)}</span>
                                             </div>
                                          </div>
                                       </div>
@@ -796,12 +851,12 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                 <div className="grid grid-cols-2 gap-6 relative z-10">
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Giá trị đơn hàng</p>
-                    <p className="text-2xl font-bold text-white">{(order.orderItems || []).reduce((acc: any, i: any) => acc + (Number(i.price) * i.quantity), 0).toLocaleString()}đ</p>
+                    <p className="text-2xl font-bold text-white">{formatMoney((order.orderItems || []).reduce((acc: any, i: any) => acc + (Number(i.price) * i.quantity), 0), order.currency)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Dự kiến lợi nhuận</p>
                     <p className="text-2xl font-bold text-green-400">
-                      {(order.orderItems || []).reduce((acc: any, i: any) => acc + ((Number(i.price) - Number(i.cogsAtOrder || 0)) * i.quantity), 0).toLocaleString()}đ
+                      {formatMoney((order.orderItems || []).reduce((acc: any, i: any) => acc + ((Number(i.price) - Number(i.cogsAtOrder || 0)) * i.quantity), 0), order.currency)}
                     </p>
                   </div>
                 </div>

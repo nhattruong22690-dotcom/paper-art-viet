@@ -71,7 +71,12 @@ export default function OrderCard({ order, onClick }: OrderCardProps) {
         </h4>
         <div className="flex items-center gap-2 mt-0.5 text-muted-foreground">
            <DollarSign size={10} />
-           <span className="text-[11px] font-bold tracking-tight">{totalValue.toLocaleString()}đ</span>
+           <span className="text-[11px] font-bold tracking-tight">
+             {order.currency === 'USD' 
+               ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(totalValue)
+               : totalValue.toLocaleString('vi-VN') + 'đ'
+             }
+           </span>
         </div>
       </div>
 

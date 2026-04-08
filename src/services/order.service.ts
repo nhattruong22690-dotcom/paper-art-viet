@@ -63,7 +63,8 @@ export async function createSalesOrder(data: {
     cogsAtOrder: number;
     bomSnapshot?: any;
     note?: string;
-  }[]
+  }[];
+  currency?: string;
 }) {
   let nextCode = data.contractCode;
 
@@ -104,6 +105,7 @@ export async function createSalesOrder(data: {
       contract_code: nextCode,
       deadline_delivery: data.deadlineDelivery,
       estimated_stages: data.estimated_stages,
+      currency: data.currency || 'VND',
       status: 'new'
     })
     .select()
@@ -134,7 +136,7 @@ export async function createSalesOrder(data: {
     }
   }
 
-  return { order: { ...order, customerId: order.customer_id, contractCode: order.contract_code, deadlineDelivery: order.deadline_delivery } };
+  return { order: { ...order, customerId: order.customer_id, contractCode: order.contract_code, deadlineDelivery: order.deadline_delivery, currency: order.currency } };
 }
 
 /**
@@ -182,6 +184,7 @@ export async function getOrders() {
       orderDate: order.order_date,
       deadlineDelivery: order.deadline_delivery,
       status: order.status,
+      currency: order.currency || 'VND',
       estimatedStages: order.estimated_stages || [],
       notes: order.notes,
       isAllocated,
@@ -309,6 +312,7 @@ export async function getOrderById(id: string) {
     orderDate: order.order_date,
     deadlineDelivery: order.deadline_delivery,
     status: order.status,
+    currency: order.currency || 'VND',
     estimatedStages: order.estimated_stages || [],
     notes: order.notes,
     logs: order.logs || [],
@@ -385,6 +389,7 @@ export async function updateOrder(id: string, data: any) {
   if (contractCode) dbData.contract_code = contractCode;
   if (deadlineDelivery) dbData.deadline_delivery = deadlineDelivery;
   if (orderDate) dbData.order_date = orderDate;
+  if (data.currency) dbData.currency = data.currency;
   
   // Ưu tiên estimated_stages nếu có, nếu không lấy estimatedStages
   const stagesToSave = estimated_stages || estimatedStages;

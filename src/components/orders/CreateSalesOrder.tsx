@@ -31,17 +31,34 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Utility for thousand separator
-function formatNumber(val: number | string | undefined | null) {
+// Utility for thousand separator and decimal handling
+function formatNumber(val: number | string | undefined | null, currency: string = 'VND') {
   if (val === undefined || val === null || val === '') return '0';
   const num = typeof val === 'string' ? parseFloat(val.replace(/\./g, '').replace(/,/g, '')) : val;
   if (isNaN(num)) return val.toString();
+  
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(num);
+  }
+  
   return new Intl.NumberFormat('vi-VN').format(num);
 }
 
-// Utility to parse formatted number
+// Utility to parse formatted number (supports decimals)
 function parseNumber(val: string): number {
-  return parseInt(val.replace(/\D/g, '')) || 0;
+  if (!val) return 0;
+  // Remove thousand separators but keep the decimal point
+  // Standardizing: remove all non-digits except first dot/comma
+  const cleanVal = val.replace(/,/g, '.'); // Convert all commas to dots
+  const parts = cleanVal.split('.');
+  if (parts.length > 2) {
+    // If multiple dots, keep only the first one as decimal point
+    return parseFloat(parts[0] + '.' + parts.slice(1).join('')) || 0;
+  }
+  return parseFloat(cleanVal) || 0;
 }
 
 interface Product {
@@ -64,6 +81,7 @@ interface OrderItem {
   productId: string;
   productName: string;
   sku: string;
+  unit: string;
   quantity: number;
   cogs: number;
   dealPrice: number;
@@ -189,6 +207,34 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ value, onSelect, prod
 };
 
 
+const CurrencySelector: React.FC<{ value: string, onChange: (val: string) => void }> = ({ value, onChange }) => {
+  return (
+    <div className="flex bg-white border-2 border-black rounded-xl overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+      <button
+        type="button"
+        onClick={() => onChange('VND')}
+        className={cn(
+          "flex-1 px-4 py-2 text-[10px] font-black transition-all",
+          value === 'VND' ? "bg-black text-white" : "text-black hover:bg-black/5"
+        )}
+      >
+        VND
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('USD')}
+        className={cn(
+          "flex-1 px-4 py-2 text-[10px] font-black transition-all",
+          value === 'USD' ? "bg-black text-white" : "text-black hover:bg-black/5"
+        )}
+      >
+        USD
+      </button>
+    </div>
+  );
+};
+
+
 interface CreateSalesOrderProps {
   isOpen: boolean;
   onClose: () => void;
@@ -205,6 +251,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
   const [deadline, setDeadline] = useState('');
   const [milestones, setMilestones] = useState<{id: string, label: string, deadline: string, isCompleted: boolean}[]>([]);
   const [notes, setNotes] = useState('');
+  const [currency, setCurrency] = useState('VND');
   const [items, setItems] = useState<OrderItem[]>([]);
   const [showManagerLock, setShowManagerLock] = useState(false);
   const [managerPass, setManagerPass] = useState('');
@@ -343,6 +390,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
             productId: details.id,
             sku: details.sku,
             productName: details.name,
+            unit: details.unit || 'Cái',
             cogs: cogs,
             dealPrice: defaultDealPrice,
             suggestedPrice: defaultDealPrice,
@@ -384,6 +432,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
       productId: '',
       productName: '',
       sku: '',
+      unit: 'Cái',
       quantity: 1,
       cogs: 0,
       dealPrice: 0,
@@ -453,6 +502,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
           customerId: selectedCustomerId,
           contractCode: contractCode.trim(),
           deadlineDelivery: deadline,
+          currency: currency,
           estimated_stages: milestones.filter(m => m.label.trim()), // Chỉ gửi những khâu có tên
           items: items.map(i => ({
             productId: i.productId,
@@ -627,6 +677,10 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                       className="form-input h-14 font-black"
                      />
                   </div>
+                   <div className="space-y-3">
+                      <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Đơn vị tiền tệ</label>
+                      <CurrencySelector value={currency} onChange={setCurrency} />
+                   </div>
                </div>
             </section>
 
@@ -648,14 +702,15 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                <div className="overflow-visible border-2 border-black rounded-xl hidden md:block">
                   <table className="w-full text-left">
                      <thead>
-                        <tr className="bg-black text-[10px] font-black uppercase tracking-widest">
-                           <th className="px-6 py-4">Sản phẩm</th>
-                           <th className="px-6 py-4 text-center w-36">Số lượng</th>
-                           <th className="px-6 py-4 text-right">Giá vốn</th>
-                           <th className="px-6 py-4 text-right w-56">Giá Deal</th>
-                           <th className="px-6 py-4 text-right w-52">Thành tiền</th>
-                           <th className="px-6 py-4 w-12"></th>
-                        </tr>
+                        <tr className="bg-black text-[10px] font-black uppercase tracking-widest text-white">
+                            <th className="px-6 py-4">Sản phẩm</th>
+                            <th className="px-6 py-4 text-center w-32">Số lượng</th>
+                            <th className="px-6 py-4 text-center w-24">ĐVT</th>
+                            <th className="px-6 py-4 text-right">Giá vốn</th>
+                            <th className="px-6 py-4 text-right w-48">Giá Deal</th>
+                            <th className="px-6 py-4 text-right w-48">Thành tiền</th>
+                            <th className="px-6 py-4 w-12"></th>
+                         </tr>
                      </thead>
                      <tbody className="divide-y-2 divide-black/5">
                         {items.map((item) => {
@@ -674,42 +729,54 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                                     }}
                                   />
                               </td>
+                               <td className="px-6 py-5">
+                                 <input 
+                                   type="number" 
+                                   step="any"
+                                   value={item.quantity || ''}
+                                   onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                   className="form-input !h-12 py-0 text-center font-black tabular-nums" 
+                                   placeholder="0"
+                                  />
+                               </td>
+                               <td className="px-6 py-5 text-center text-[10px] font-black text-black uppercase tabular-nums italic">
+                                  {item.unit || 'Cái'}
+                               </td>
                               <td className="px-6 py-5">
                                  <input 
-                                  type="text" 
-                                  inputMode="numeric"
-                                  value={item.quantity === 0 ? '' : formatNumber(item.quantity)}
-                                  onChange={(e) => updateItem(item.id, 'quantity', parseNumber(e.target.value))}
-                                  className="form-input !h-12 py-0 text-center font-black tabular-nums" 
+                                   type="number" 
+                                   step="any"
+                                   value={item.cogs || ''}
+                                   onChange={(e) => updateItem(item.id, 'cogs', parseFloat(e.target.value) || 0)}
+                                   placeholder="0.00"
+                                   className="form-input !h-12 py-0 text-right font-black tabular-nums text-black/40 italic"
                                  />
-                              </td>
-                              <td className="px-6 py-5 text-right tabular-nums text-black/40 italic font-black text-[11px]">
-                                 {formatNumber(item.cogs)}
-                              </td>
+                               </td>
                               <td className="px-6 py-5">
                                   <div className="space-y-1">
                                     <input 
-                                      type="text" 
-                                      inputMode="numeric"
-                                      value={item.dealPrice === 0 ? '' : formatNumber(item.dealPrice)}
-                                      onChange={(e) => updateItem(item.id, 'dealPrice', parseNumber(e.target.value))}
-                                      className={cn(
-                                        "form-input !h-12 py-0 text-right font-black tabular-nums",
-                                        isLoss ? "border-neo-red !bg-neo-red/5" : ""
-                                      )}
-                                    />
+                                       type="number" 
+                                       step="any"
+                                       value={item.dealPrice || ''}
+                                       onChange={(e) => updateItem(item.id, 'dealPrice', parseFloat(e.target.value) || 0)}
+                                       placeholder="0.00"
+                                       className={cn(
+                                         "form-input !h-12 py-0 text-right font-black tabular-nums",
+                                         isLoss ? "border-neo-red !bg-neo-red/5" : ""
+                                       )}
+                                     />
                                     <div className="flex gap-2 justify-end">
                                       {(item.wholesalePrice ?? 0) > 0 && (
-                                         <button onClick={() => updateItem(item.id, 'dealPrice', item.wholesalePrice ?? 0)} className="text-[8px] font-black text-black/40 uppercase hover:text-black italic">Sỉ: {formatNumber(item.wholesalePrice)}</button>
+                                         <button onClick={() => updateItem(item.id, 'dealPrice', item.wholesalePrice ?? 0)} className="text-[8px] font-black text-black/40 uppercase hover:text-black italic">Sỉ: {formatNumber(item.wholesalePrice, currency)}</button>
                                       )}
                                       {(item.exportPrice ?? 0) > 0 && (
-                                         <button onClick={() => updateItem(item.id, 'dealPrice', item.exportPrice ?? 0)} className="text-[8px] font-black text-black/40 uppercase hover:text-black italic">XK: {formatNumber(item.exportPrice)}</button>
+                                         <button onClick={() => updateItem(item.id, 'dealPrice', item.exportPrice ?? 0)} className="text-[8px] font-black text-black/40 uppercase hover:text-black italic">XK: {formatNumber(item.exportPrice, currency)}</button>
                                       )}
                                     </div>
                                   </div>
                               </td>
                               <td className="px-6 py-5 text-right font-black tabular-nums text-black">
-                                 {formatNumber(item.quantity * item.dealPrice)}
+                                 {formatNumber(item.quantity * item.dealPrice, currency)}
                               </td>
                               <td className="px-6 py-5 text-center">
                                  <button onClick={() => removeItem(item.id)} className="w-8 h-8 flex items-center justify-center text-black/20 hover:text-neo-red transition-all">
@@ -810,16 +877,16 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
               <div className="flex flex-wrap items-center gap-12 w-full lg:w-auto">
                  <div className="flex flex-col">
                    <span className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1">Tổng doanh thu</span>
-                   <span className="text-3xl font-black text-black italic tabular-nums">{formatNumber(totalRevenue)} <span className="text-xs">đ</span></span>
+                   <span className="text-3xl font-black text-black italic tabular-nums">{formatNumber(totalRevenue, currency)} <span className="text-xs">{currency}</span></span>
                  </div>
                  <div className="flex flex-col">
                    <span className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1">Tổng giá vốn</span>
-                   <span className="text-2xl font-black text-black/20 italic tabular-nums">{formatNumber(totalCOGS)} <span className="text-xs">đ</span></span>
+                   <span className="text-2xl font-black text-black/20 italic tabular-nums">{formatNumber(totalCOGS, currency)} <span className="text-xs">{currency}</span></span>
                  </div>
                  <div className="flex flex-col">
                    <span className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1">Thặng dư dự kiến</span>
                    <span className={cn("text-3xl font-black italic tabular-nums", totalProfit >= 0 ? "text-neo-green-pure text-green-600" : "text-neo-red")}>
-                      {formatNumber(totalRevenue - totalCOGS)} <span className="text-xs">đ</span>
+                      {formatNumber(totalRevenue - totalCOGS, currency)} <span className="text-xs">{currency}</span>
                    </span>
                  </div>
               </div>
