@@ -144,7 +144,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ value, onSelect, prod
         <div className="flex flex-col justify-center overflow-hidden">
           {selectedProduct ? (
             <div className="flex flex-col">
-              <span className="text-[9px] font-black text-black/60 uppercase tracking-widest leading-none mb-1">{selectedProduct.sku}</span>
+              <span className="text-[0.5625rem] font-black text-black/60 uppercase tracking-widest leading-none mb-1">{selectedProduct.sku}</span>
               <span className="text-sm font-black text-black italic truncate">{selectedProduct.name}</span>
             </div>
           ) : (
@@ -183,17 +183,17 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ value, onSelect, prod
                   }}
                   className="w-full text-left px-6 py-4 hover:bg-neo-purple/5 transition-colors border-b-2 border-black/5 last:border-0 flex flex-col gap-1"
                 >
-                  <span className="text-[9px] font-black text-black/60 uppercase tracking-widest leading-none">{p.sku}</span>
+                  <span className="text-[0.5625rem] font-black text-black/60 uppercase tracking-widest leading-none">{p.sku}</span>
                   <span className="text-xs font-black text-black italic leading-tight block truncate">{p.name}</span>
                 </button>
               ))
             ) : (
               <div className="p-10 text-center flex flex-col items-center gap-4">
-                <p className="text-[10px] font-black text-black/20 uppercase tracking-widest">Không tìm thấy</p>
+                <p className="text-[0.625rem] font-black text-black/20 uppercase tracking-widest">Không tìm thấy</p>
                 <button 
                   type="button"
                   onClick={onQuickCreate} 
-                  className="btn-secondary !h-10 !px-6 text-[10px]"
+                  className="btn-secondary !h-10 !px-6 text-[0.625rem]"
                 >
                   <Plus size={14} /> Tạo nhanh
                 </button>
@@ -214,7 +214,7 @@ const CurrencySelector: React.FC<{ value: string, onChange: (val: string) => voi
         type="button"
         onClick={() => onChange('VND')}
         className={cn(
-          "flex-1 px-4 py-2 text-[10px] font-black transition-all",
+          "flex-1 px-4 py-2 text-[0.625rem] font-black transition-all",
           value === 'VND' ? "bg-black text-white" : "text-black hover:bg-black/5"
         )}
       >
@@ -224,7 +224,7 @@ const CurrencySelector: React.FC<{ value: string, onChange: (val: string) => voi
         type="button"
         onClick={() => onChange('USD')}
         className={cn(
-          "flex-1 px-4 py-2 text-[10px] font-black transition-all",
+          "flex-1 px-4 py-2 text-[0.625rem] font-black transition-all",
           value === 'USD' ? "bg-black text-white" : "text-black hover:bg-black/5"
         )}
       >
@@ -305,6 +305,28 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const resetForm = () => {
+    setSelectedCustomerId('');
+    setSelectedCustomer(null);
+    setContractCode('');
+    setIsDuplicate(false);
+    setDeadline('');
+    setMilestones([]);
+    setNotes('');
+    setCurrency('VND');
+    setItems([]);
+    setCustomerSearch('');
+    setManagerPass('');
+    setIsSubmitting(false);
+    setShowManagerLock(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   // Lock scroll when modal is open
   useEffect(() => {
@@ -547,8 +569,8 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                  <ShoppingCart size={24} className="text-black" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-black tracking-tight uppercase italic">Tạo Đơn Hàng Mới</h2>
-                <p className="text-[10px] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Hệ thống quản trị Paper Art Việt</p>
+                <h2 className="text-[clamp(1.2rem,4vw,2rem)] font-black text-black tracking-tight uppercase italic leading-tight">Tạo Đơn Hàng Mới</h2>
+                <p className="text-[0.625rem] text-black/40 font-black uppercase tracking-[0.2em] mt-1 italic">Hệ thống quản trị Paper Art Việt</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -582,12 +604,12 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
             {/* CUSTOMER SECTION */}
             <section className="p-8 bg-white border-neo border-black rounded-xl shadow-neo space-y-10">
                <div className="flex items-center gap-3">
-                  <h3 className="text-[11px] font-black text-black/40 uppercase tracking-[0.3em]">Thông tin khách hàng & Hợp đồng</h3>
+                  <h3 className="text-[0.6875rem] font-black text-black/40 uppercase tracking-[0.3em]">Thông tin khách hàng & Hợp đồng</h3>
                </div>
                
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   <div className="space-y-3 relative" ref={comboboxRef}>
-                     <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Tìm khách hàng</label>
+                     <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest ml-1">Tìm khách hàng</label>
                      <div className="relative group/field">
                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20" size={20} />
                        <input 
@@ -615,14 +637,14 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                                   className="w-full text-left px-6 py-4 hover:bg-neo-purple/5 transition-colors border-b-2 border-black/5 last:border-0"
                                 >
                                   <div className="flex flex-col">
-                                     <span className="text-[9px] font-black text-black/60 uppercase tracking-widest leading-none mb-1">{c.customerCode || 'KH LẠ'}</span>
+                                     <span className="text-[0.5625rem] font-black text-black/60 uppercase tracking-widest leading-none mb-1">{c.customerCode || 'KH LẠ'}</span>
                                      <span className="text-sm font-black text-black italic">{c.name}</span>
                                   </div>
                                 </button>
                               ))}
                             </div>
                           ) : (
-                            <div className="p-10 text-center text-black/20 text-[10px] font-black uppercase">Không có kết quả</div>
+                            <div className="p-10 text-center text-black/20 text-[0.625rem] font-black uppercase">Không có kết quả</div>
                           )}
                        </div>
                      )}
@@ -631,18 +653,18 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                        <div className="mt-4 p-5 bg-neo-purple/5 border-2 border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] space-y-3 animate-in fade-in italic">
                           <div className="flex items-center gap-3">
                              <Phone size={14} className="text-black" />
-                             <p className="text-[11px] font-black text-black tabular-nums">{selectedCustomer.phone || 'N/A'}</p>
+                             <p className="text-[0.6875rem] font-black text-black tabular-nums">{selectedCustomer.phone || 'N/A'}</p>
                           </div>
                           <div className="flex items-start gap-3">
                              <MapPin size={14} className="text-black mt-0.5" />
-                             <p className="text-[11px] font-black text-black/60 leading-relaxed uppercase">{selectedCustomer.address || 'N/A'}</p>
+                             <p className="text-[0.6875rem] font-black text-black/60 leading-relaxed uppercase">{selectedCustomer.address || 'N/A'}</p>
                           </div>
                        </div>
                      )}
                   </div>
 
                   <div className="space-y-3">
-                     <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Số hợp đồng</label>
+                     <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest ml-1">Số hợp đồng</label>
                      <div className="relative group/field">
                        <input 
                         type="text" 
@@ -663,13 +685,13 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                      {isDuplicate && (
                        <div className="flex items-center gap-2 text-neo-red animate-in fade-in slide-in-from-top-1">
                          <AlertCircle size={12} />
-                         <span className="text-[9px] font-black uppercase italic">Số hợp đồng này đã tồn tại!</span>
+                         <span className="text-[0.5625rem] font-black uppercase italic">Số hợp đồng này đã tồn tại!</span>
                        </div>
                      )}
                   </div>
 
                   <div className="space-y-3">
-                     <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Hạn giao hàng</label>
+                     <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest ml-1">Hạn giao hàng</label>
                      <input 
                       type="date" 
                       value={deadline}
@@ -678,7 +700,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                      />
                   </div>
                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Đơn vị tiền tệ</label>
+                      <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest ml-1">Đơn vị tiền tệ</label>
                       <CurrencySelector value={currency} onChange={setCurrency} />
                    </div>
                </div>
@@ -689,35 +711,34 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                <div className="flex justify-between items-center bg-neo-purple/5 p-4 rounded-xl border-2 border-black border-dashed">
                   <div className="flex items-center gap-3">
                      <ShoppingCart size={18} className="text-black" />
-                     <h3 className="text-[11px] font-black text-black/40 uppercase tracking-[0.3em]">Danh sách sản phẩm</h3>
+                     <h3 className="text-[0.6875rem] font-black text-black/40 uppercase tracking-[0.3em]">Danh sách sản phẩm</h3>
                   </div>
                   <button 
                     onClick={addItem}
-                    className="btn-secondary !h-10 !px-6 text-[10px]"
+                    className="btn-secondary !h-10 !px-6 text-[0.625rem]"
                   >
                     <Plus size={14} strokeWidth={2.5} /> Thêm sản phẩm
                   </button>
                </div>
 
-               <div className="overflow-visible border-2 border-black rounded-xl hidden md:block">
-                  <table className="w-full text-left">
-                     <thead>
-                        <tr className="bg-black text-[10px] font-black uppercase tracking-widest text-white">
-                            <th className="px-6 py-4">Sản phẩm</th>
-                            <th className="px-6 py-4 text-center w-32">Số lượng</th>
-                            <th className="px-6 py-4 text-center w-24">ĐVT</th>
-                            <th className="px-6 py-4 text-right">Giá vốn</th>
-                            <th className="px-6 py-4 text-right w-48">Giá Deal</th>
-                            <th className="px-6 py-4 text-right w-48">Thành tiền</th>
-                            <th className="px-6 py-4 w-12"></th>
-                         </tr>
-                     </thead>
-                     <tbody className="divide-y-2 divide-black/5">
-                        {items.map((item) => {
-                          const isLoss = item.dealPrice > 500 && item.dealPrice < item.cogs;
-                          return (
-                           <tr key={item.id} className="group hover:bg-neo-purple/5 transition-all">
-                              <td className="px-6 py-5">
+               <div className="space-y-6">
+                 {items.map((item, idx) => {
+                   const isLoss = item.dealPrice > 500 && item.dealPrice < item.cogs;
+                   return (
+                     <div key={item.id} className="relative bg-white border-neo border-black rounded-xl shadow-neo group transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-active">
+                        {/* DELETION BANNER/ACTION */}
+                        <button 
+                          onClick={() => removeItem(item.id)}
+                          className="absolute top-0 right-0 w-12 h-12 flex items-center justify-center bg-white border-b-neo border-l-neo border-black text-black/20 hover:text-neo-red hover:bg-neo-red/5 transition-all z-10"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+
+                        <div className="p-6 md:p-8 space-y-6">
+                           {/* LINE 1: PRODUCT, UNIT, QUANTITY */}
+                           <div className="flex flex-col md:flex-row gap-6 items-start">
+                              <div className="flex-1 w-full space-y-2">
+                                 <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest ml-1 block">Sản phẩm #{idx + 1}</label>
                                  <ProductSelector 
                                     value={item.productId}
                                     onSelect={(pId) => handleProductSelect(item.id, pId)}
@@ -728,65 +749,99 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                                       setIsProductModalOpen(true);
                                     }}
                                   />
-                              </td>
-                               <td className="px-6 py-5">
+                              </div>
+                              <div className="w-full md:w-24 space-y-2">
+                                 <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest ml-1 block">ĐVT</label>
+                                 <div className="h-[3.5rem] bg-black/5 border-neo border-black rounded-xl flex items-center justify-center font-black text-[0.75rem] italic uppercase tracking-widest text-black/60">
+                                    {item.unit || 'Cái'}
+                                 </div>
+                              </div>
+                              <div className="w-full md:w-32 space-y-2">
+                                 <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest ml-1 block">Số lượng</label>
                                  <input 
                                    type="number" 
                                    step="any"
                                    value={item.quantity || ''}
                                    onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                   className="form-input !h-12 py-0 text-center font-black tabular-nums" 
+                                   className="form-input !h-[3.5rem] text-center font-black tabular-nums shadow-neo" 
                                    placeholder="0"
                                   />
-                               </td>
-                               <td className="px-6 py-5 text-center text-[10px] font-black text-black uppercase tabular-nums italic">
-                                  {item.unit || 'Cái'}
-                               </td>
-                              <td className="px-6 py-5">
-                                 <input 
-                                   type="number" 
-                                   step="any"
-                                   value={item.cogs || ''}
-                                   onChange={(e) => updateItem(item.id, 'cogs', parseFloat(e.target.value) || 0)}
-                                   placeholder="0.00"
-                                   className="form-input !h-12 py-0 text-right font-black tabular-nums text-black/40 italic"
-                                 />
-                               </td>
-                              <td className="px-6 py-5">
-                                  <div className="space-y-1">
+                              </div>
+                           </div>
+
+                           {/* DASHED SEPARATOR */}
+                           <div className="border-t-2 border-dashed border-black/10" />
+
+                           {/* LINE 2: COGS, PRICE, TOTAL */}
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest ml-1 block">Giá vốn</label>
+                                 <div className="relative">
                                     <input 
                                        type="number" 
                                        step="any"
-                                       value={item.dealPrice || ''}
-                                       onChange={(e) => updateItem(item.id, 'dealPrice', parseFloat(e.target.value) || 0)}
+                                       value={item.cogs || ''}
+                                       onChange={(e) => updateItem(item.id, 'cogs', parseFloat(e.target.value) || 0)}
                                        placeholder="0.00"
-                                       className={cn(
-                                         "form-input !h-12 py-0 text-right font-black tabular-nums",
-                                         isLoss ? "border-neo-red !bg-neo-red/5" : ""
-                                       )}
-                                     />
-                                    <div className="flex gap-2 justify-end">
+                                       className="form-input !h-[3.5rem] text-right font-black tabular-nums text-black/40 italic bg-black/5 shadow-neo"
+                                    />
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.5rem] font-black text-black/20 uppercase tracking-widest pointer-events-none">{currency}</span>
+                                 </div>
+                              </div>
+                              <div className="space-y-2">
+                                 <div className="flex justify-between items-center px-1">
+                                    <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest block font-space">Giá Deal</label>
+                                    <div className="flex gap-2">
                                       {(item.wholesalePrice ?? 0) > 0 && (
-                                         <button onClick={() => updateItem(item.id, 'dealPrice', item.wholesalePrice ?? 0)} className="text-[8px] font-black text-black/40 uppercase hover:text-black italic">Sỉ: {formatNumber(item.wholesalePrice, currency)}</button>
+                                         <button onClick={() => updateItem(item.id, 'dealPrice', item.wholesalePrice ?? 0)} className="text-[0.5rem] font-black text-black/40 uppercase hover:text-black italic underline decoration-dotted">Sỉ</button>
                                       )}
                                       {(item.exportPrice ?? 0) > 0 && (
-                                         <button onClick={() => updateItem(item.id, 'dealPrice', item.exportPrice ?? 0)} className="text-[8px] font-black text-black/40 uppercase hover:text-black italic">XK: {formatNumber(item.exportPrice, currency)}</button>
+                                         <button onClick={() => updateItem(item.id, 'dealPrice', item.exportPrice ?? 0)} className="text-[0.5rem] font-black text-black/40 uppercase hover:text-black italic underline decoration-dotted">XK</button>
                                       )}
                                     </div>
-                                  </div>
-                              </td>
-                              <td className="px-6 py-5 text-right font-black tabular-nums text-black">
-                                 {formatNumber(item.quantity * item.dealPrice, currency)}
-                              </td>
-                              <td className="px-6 py-5 text-center">
-                                 <button onClick={() => removeItem(item.id)} className="w-8 h-8 flex items-center justify-center text-black/20 hover:text-neo-red transition-all">
-                                   <Trash2 size={16} />
-                                 </button>
-                              </td>
-                           </tr>
-                        );})}
-                     </tbody>
-                  </table>
+                                 </div>
+                                 <div className="relative">
+                                    <input 
+                                      type="number" 
+                                      step="any"
+                                      value={item.dealPrice || ''}
+                                      onChange={(e) => updateItem(item.id, 'dealPrice', parseFloat(e.target.value) || 0)}
+                                      placeholder="0.00"
+                                      className={cn(
+                                        "form-input !h-[3.5rem] text-right font-black tabular-nums shadow-neo",
+                                        isLoss ? "border-neo-red !bg-neo-red/5" : "focus:bg-neo-purple/5"
+                                      )}
+                                    />
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[0.5rem] font-black text-black/20 uppercase tracking-widest pointer-events-none">{currency}</span>
+                                 </div>
+                                 {isLoss && (
+                                    <div className="flex items-center gap-2 px-1 text-neo-red animate-pulse">
+                                       <Lock size={10} strokeWidth={3} />
+                                       <span className="text-[0.5rem] font-black uppercase tracking-widest italic">Giá dưới vốn</span>
+                                    </div>
+                                 )}
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[0.625rem] font-black text-black/40 uppercase tracking-widest ml-1 block bg-neo-yellow/30 w-fit px-2 py-0.5 rounded-md">Thành tiền</label>
+                                 <div className="h-[3.5rem] bg-black text-white border-neo border-black rounded-xl flex items-center justify-end px-6 font-black text-[1.2rem] italic tabular-nums shadow-neo">
+                                    {formatNumber(item.quantity * item.dealPrice, currency)}
+                                    <span className="ml-2 text-[0.6rem] opacity-50 uppercase tracking-widest">{currency}</span>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                   );
+                 })}
+                 {items.length === 0 && (
+                   <div className="py-20 text-center bg-white border-2 border-dashed border-black/10 rounded-2xl flex flex-col items-center gap-4">
+                      <div className="w-16 h-16 bg-black/5 rounded-full flex items-center justify-center text-black/20">
+                         <Package size={32} />
+                      </div>
+                      <p className="text-[0.625rem] font-black text-black/20 uppercase tracking-[0.2em] italic">Chưa có sản phẩm nào được thêm</p>
+                      <button onClick={addItem} className="btn-secondary !h-10 !px-8 text-[0.625rem]">Bắt đầu thêm ngay</button>
+                   </div>
+                 )}
                </div>
             </section>
 
@@ -797,12 +852,12 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                      <div className="w-8 h-8 bg-neo-yellow/20 border-2 border-black rounded-lg flex items-center justify-center">
                         <Calendar size={16} className="text-black" />
                      </div>
-                     <h3 className="text-[11px] font-black text-black/40 uppercase tracking-[0.3em]">Thời hạn các khâu dự tính</h3>
+                     <h3 className="text-[0.6875rem] font-black text-black/40 uppercase tracking-[0.3em]">Thời hạn các khâu dự tính</h3>
                   </div>
                   <button 
                     type="button"
                     onClick={addMilestone}
-                    className="btn-secondary !h-10 !px-6 text-[10px]"
+                    className="btn-secondary !h-10 !px-6 text-[0.625rem]"
                   >
                     <Plus size={14} strokeWidth={2.5} /> Thêm khâu
                   </button>
@@ -812,7 +867,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                  <div className="border-2 border-black rounded-xl overflow-hidden">
                     <table className="w-full text-left">
                        <thead>
-                          <tr className="bg-black/5 text-[9px] font-black text-black/40 uppercase tracking-widest border-b-2 border-black">
+                          <tr className="bg-black/5 text-[0.5625rem] font-black text-black/40 uppercase tracking-widest border-b-2 border-black">
                              <th className="px-6 py-3">Các công đoạn</th>
                              <th className="px-6 py-3 w-48">Thời gian dự tính</th>
                              <th className="px-6 py-3 w-32 text-center">Hoàn thành</th>
@@ -861,7 +916,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                  </div>
                ) : (
                  <div className="py-10 text-center border-2 border-dashed border-black/10 rounded-xl">
-                    <p className="text-[10px] font-black text-black/20 uppercase tracking-widest italic">Chưa có công đoạn nào được thiết lập</p>
+                    <p className="text-[0.625rem] font-black text-black/20 uppercase tracking-widest italic">Chưa có công đoạn nào được thiết lập</p>
                  </div>
                )}
             </section>
@@ -876,15 +931,15 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-10">
               <div className="flex flex-wrap items-center gap-12 w-full lg:w-auto">
                  <div className="flex flex-col">
-                   <span className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1">Tổng doanh thu</span>
+                   <span className="text-[0.5625rem] font-black text-black/40 uppercase tracking-widest mb-1">Tổng doanh thu</span>
                    <span className="text-3xl font-black text-black italic tabular-nums">{formatNumber(totalRevenue, currency)} <span className="text-xs">{currency}</span></span>
                  </div>
                  <div className="flex flex-col">
-                   <span className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1">Tổng giá vốn</span>
+                   <span className="text-[0.5625rem] font-black text-black/40 uppercase tracking-widest mb-1">Tổng giá vốn</span>
                    <span className="text-2xl font-black text-black/20 italic tabular-nums">{formatNumber(totalCOGS, currency)} <span className="text-xs">{currency}</span></span>
                  </div>
                  <div className="flex flex-col">
-                   <span className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1">Thặng dư dự kiến</span>
+                   <span className="text-[0.5625rem] font-black text-black/40 uppercase tracking-widest mb-1">Thặng dư dự kiến</span>
                    <span className={cn("text-3xl font-black italic tabular-nums", totalProfit >= 0 ? "text-neo-green-pure text-green-600" : "text-neo-red")}>
                       {formatNumber(totalRevenue - totalCOGS, currency)} <span className="text-xs">{currency}</span>
                    </span>
@@ -911,7 +966,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                     <Lock size={32} strokeWidth={2.5} />
                  </div>
                  <h3 className="text-lg font-black text-black text-center uppercase tracking-tight mb-2 italic">Manager Authorization</h3>
-                 <p className="text-[10px] text-black/40 text-center font-black uppercase tracking-widest mb-10 leading-relaxed italic">
+                 <p className="text-[0.625rem] text-black/40 text-center font-black uppercase tracking-widest mb-10 leading-relaxed italic">
                     Đơn hàng dưới giá vốn. Cần xác thực quản lý.
                  </p>
                  
@@ -924,8 +979,8 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                  />
   
                  <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => setShowManagerLock(false)} className="h-14 font-black text-[10px] uppercase tracking-widest text-black/40 hover:text-black transition-all">Hủy</button>
-                    <button onClick={handleSubmit} className="btn-primary !h-14 text-[10px] uppercase tracking-widest">Verify</button>
+                    <button onClick={() => setShowManagerLock(false)} className="h-14 font-black text-[0.625rem] uppercase tracking-widest text-black/40 hover:text-black transition-all">Hủy</button>
+                    <button onClick={handleSubmit} className="btn-primary !h-14 text-[0.625rem] uppercase tracking-widest">Verify</button>
                  </div>
               </div>
            </div>

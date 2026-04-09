@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  font-size: clamp(12px, 1.1vw, 16px);
+}
+
 :root {
   --background: #F5F5DC; /* Soft Beige */
   --foreground: #0F172A; /* Slate 900 */
@@ -185,4 +189,15 @@ tr.bg-black th,
 
 .glass-panel, .retro-paper, .liquid-bg, .bento-container, .washi-tape-top, .paper-clip {
   display: none !important;
+}
+
+/* Hide spin buttons in number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
 }
