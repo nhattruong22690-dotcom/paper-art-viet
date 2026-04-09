@@ -37,6 +37,11 @@ export default function Sidebar() {
   // Effective expanded state
   const isExpanded = !isCollapsed || isHovered;
 
+  // Track width for the layout
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sidebar-width', isExpanded ? '18rem' : '5rem');
+  }, [isExpanded]);
+
   // Load collapsed state from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('sidebar-collapsed');
@@ -85,7 +90,7 @@ export default function Sidebar() {
       onMouseEnter={() => isCollapsed && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "hidden lg:flex fixed lg:sticky top-0 left-0 h-screen bg-background border-r-neo border-black flex-col z-[101] overflow-y-auto font-sans transition-all duration-300",
+        "hidden lg:flex fixed top-0 left-0 h-screen bg-background border-r-neo border-black flex-col z-[101] overflow-y-auto font-sans transition-all duration-300 shadow-neo",
         isExpanded ? "w-72" : "w-20"
       )}
     >

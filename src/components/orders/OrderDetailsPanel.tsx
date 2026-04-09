@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, Edit3, Save, Calendar, User, FileText, CheckCircle2, ChevronRight, Plus, Factory, Zap, Briefcase, UserCheck, History, RotateCcw, Activity, Layers } from 'lucide-react';
+import { X, Trash2, Edit3, Save, Calendar, User, FileText, CheckCircle2, ChevronRight, ChevronDown, Plus, Factory, Zap, Briefcase, UserCheck, History, RotateCcw, Activity, Layers, RefreshCw } from 'lucide-react';
+import { getMilestoneTemplate } from '@/services/systemConfig.service';
 import { useNotification } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
 import SplitProductionModal from './SplitProductionModal';
@@ -42,6 +43,8 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [expandedSnapshotItems, setExpandedSnapshotItems] = useState<Record<string, boolean>>({});
+  const [isProductionCollapsed, setIsProductionCollapsed] = useState(false);
+  const [isMilestonesCollapsed, setIsMilestonesCollapsed] = useState(false);
 
   const toggleSnapshot = (itemId: string) => {
     setExpandedSnapshotItems(prev => ({
@@ -244,6 +247,29 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
     }
   };
 
+  const loadDefaultMilestones = async () => {
+    try {
+      const template = await getMilestoneTemplate();
+      if (!template || !Array.isArray(template) || template.length === 0) {
+        showToast('error', 'Chưa có cấu hình thời hạn mặc định trong Cài đặt');
+        return;
+      }
+
+      const newMilestones = template.map(item => ({
+        id: item.id || Math.random().toString(36).substr(2, 9),
+        label: item.label,
+        deadline: '',
+        isCompleted: false
+      }));
+
+      setEditData({ ...editData, estimatedStages: newMilestones });
+      showToast('success', `Đã tải ${newMilestones.length} công đoạn mặc định`);
+    } catch (err) {
+      console.error(err);
+      showToast('error', 'Lỗi khi tải dữ liệu mặc định');
+    }
+  };
+
   const getItemProgress = (productId: string, orderItemQuantity: number) => {
     const itemPOs = order.productionOrders?.filter((po: any) => po.productId === productId) || [];
     const totalAllocated = itemPOs.reduce((acc: number, po: any) => acc + (po.quantityTarget || 0), 0);
@@ -411,7 +437,24 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
 
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-l-4 border-primary pl-3">
-                  <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mục sản xuất</h3>
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer group"
+                    onClick={() => setIsProductionCollapsed(!isProductionCollapsed)}
+                  >
+                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                       <Factory size={12} className={cn("transition-transform duration-300", isProductionCollapsed && "rotate-12")} />
+                       Mục sản xuất
+                       <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[9px] font-black border border-primary/10">
+                          {(isEditing ? editData.orderItems : order.orderItems || []).length} sản phẩm
+                       </span>
+                    </h3>
+                    <div className={cn(
+                      "p-1.5 rounded-lg bg-gray-100/80 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-sm",
+                      isProductionCollapsed ? "rotate-0" : "rotate-180"
+                    )}>
+                       <ChevronDown size={14} strokeWidth={3} />
+                    </div>
+                  </div>
                   {isEditing && (
                     <div className="flex items-center gap-2">
                        <button 
@@ -440,8 +483,9 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                   )}
                 </div>
 
-                <div className="space-y-4">
-                  {(isEditing ? editData.orderItems : order.orderItems || []).map((item: any) => {
+                {!isProductionCollapsed && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {(isEditing ? editData.orderItems : order.orderItems || []).map((item: any) => {
                     const stats = getItemProgress(item.productId, item.quantity);
                     const isNewItem = String(item.id).startsWith('new-');
                     return (
@@ -727,14 +771,39 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                       </div>
                     );
                   })}
-                </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-l-4 border-amber-400 pl-3">
-                   <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Thời hạn các khâu dự tính</h3>
-                   {isEditing && (
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer group"
+                    onClick={() => setIsMilestonesCollapsed(!isMilestonesCollapsed)}
+                  >
+                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                       <Calendar size={12} className={cn("transition-transform duration-300", isMilestonesCollapsed && "rotate-12")} />
+                       Thời hạn các khâu dự tính
+                       <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[9px] font-black border border-amber-200">
+                          {(isEditing ? editData.estimatedStages : order.estimatedStages || []).length} khâu
+                       </span>
+                    </h3>
+                    <div className={cn(
+                      "p-1.5 rounded-lg bg-gray-100/80 text-gray-500 group-hover:bg-amber-100 group-hover:text-amber-700 transition-all shadow-sm",
+                      isMilestonesCollapsed ? "rotate-0" : "rotate-180"
+                    )}>
+                       <ChevronDown size={14} strokeWidth={3} />
+                    </div>
+                  </div>
+                  {isEditing && (
                      <div className="flex items-center gap-2">
+                        <button 
+                           onClick={loadDefaultMilestones}
+                           className="flex items-center gap-1.5 px-2.5 py-1.5 bg-neo-blue/10 text-neo-blue rounded-lg hover:bg-neo-blue/20 border border-neo-blue/20 transition-all shadow-sm font-bold text-[9px] uppercase tracking-widest"
+                           title="Tải từ cài đặt mặc định"
+                        >
+                          <RefreshCw size={12} strokeWidth={3} /> Tải mặc định
+                        </button>
                         <button 
                            onClick={() => {
                             const newMilestones = [
@@ -761,8 +830,9 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                    )}
                 </div>
                 
-                <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
-                   <table className="w-full text-left text-xs">
+                {!isMilestonesCollapsed && (
+                  <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                    <table className="w-full text-left text-xs">
                       <thead>
                          <tr className="bg-gray-50/50 border-b border-border text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
                             <th className="px-4 py-3">Công đoạn</th>
@@ -840,10 +910,11 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                  Chưa có dữ liệu khâu dự tính
                               </td>
                            </tr>
-                         )}
-                      </tbody>
-                   </table>
-                </div>
+                          )}
+                       </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               {/* Financial Summary */}

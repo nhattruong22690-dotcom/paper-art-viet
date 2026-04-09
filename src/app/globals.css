@@ -26,6 +26,7 @@ html {
   --input: #ffffff;
   --ring: #D8B4FE;
   --radius: 12px; 
+  --sidebar-width: 18rem;
 }
 
 @theme {

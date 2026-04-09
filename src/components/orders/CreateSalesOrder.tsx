@@ -22,8 +22,10 @@ import {
   ArrowUpRight,
   Loader2,
   Calculator,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
+import { getMilestoneTemplate } from '@/services/systemConfig.service';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -504,6 +506,29 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
     }));
   };
 
+  const loadDefaultMilestones = async () => {
+    try {
+      const template = await getMilestoneTemplate();
+      if (!template || !Array.isArray(template) || template.length === 0) {
+        showToast('error', 'Chưa có cấu hình thời hạn mặc định trong Cài đặt');
+        return;
+      }
+
+      const newMilestones = template.map(item => ({
+        id: item.id || Math.random().toString(36).substr(2, 9),
+        label: item.label,
+        deadline: '',
+        isCompleted: false
+      }));
+
+      setMilestones(newMilestones);
+      showToast('success', `Đã tải ${newMilestones.length} công đoạn mặc định`);
+    } catch (err) {
+      console.error(err);
+      showToast('error', 'Lỗi khi tải dữ liệu mặc định');
+    }
+  };
+
   const totalRevenue = items.reduce((sum, item) => sum + (item.quantity * item.dealPrice), 0);
   const totalCOGS = items.reduce((sum, item) => sum + (item.quantity * item.cogs), 0);
   const totalProfit = totalRevenue - totalCOGS;
@@ -854,13 +879,23 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                      </div>
                      <h3 className="text-[0.6875rem] font-black text-black/40 uppercase tracking-[0.3em]">Thời hạn các khâu dự tính</h3>
                   </div>
-                  <button 
-                    type="button"
-                    onClick={addMilestone}
-                    className="btn-secondary !h-10 !px-6 text-[0.625rem]"
-                  >
-                    <Plus size={14} strokeWidth={2.5} /> Thêm khâu
-                  </button>
+                   <div className="flex items-center gap-2">
+                      <button 
+                        type="button"
+                        onClick={loadDefaultMilestones}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-neo-blue/10 text-neo-blue rounded-lg hover:bg-neo-blue/20 border border-neo-blue/20 transition-all shadow-sm font-bold text-[9px] uppercase tracking-widest"
+                        title="Tải từ cài đặt mặc định"
+                      >
+                        <RefreshCw size={12} strokeWidth={3} /> Tải mặc định
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={addMilestone}
+                        className="btn-secondary !h-10 !px-6 text-[0.625rem]"
+                      >
+                        <Plus size={14} strokeWidth={2.5} /> Thêm khâu
+                      </button>
+                   </div>
                </div>
 
                {milestones.length > 0 ? (

@@ -118,3 +118,33 @@ export function subscribeToMaintenance(callback: (config: any) => void) {
       console.log('Realtime Subscription Status:', status);
     });
 }
+/**
+ * Get the milestone template configuration.
+ */
+export async function getMilestoneTemplate() {
+  return getConfig('milestone_template');
+}
+
+/**
+ * Update the milestone template configuration.
+ */
+export async function updateMilestoneTemplate(template: any[]) {
+  try {
+    const { data, error } = await supabase
+      .from('SystemConfig')
+      .upsert({ 
+        key: 'milestone_template', 
+        value: template 
+      }, { 
+        onConflict: 'key' 
+      })
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+    return data?.value || template;
+  } catch (error) {
+    console.error('updateMilestoneTemplate Error:', error);
+    throw error;
+  }
+}
