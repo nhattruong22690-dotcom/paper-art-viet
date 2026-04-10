@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Search, Plus, Trash2, Edit2, Package, 
   FileSpreadsheet, Download, Loader2, Database, 
-  Tag, Save, Store, ChevronRight, AlertCircle 
+  Tag, Save, Store, ChevronRight, AlertCircle, Box 
 } from 'lucide-react';
 import { 
   getAllMaterials, 
