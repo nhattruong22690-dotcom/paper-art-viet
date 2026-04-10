@@ -101,7 +101,9 @@ function SearchableSelect({
   const filtered = options.filter(opt => {
     const text = (opt.specification || opt.name || "").toLowerCase();
     const type = (opt.type || "").toLowerCase();
-    return text.includes(search.toLowerCase()) || type.includes(search.toLowerCase());
+    const code = (opt.code || opt.sku || "").toLowerCase();
+    const s = search.toLowerCase();
+    return text.includes(s) || type.includes(s) || code.includes(s);
   });
 
   return (

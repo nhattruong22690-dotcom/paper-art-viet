@@ -13,6 +13,7 @@ interface Option {
   id: string;
   label: string;
   sublabel?: string;
+  searchTerms?: string[];
   disabled?: boolean;
 }
 
@@ -42,8 +43,12 @@ export function SearchableSelect({ options, onSelect, placeholder, icon, classNa
   const filteredOptions = options.filter(opt => {
     const label = opt.label?.toLowerCase() || '';
     const sublabel = opt.sublabel?.toLowerCase() || '';
+    const extra = (opt.searchTerms || []).join(' ').toLowerCase();
     const search = searchTerm.toLowerCase();
-    return label.includes(search) || sublabel.includes(search);
+    
+    return label.includes(search) || 
+           sublabel.includes(search) || 
+           extra.includes(search);
   });
 
   return (

@@ -831,7 +831,8 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                            options={materials.map(m => ({
                               id: m.id,
                               label: m.specification || m.name || 'Vật tư chưa đặt tên',
-                              sublabel: `${m.sku || 'N/A'} • ${m.type || 'RAW'}`,
+                              sublabel: `${m.code || m.sku || 'N/A'} • ${m.type || 'RAW'}`,
+                              searchTerms: [m.code, m.sku, m.name, m.specification, m.type, m.note].filter(Boolean) as string[],
                               disabled: bomItems.some(bi => bi.materialId === m.id)
                            }))}
                            onSelect={(id) => {
@@ -847,6 +848,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                               id: op.id,
                               label: op.specification || op.name || 'Công đoạn chưa đặt tên',
                               sublabel: `Mặc định: ${formatNumber(op.price || 0)} VNĐ`,
+                              searchTerms: [op.name, op.specification, op.type, op.code, op.note].filter(Boolean) as string[],
                               disabled: bomOperations.some(bo => bo.operationId === op.id)
                            }))}
                            onSelect={(id) => {
