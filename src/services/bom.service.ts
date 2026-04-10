@@ -26,8 +26,8 @@ export async function getBOMDetail(bomId: string): Promise<BOMWithDetails> {
     .select(`
       *,
       product:products (*),
-      bom_materials (*, materials (*)),
-      bom_operations (*, operations (*))
+      bom_materials (*, material:materials (*)),
+      bom_operations (*, operation:operations (*))
     `)
     .eq('id', bomId)
     .single();
@@ -47,13 +47,13 @@ export async function calculateBOMCost(bomId: string) {
   
   const materialCost = bom.bom_materials.reduce((total, item) => {
     const customPrices = bom.product?.cogs_config?.customPrices || {};
-    const cost = customPrices[item.material_id] ?? (item.materials?.price || 0);
+    const cost = customPrices[item.material_id] ?? (item.material?.price || 0);
     return total + (item.qty * cost * (1 + item.scrap_rate));
   }, 0);
 
   const operationCost = bom.bom_operations.reduce((total, item) => {
     const customPrices = bom.product?.cogs_config?.customPrices || {};
-    const cost = customPrices[item.operation_id] ?? (item.operations?.price || 0);
+    const cost = customPrices[item.operation_id] ?? (item.operation?.price || 0);
     return total + cost;
   }, 0);
 

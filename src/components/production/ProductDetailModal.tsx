@@ -199,9 +199,9 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                   materialId: item.material_id,
                   quantity: Number(item.qty || 0),
                   material: {
-                     ...(item.materials || {}),
-                     unitPrice: Number(definedCustomPrice ?? item.materials?.price ?? 0),
-                     referencePrice: Number(item.materials?.price || 0)
+                     ...(item.material || {}),
+                     unitPrice: Number(definedCustomPrice ?? item.material?.price ?? 0),
+                     referencePrice: Number(item.material?.price || 0)
                   }
                };
             }) as any);
@@ -213,8 +213,8 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                   operationId: op.operation_id,
                   sequence: op.sequence,
                   operation: {
-                     ...(op.operations || {}),
-                     price: Number(definedCustomPrice ?? op.operations?.price ?? 0)
+                     ...(op.operation || {}),
+                     price: Number(definedCustomPrice ?? op.operation?.price ?? 0)
                   }
                };
             }));

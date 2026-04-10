@@ -12,7 +12,7 @@ export async function calculateProductCOGS(productId: string) {
         *,
         bom_materials (
           *,
-          materials (*)
+          material:materials (*)
         )
       )
     `)
@@ -32,7 +32,7 @@ export async function calculateProductCOGS(productId: string) {
   // Fallback to naive BOM material calculation if no config exists
   const activeBom = (product.bom || []).find((b: any) => b.is_active) || product.bom?.[0];
   const totalCOGS = (activeBom?.bom_materials || []).reduce((acc: number, item: any) => {
-    const rawPrice = item.materials?.price || 0;
+    const rawPrice = item.material?.price || 0;
     let price = Number(rawPrice);
     
     const quantity = Number(item.qty || 0);
