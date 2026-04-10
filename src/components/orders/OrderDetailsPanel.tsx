@@ -1193,7 +1193,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                       disabled={isLoadingBOMs}
                       className="flex items-center gap-2 px-3 py-1.5 bg-white border border-border rounded-lg fluid-text-xs font-bold hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
                     >
-                      <RefreshCw className="fluid-icon-xs" className={cn(isLoadingBOMs && "animate-spin")} />
+                      <RefreshCw className={cn("fluid-icon-xs", isLoadingBOMs && "animate-spin")} />
                       Lấy dữ liệu BOM
                     </button>
 
