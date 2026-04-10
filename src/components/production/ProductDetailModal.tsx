@@ -370,7 +370,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
          await recalculateProductCostPrice(product.id);
          onUpdate();
          setTimeout(() => {
-            showToast('success', `Đã cập nhật BOM v${currentVersion.version} thành công`);
+            showToast('success', `Đã cập nhật BOM v${targetVersionNumber} thành công`);
          }, 100);
       } catch (error) {
          console.error('Failed to save BOM:', error);
