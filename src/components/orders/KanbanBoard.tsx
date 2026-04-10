@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import OrderCard from './OrderCard';
 import OrderDetailsPanel from './OrderDetailsPanel';
-import { Search, Filter, LayoutGrid, List, CheckCircle2, Truck, Package, Factory, ClipboardList, AlertTriangle } from 'lucide-react';
+import { Search, Filter, LayoutGrid, List, CheckCircle2, Truck, Package, Factory, ClipboardList, AlertTriangle, ShoppingCart } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -108,64 +108,108 @@ export default function KanbanBoard({
 
   return (
     <div className="space-y-6">
-      {/* Search & Global Filter Toolbar */}
-      <div className="flex flex-col md:flex-row gap-3">
-        <div className="flex-1 relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={16} />
-          <input 
-            type="text" 
-            placeholder="Tìm mã đơn hoặc khách hàng..."
-            className="w-full bg-white border border-border rounded-lg py-2.5 pl-11 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-bold"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-           <button 
-             onClick={() => {
-               setFilterDelay(!filterDelay);
-               if (!filterDelay) setFilterUnallocated(false);
-             }}
-             className={cn(
-               "px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border shadow-sm",
-               filterDelay ? "bg-red-600 text-white border-red-700" : "bg-white text-muted-text border-border hover:border-gray-400"
-             )}
-           >
-             <Filter size={14} /> Trễ tiến độ
-           </button>
-           <button 
-             onClick={() => {
-               setFilterUnallocated(!filterUnallocated);
-               if (!filterUnallocated) setFilterDelay(false);
-             }}
-             className={cn(
-               "px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border shadow-sm",
-               filterUnallocated ? "bg-amber-500 text-white border-amber-600" : "bg-white text-muted-text border-border hover:border-gray-400"
-             )}
-           >
-             <AlertTriangle size={14} /> Chưa phân bổ
-           </button>
+      {/* Unified Kanban Header Frame - Sticky */}
+      <div className="sticky top-0 z-30 bg-background pt-4 pb-2">
+        <div className="bg-white border-2 border-black rounded-[32px] shadow-neo overflow-hidden flex flex-col divide-y-2 divide-black/[0.08]">
+          
+          {/* Layer 1: Title (Yellow) */}
+          <div className="bg-[#f0f0d8] px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-neo-yellow border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                <ShoppingCart size={18} strokeWidth={3} className="text-black" />
+              </div>
+              <div>
+                <h3 className="font-bold text-black uppercase text-sm tracking-[0.2em] font-space leading-none">Bảng điều phối Kanban</h3>
+                <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest mt-1">Hệ thống quản lý đơn hàng</p>
+              </div>
+            </div>
+            
+            <div className="hidden sm:flex gap-2">
+               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+               <span className="text-[10px] font-bold text-black uppercase tracking-widest leading-none flex items-center">Trực tuyến</span>
+            </div>
+          </div>
+
+          {/* Layer 2: Search & Filter Toolbar */}
+          <div className="p-3 bg-white flex flex-col md:flex-row gap-3">
+            <div className="flex-1 relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-black transition-colors" size={16} />
+              <input 
+                type="text" 
+                placeholder="Tìm mã đơn hoặc khách hàng..."
+                className="w-full bg-gray-50/50 border border-black/10 rounded-xl py-2.5 pl-11 pr-4 text-sm outline-none focus:border-black focus:ring-0 transition-all font-bold"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+               <button 
+                 onClick={() => {
+                   setFilterDelay(!filterDelay);
+                   if (!filterDelay) setFilterUnallocated(false);
+                 }}
+                 className={cn(
+                   "px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2",
+                   filterDelay ? "bg-red-600 text-white border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" : "bg-white text-muted-text border-black/5 hover:border-black"
+                 )}
+               >
+                 <Filter size={14} /> Trễ tiến độ
+               </button>
+               <button 
+                 onClick={() => {
+                   setFilterUnallocated(!filterUnallocated);
+                   if (!filterUnallocated) setFilterDelay(false);
+                 }}
+                 className={cn(
+                   "px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2",
+                   filterUnallocated ? "bg-amber-400 text-black border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" : "bg-white text-muted-text border-black/5 hover:border-black"
+                 )}
+               >
+                 <AlertTriangle size={14} /> Chưa phân bổ
+               </button>
+            </div>
+          </div>
+
+          {/* Layer 3: Column Headers (Desktop Only) */}
+          <div className="hidden md:flex divide-x-2 divide-black/[0.08] bg-white">
+            {STAGES.map(stage => (
+              <div key={stage.id} className="flex-1 p-4 flex items-center justify-between group cursor-default">
+                <div className="flex items-center gap-2">
+                  <div className={cn("p-1.5 rounded-lg text-white shadow-sm transition-transform group-hover:scale-110", stage.color)}>
+                     <stage.icon size={12} strokeWidth={2.5} />
+                  </div>
+                  <h3 className="text-[10px] font-black text-foreground uppercase tracking-wider">{stage.label}</h3>
+                </div>
+                <span className="text-[10px] font-black text-black/60 bg-gray-100 px-2 py-0.5 rounded-full border border-black/5">
+                  {getOrdersByStage(stage.id).length}
+                </span>
+              </div>
+            ))}
+          </div>
+          
+          {/* Layer 4: Mobile Stage Tabs (Mobile Only) */}
+          <div className="md:hidden bg-white p-2 flex gap-2 overflow-x-auto no-scrollbar border-t border-black/5">
+            {STAGES.map(stage => (
+              <button 
+                key={stage.id}
+                onClick={() => setActiveTab(stage.id)}
+                className={cn(
+                  "px-4 py-2 rounded-lg whitespace-nowrap text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0",
+                  activeTab === stage.id ? "bg-black text-white" : "bg-gray-100 text-muted-foreground border border-black/5"
+                )}
+              >
+                <div className={cn("w-2 h-2 rounded-full", stage.color)} />
+                {stage.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Mobile Stage Tabs */}
-      <div className="md:hidden flex overflow-x-auto gap-2 pb-2 no-scrollbar">
-        {STAGES.map(stage => (
-          <button 
-            key={stage.id}
-            onClick={() => setActiveTab(stage.id)}
-            className={cn(
-              "px-4 py-2 rounded-lg whitespace-nowrap text-[10px] font-bold uppercase tracking-widest transition-all",
-              activeTab === stage.id ? "bg-primary text-white" : "bg-white text-muted-foreground border border-border"
-            )}
-          >
-            {stage.label} ({getOrdersByStage(stage.id).length})
-          </button>
-        ))}
-      </div>
+
 
       {/* Desktop Kanban Grid */}
-      <div className="hidden md:grid grid-cols-5 gap-4 items-start h-[calc(100vh-280px)]">
+      <div className="hidden md:grid grid-cols-5 gap-4 items-start min-h-[600px] mt-2">
         {STAGES.map(stage => (
           <div 
             key={stage.id} 
@@ -173,19 +217,7 @@ export default function KanbanBoard({
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, stage.id)}
           >
-            <div className="px-2 py-2 flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className={cn("p-1.5 rounded text-white shadow-sm", stage.color)}>
-                   <stage.icon size={12} strokeWidth={2.5} />
-                </div>
-                <h3 className="text-[10px] font-bold text-foreground uppercase tracking-wider">{stage.label}</h3>
-              </div>
-              <span className="text-[10px] font-bold text-muted-foreground bg-white px-2 py-0.5 rounded-full border border-border">
-                {getOrdersByStage(stage.id).length}
-              </span>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto space-y-3 px-1 custom-scrollbar pb-10">
+            <div className="flex-1 space-y-3 px-1 pb-10 mt-3">
               {getOrdersByStage(stage.id).map(order => (
                 <OrderCard 
                   key={order.id} 

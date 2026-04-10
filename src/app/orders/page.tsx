@@ -42,21 +42,13 @@ export default function OrdersPage() {
         </button>
       </div>
 
-      {/* Kanban Board Area */}
-      <div className="neo-card !p-8 bg-background shadow-neo-active">
-        <div className="mb-6 flex items-center gap-4">
-           <div className="w-10 h-10 rounded-xl bg-neo-yellow border-neo border-black flex items-center justify-center shadow-neo-active">
-              <ShoppingCart size={20} strokeWidth={3} />
-           </div>
-           <h3 className="font-bold text-foreground uppercase text-sm tracking-widest font-space">Bảng điều phối Kanban</h3>
-        </div>
-         <KanbanBoard 
-           key={refreshKey} 
-           selectedOrderId={selectedOrderId}
-           onSelectOrder={setSelectedOrderId}
-           onRefreshRequest={() => setRefreshKey(prev => prev + 1)}
-         />
-      </div>
+      <KanbanBoard 
+        key={refreshKey} 
+        selectedOrderId={selectedOrderId}
+        onSelectOrder={setSelectedOrderId}
+        onRefreshRequest={() => setRefreshKey(prev => prev + 1)}
+      />
+
 
       {/* Detail Side Panel - Moved to Page Root to ensure full height */}
       <OrderDetailsPanel 
