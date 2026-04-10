@@ -386,10 +386,11 @@ export default function MaterialMasterList() {
             <table className="w-full text-left border-collapse">
                <thead className="bg-[#FAF7F2] border-b-[3px] border-black uppercase text-[10px] font-black tracking-widest text-black/40 italic">
                   <tr>
-                     <th className="px-10 py-6 border-r-[2.5px] border-black/5 min-w-[300px]">Vật tư / Thông số</th>
-                     <th className="px-10 py-6 border-r-[2.5px] border-black/5 text-center w-32">Phân loại</th>
-                     <th className="px-10 py-6 border-r-[2.5px] border-black/5 text-center w-32">Đơn vị</th>
-                     <th className="px-10 py-6 border-r-[2.5px] border-black/5 min-w-[150px]">Tồn kho</th>
+                     <th className="px-10 py-6 border-r-[2.5px] border-black/5 w-40">Mã hàng</th>
+                     <th className="px-10 py-6 border-r-[2.5px] border-black/5 min-w-[250px]">Vật tư / Thông số</th>
+                     <th className="px-10 py-6 border-r-[2.5px] border-black/5 text-center w-40">Phân loại</th>
+                     <th className="px-10 py-6 border-r-[2.5px] border-black/5 text-center w-24">Đơn vị</th>
+                     <th className="px-10 py-6 border-r-[2.5px] border-black/5 w-20">Tồn kho</th>
                      <th className="px-10 py-6 text-right min-w-[180px]">Đơn giá niêm yết</th>
                      <th className="px-10 py-6 w-[150px] text-center">Quản lý</th>
                   </tr>
@@ -397,13 +398,13 @@ export default function MaterialMasterList() {
                <tbody className="divide-y-[2.5px] divide-black/5">
                   {loading ? (
                      <tr>
-                        <td colSpan={6} className="py-40 text-center italic text-black/20 font-black uppercase tracking-[0.5em]">
+                        <td colSpan={7} className="py-40 text-center italic text-black/20 font-black uppercase tracking-[0.5em]">
                            <Loader2 className="animate-spin inline mr-4" /> Syncing Inventory Database...
                         </td>
                      </tr>
                   ) : filteredMaterials.length === 0 ? (
                      <tr>
-                        <td colSpan={6} className="py-40 text-center italic text-black/20 font-black uppercase tracking-[0.5em]">
+                        <td colSpan={7} className="py-40 text-center italic text-black/20 font-black uppercase tracking-[0.5em]">
                            <Box size={48} className="mx-auto mb-4 opacity-10" />
                            Không tìm thấy vật tư phù hợp
                         </td>
@@ -411,18 +412,20 @@ export default function MaterialMasterList() {
                   ) : filteredMaterials.map((mat) => (
                     <tr key={mat.id} className="group hover:bg-neo-purple/5 transition-colors">
                        <td className="px-10 py-8 border-r-[2.5px] border-black/5">
+                          <span className="text-xs font-black text-neo-purple uppercase tracking-tighter">{mat.code || 'null'}</span>
+                       </td>
+                       <td className="px-10 py-8 border-r-[2.5px] border-black/5">
                           <div className="flex flex-col">
                              <span className="text-sm font-black text-black uppercase italic leading-tight">{mat.specification || 'CHƯA CÓ QUY CÁCH'}</span>
                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[10px] font-black text-neo-purple uppercase tracking-tighter">{mat.code}</span>
-                                <span className="w-1 h-1 rounded-full bg-black/10" />
                                 <span className="text-[10px] font-bold text-black/40 uppercase tracking-tighter">{mat.name}</span>
                              </div>
                           </div>
                        </td>
                        <td className="px-10 py-8 border-r-[2.5px] border-black/5 text-center">
                           <span className={cn(
-                            "px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border-2 border-black/10",
+                            "px-3 py-1 text-[10px] whitespace-nowrap font-black uppercase tracking-widest rounded-lg border-2 border-black/10 transition-all",
+                            mat.type?.length > 10 && "text-[9px] px-2",
                             mat.type === 'Giấy' ? "bg-neo-purple text-white border-black" : "bg-black text-white"
                           )}>{mat.type}</span>
                        </td>
