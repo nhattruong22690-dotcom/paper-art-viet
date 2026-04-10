@@ -3,10 +3,10 @@ import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const orderId = params.id;
+    const { id: orderId } = await params;
     const { snapshots } = await req.json(); // Array of { orderItemId: string, snapshot: any }
 
     if (!snapshots || !Array.isArray(snapshots)) {
