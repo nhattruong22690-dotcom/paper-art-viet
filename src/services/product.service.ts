@@ -83,11 +83,9 @@ export async function getProductDetail(id: string) {
         materialId: bm.material_id,
         quantity: Number(bm.qty),
         material: bm.materials ? {
-          id: bm.materials.id,
-          sku: bm.materials.type,
-          name: bm.materials.specification,
-          unit: bm.materials.unit,
-          referencePrice: Number(bm.materials.price || 0),
+          ...bm.materials,
+          sku: bm.materials.code,
+          name: bm.materials.name,
           unitPrice: Number(bm.materials.price || 0)
         } : null
       }));

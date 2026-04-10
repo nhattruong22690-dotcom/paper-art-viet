@@ -156,16 +156,24 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                setWasteRatio(config.wasteRatio ?? 0.05);
                setCustomCosts(config.customCosts || []);
                setProductionNotes(config.productionNotes || []);
-               setCustomPrices(config.customPrices || {});
-            }
-
-            const versions = data.bomVersions || [];
-            setBomVersions(versions);
-
-            const active = versions.find((v: any) => v.is_active) || versions[0];
-            if (active) {
-               setSelectedVersionId(active.id);
-               await loadBOMForVersion(active.id);
+               const loadedCustomPrices = config.customPrices || {};
+               setCustomPrices(loadedCustomPrices);
+               
+               const versions = data.bomVersions || [];
+               setBomVersions(versions);
+               const active = versions.find((v: any) => v.is_active) || versions[0];
+               if (active) {
+                  setSelectedVersionId(active.id);
+                  loadBOMForVersion(active.id, loadedCustomPrices);
+               }
+            } else {
+               const versions = data.bomVersions || [];
+               setBomVersions(versions);
+               const active = versions.find((v: any) => v.is_active) || versions[0];
+               if (active) {
+                  setSelectedVersionId(active.id);
+                  loadBOMForVersion(active.id, {});
+               }
             }
          }
       } catch (error) {
@@ -175,41 +183,46 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
       }
    };
 
-   const loadBOMForVersion = async (versionId: string) => {
+   const loadBOMForVersion = async (versionId: string, currentCustomPrices?: Record<string, number>) => {
+      setIsLoadingBOM(true);
       try {
          const { getBOMDetail } = await import('@/services/bom.service');
          const bom = await getBOMDetail(versionId);
 
          if (bom) {
+            const pricesSource = currentCustomPrices || customPrices;
+            
             setBomItems((bom.bom_materials || []).map((item: any) => {
-               const definedCustomPrice = customPrices[item.material_id];
+               const definedCustomPrice = pricesSource[item.material_id];
                return {
                   id: item.id,
                   materialId: item.material_id,
-                  quantity: Number(item.qty),
+                  quantity: Number(item.qty || 0),
                   material: {
-                     ...item.materials,
-                     unitPrice: typeof definedCustomPrice === 'number' ? definedCustomPrice : Number(item.materials.price || 0),
-                     referencePrice: Number(item.materials.price || 0)
+                     ...(item.materials || {}),
+                     unitPrice: Number(definedCustomPrice ?? item.materials?.price ?? 0),
+                     referencePrice: Number(item.materials?.price || 0)
                   }
                };
             }) as any);
 
             setBomOperations((bom.bom_operations || []).map((op: any) => {
-               const definedCustomPrice = customPrices[op.operation_id] ?? 0;
+               const definedCustomPrice = pricesSource[op.operation_id];
                return {
                   id: op.id,
                   operationId: op.operation_id,
                   sequence: op.sequence,
                   operation: {
-                     ...op.operations,
-                     price: definedCustomPrice || Number(op.operations.price || 0)
+                     ...(op.operations || {}),
+                     price: Number(definedCustomPrice ?? op.operations?.price ?? 0)
                   }
                };
             }));
          }
       } catch (error) {
          console.error('Failed to load BOM version:', error);
+      } finally {
+         setIsLoadingBOM(false);
       }
    };
 
@@ -495,13 +508,13 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    const wasteCost = totalMaterialCost * wasteRatio;
    const customTotal = customCosts.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
 
-   const totalCOGS = totalMaterialCost + totalOperationCost + wasteCost + customTotal;
+   const totalCOGS = Math.round(totalMaterialCost + totalOperationCost + wasteCost + customTotal);
 
 
    useEffect(() => {
       if (totalCOGS > 0) {
-         setWholesalePrice(totalCOGS * 1.3);
-         setExportPrice(totalCOGS * 2.4);
+         setWholesalePrice(Math.round(totalCOGS * 1.3));
+         setExportPrice(Math.round(totalCOGS * 2.4));
       }
    }, [totalCOGS]);
 
@@ -681,7 +694,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                     </div>
                                     <div className="flex-1">
                                        <p className="text-5xl font-black text-black tabular-nums tracking-tighter italic">
-                                          {formatNumber(Math.round(basePrice))}
+                                          {formatVND(Math.round(basePrice))}
                                        </p>
                                        <span className="text-[10px] text-black uppercase font-black tracking-widest italic block leading-none whitespace-nowrap">VNĐ / Sản phẩm</span>
                                     </div>
@@ -697,7 +710,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                     </div>
                                     <div className="flex-1">
                                        <p className="text-5xl font-black text-black tabular-nums tracking-tighter">
-                                          {formatNumber(Math.round(wholesalePrice))}
+                                          {formatVND(Math.round(wholesalePrice))}
                                        </p>
                                        <p className="text-[10px] text-black font-black uppercase tracking-widest mt-1 italic block leading-none whitespace-nowrap">BIÊN LỢI NHUẬN ĐỀ XUẤT OK</p>
                                     </div>
@@ -713,7 +726,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                     </div>
                                     <div className="flex-1">
                                        <p className="text-5xl font-black text-black tabular-nums tracking-tighter">
-                                          {formatNumber(Math.round(exportPrice))}
+                                          {formatVND(Math.round(exportPrice))}
                                        </p>
                                        <p className="text-[10px] text-black font-black uppercase tracking-widest mt-1 italic block leading-none whitespace-nowrap">GIÁ CHUẨN TOÀN CẦU</p>
                                     </div>
@@ -907,7 +920,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                              </div>
                                           </td>
                                           <td className="px-6 py-4 text-right tabular-nums text-black font-black italic text-sm">
-                                             {formatNumber(item.quantity * (item.material.unitPrice || 0))}đ
+                                             {formatVND(item.quantity * (item.material.unitPrice || 0))}
                                           </td>
                                           <td className="px-6 py-4">
                                              <button onClick={() => handleRemoveMaterial(item.materialId)} className="text-black/20 hover:text-rose-500 transition-colors">
@@ -989,15 +1002,15 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                  <div className="space-y-4">
                                     <div className="flex justify-between items-center p-4 bg-[#FAF7F2] border-[2px] border-black rounded-xl">
                                        <span className="text-sm font-black text-black">Tổng Vật tư (BOM Materials)</span>
-                                       <span className="text-lg font-black italic">{formatNumber(totalMaterialCost)}đ</span>
+                                       <span className="text-lg font-black italic">{formatVND(totalMaterialCost)}</span>
                                     </div>
                                     <div className="flex justify-between items-center p-4 bg-[#FAF7F2] border-[2px] border-black rounded-xl">
                                        <span className="text-sm font-black text-black">Tổng Nhân công (BOM Operations)</span>
-                                       <span className="text-lg font-black italic">{formatNumber(totalOperationCost)}đ</span>
+                                       <span className="text-lg font-black italic">{formatVND(totalOperationCost)}</span>
                                     </div>
                                     <div className="flex justify-between items-center p-4 bg-rose-50 border-[2px] border-rose-300 border-dashed rounded-xl">
                                        <span className="text-sm font-black text-rose-700 italic">Hao hụt ước tính ({wasteRatio * 100}%)</span>
-                                       <span className="text-lg font-black text-rose-700 italic">+{formatNumber(wasteCost)}đ</span>
+                                       <span className="text-lg font-black text-rose-700 italic">+{formatVND(wasteCost)}</span>
                                     </div>
                                  </div>
 
@@ -1060,7 +1073,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                        <span className="text-[10px] font-black text-black/40 uppercase">Giá sỉ (130% COGS)</span>
                                        <span className="px-2 py-0.5 bg-black text-white text-[9px] font-black rounded italic">Margin 30%</span>
                                     </div>
-                                    <p className="text-3xl font-black text-black tabular-nums tracking-tighter italic">{formatVND(totalCOGS * 1.3)}</p>
+                                    <p className="text-3xl font-black text-black tabular-nums tracking-tighter italic">{formatVND(Math.round(totalCOGS * 1.3))}</p>
                                  </div>
 
                                  <div className="p-6 bg-[#D1FAE5] border-[2px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">

@@ -126,7 +126,7 @@ html {
   }
 }
 
-/* Neo-Brutalism Table */
+/* Neo-Brutalism Table — default for all tables */
 table {
   @apply w-full border-collapse text-left text-sm bg-white rounded-xl overflow-visible border-neo border-black shadow-neo mt-4;
 }
@@ -146,6 +146,33 @@ tbody tr:last-child td {
 tbody tr:hover {
   @apply bg-slate-50/50;
 }
+
+/* Thin table override — for modal/detail panels */
+.thin-table {
+  border-width: 1px !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  margin-top: 0 !important;
+  overflow: hidden !important;
+}
+
+.thin-table thead th {
+  background: #fff !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15) !important;
+  padding: 8px 16px !important;
+  font-size: 11px !important;
+}
+
+.thin-table tbody td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 8px 16px !important;
+}
+
+.thin-table tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
 
 /* Global override for black-background table headers to ensure visibility */
 thead tr.bg-black th,

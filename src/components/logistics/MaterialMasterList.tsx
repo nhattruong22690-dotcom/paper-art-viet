@@ -11,7 +11,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { getAllMaterials, upsertMaterial, deleteMaterial } from '@/services/material.service';
 import { useNotification } from '@/context/NotificationContext';
-import { formatNumber } from '@/utils/format';
+import { formatNumber, formatVND } from '@/utils/format';
 import { NumericInput } from '@/components/ui/NumericInput';
 
 function cn(...inputs: ClassValue[]) {
@@ -447,8 +447,7 @@ export default function MaterialMasterList() {
                        </td>
                        <td className="px-10 py-8 text-right tabular-nums">
                           <span className="text-2xl font-black text-black italic tracking-tighter">
-                            {formatNumber(mat.price || 0)}
-                            <span className="text-xs ml-1 font-normal opacity-40 not-italic uppercase tracking-widest"> VNĐ</span>
+                            {formatVND(mat.price || 0)}
                           </span>
                        </td>
                        <td className="px-10 py-8 text-center">

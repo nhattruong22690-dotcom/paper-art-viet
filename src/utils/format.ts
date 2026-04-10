@@ -2,20 +2,29 @@
  * Formats a number or string into a Vietnamese-style numeric string.
  * Example: 1000000.5 -> "1.000.000,5"
  */
-export const formatNumber = (val: number | string | null | undefined): string => {
+export const formatNumber = (
+  val: number | string | null | undefined, 
+  options: { decimals?: number; currency?: string } = {}
+): string => {
   if (val === null || val === undefined || val === '') return '';
   
-  // Convert to string and handle potential existing formatting
-  let str = val.toString().replace(/[^0-9.]/g, '');
-  
-  // Split into integer and decimal parts
-  const [integerPart, decimalPart] = str.split('.');
+  let num = typeof val === 'string' ? parseFloat(val.replace(/[^0-9.-]/g, '')) : val;
+  if (isNaN(num)) return '';
+
+  const isUSD = options.currency === 'USD';
+  const decimals = options.decimals !== undefined 
+    ? options.decimals 
+    : (isUSD ? 2 : 0);
+
+  // Round to specified decimals
+  const fixed = num.toFixed(decimals);
+  const [integerPart, decimalPart] = fixed.split('.');
   
   // Format integer part with dots
   const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   
-  // Return combined parts with comma for decimal if it exists
-  return decimalPart !== undefined ? `${formattedInteger},${decimalPart}` : formattedInteger;
+  // Return combined parts with comma for decimal if it exists and decimals > 0
+  return decimalPart && decimals > 0 ? `${formattedInteger},${decimalPart}` : formattedInteger;
 };
 
 /**
@@ -44,8 +53,20 @@ export const parseNumber = (val: string | null | undefined): number => {
 
 /**
  * Formats a number specifically for currency display (VND).
+ * Rounds to 0 decimal places as requested.
  */
 export const formatVND = (val: number | string | null | undefined): string => {
-  const formatted = formatNumber(val);
-  return formatted ? `${formatted}đ` : '0đ';
+  if (val === null || val === undefined || val === '') return '0đ';
+  const formatted = formatNumber(val, { currency: 'VND', decimals: 0 });
+  return `${formatted}đ`;
+};
+
+/**
+ * Formats a number specifically for currency display (USD).
+ * Uses 2 decimal places as requested.
+ */
+export const formatUSD = (val: number | string | null | undefined): string => {
+  if (val === null || val === undefined || val === '') return '$0';
+  const formatted = formatNumber(val, { currency: 'USD', decimals: 2 });
+  return `$${formatted}`;
 };
