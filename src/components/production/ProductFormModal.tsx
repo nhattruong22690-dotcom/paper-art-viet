@@ -419,7 +419,7 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
   ].filter(t => !t.hidden);
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
+    <div className="fixed inset-0 lg:left-[var(--sidebar-width)] z-[500] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
       <div className="relative w-full max-w-5xl h-[90vh] bg-white rounded-xl border-neo border-black shadow-neo flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">

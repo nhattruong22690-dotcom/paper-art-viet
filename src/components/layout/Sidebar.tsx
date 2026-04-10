@@ -90,7 +90,7 @@ export default function Sidebar() {
       onMouseEnter={() => isCollapsed && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "hidden lg:flex fixed top-0 left-0 h-screen bg-background border-r-neo border-black flex-col z-[101] overflow-y-auto font-sans transition-all duration-300 shadow-neo",
+        "hidden lg:flex fixed top-0 left-0 h-screen bg-background border-r-neo border-black flex-col z-[600] overflow-y-auto font-sans transition-all duration-300 shadow-neo",
         isExpanded ? "w-72" : "w-20"
       )}
     >

@@ -57,7 +57,14 @@ export async function calculateBOMCost(bomId: string) {
     return total + cost;
   }, 0);
 
-  const totalCost = materialCost + operationCost;
+  const cogsConfig = bom.product?.cogs_config || {};
+  const wasteRatio = cogsConfig.wasteRatio ?? 0.05;
+  const customCosts = cogsConfig.customCosts || [];
+  
+  const wasteCost = materialCost * wasteRatio;
+  const customTotal = customCosts.reduce((acc: number, c: any) => acc + (Number(c.amount) || 0), 0);
+
+  const totalCost = materialCost + operationCost + wasteCost + customTotal;
   
   // Lấy snapshot gần nhất để so biến động
   const { data: lastSnapshot } = await supabase

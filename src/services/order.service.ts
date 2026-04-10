@@ -21,7 +21,15 @@ export async function calculateProductCOGS(productId: string) {
 
   if (error || !product) return 0;
 
-  // Sử dụng referencePrice hoặc purchasePrice từ Material
+  if (product.cogs_config?.totalCOGS) {
+    return Number(product.cogs_config.totalCOGS);
+  }
+
+  if (product.cost_price) {
+    return Number(product.cost_price);
+  }
+
+  // Fallback to naive BOM material calculation if no config exists
   const activeBom = (product.bom || []).find((b: any) => b.is_active) || product.bom?.[0];
   const totalCOGS = (activeBom?.bom_materials || []).reduce((acc: number, item: any) => {
     const rawPrice = item.materials?.price || 0;

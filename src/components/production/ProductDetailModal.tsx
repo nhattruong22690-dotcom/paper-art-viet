@@ -33,8 +33,9 @@ import { getAllMaterials } from '@/services/material.service';
 import { updateProductBOM, getProductDetail, upsertProduct, recalculateProductCostPrice, deleteProduct } from '@/services/product.service';
 import { useNotification } from "@/context/NotificationContext";
 import { getAllOperations } from '@/services/operation.service';
-import { formatNumber, parseNumber } from '@/utils/format';
+import { formatNumber, parseNumber, formatVND } from '@/utils/format';
 import { NumericInput } from '@/components/ui/NumericInput';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 function cn(...inputs: ClassValue[]) {
    return twMerge(clsx(inputs));
@@ -100,11 +101,16 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    const [productionTimeStd, setProductionTimeStd] = useState<number>(0);
    const [wholesalePrice, setWholesalePrice] = useState<number>(0);
    const [exportPrice, setExportPrice] = useState<number>(0);
+   const [basePrice, setBasePrice] = useState<number>(0);
    const { showToast, showModal, confirm } = useNotification();
    const [wasteRatio, setWasteRatio] = useState<number>(0.05);
    const [customCosts, setCustomCosts] = useState<any[]>([]);
    const [productionNotes, setProductionNotes] = useState<string[]>([]);
    const [noteInput, setNoteInput] = useState<string>('');
+   const [productName, setProductName] = useState<string>('');
+   const [productSKU, setProductSKU] = useState<string>('');
+   const [productUnit, setProductUnit] = useState<string>('');
+   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
 
    const [bomVersions, setBomVersions] = useState<BOMVersion[]>([]);
    const [selectedVersionId, setSelectedVersionId] = useState<string>('');
@@ -114,6 +120,9 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    useEffect(() => {
       if (isOpen && product.id) {
          setProductionTimeStd(product.productionTimeStd || 0);
+         setProductName(product.name || '');
+         setProductSKU(product.sku || '');
+         setProductUnit(product.unit || '');
          loadProductDetail();
          loadMaterials();
          loadOperations();
@@ -135,8 +144,20 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
          const data = await getProductDetail(product.id);
          if (data) {
             setProductionTimeStd(data.productionTimeStd || 0);
+            setBasePrice(Number(data.basePrice || 0));
             setWholesalePrice(Number(data.wholesalePrice || 0));
             setExportPrice(Number(data.exportPrice || 0));
+            setProductName(data.name || '');
+            setProductSKU(data.sku || '');
+            setProductUnit(data.unit || '');
+
+            if (data.cogsConfig) {
+               const config = data.cogsConfig;
+               setWasteRatio(config.wasteRatio ?? 0.05);
+               setCustomCosts(config.customCosts || []);
+               setProductionNotes(config.productionNotes || []);
+               setCustomPrices(config.customPrices || {});
+            }
 
             const versions = data.bomVersions || [];
             setBomVersions(versions);
@@ -146,14 +167,6 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                setSelectedVersionId(active.id);
                await loadBOMForVersion(active.id);
             }
-         }
-
-         const detail = data as any;
-         if (detail?.cogsConfig) {
-            const config = detail.cogsConfig;
-            setWasteRatio(config.wasteRatio ?? 0.05);
-            setCustomCosts(config.customCosts || []);
-            setProductionNotes(config.productionNotes || []);
          }
       } catch (error) {
          console.error('Failed to load product detail:', error);
@@ -169,7 +182,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
 
          if (bom) {
             setBomItems((bom.bom_materials || []).map((item: any) => {
-               const definedCustomPrice = product.cogsConfig?.customPrices?.[item.material_id];
+               const definedCustomPrice = customPrices[item.material_id];
                return {
                   id: item.id,
                   materialId: item.material_id,
@@ -183,14 +196,14 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
             }) as any);
 
             setBomOperations((bom.bom_operations || []).map((op: any) => {
-               const definedCustomPrice = product.cogsConfig?.customPrices?.[op.operation_id];
+               const definedCustomPrice = customPrices[op.operation_id] ?? 0;
                return {
                   id: op.id,
                   operationId: op.operation_id,
                   sequence: op.sequence,
                   operation: {
                      ...op.operations,
-                     price: typeof definedCustomPrice === 'number' ? definedCustomPrice : Number(op.operations.price || 0)
+                     price: definedCustomPrice || Number(op.operations.price || 0)
                   }
                };
             }));
@@ -283,22 +296,39 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    };
 
    const handleSaveBOM = async () => {
-      if (!selectedVersionId) return;
+      if (isLoadingBOM) return;
       setIsSavingBOM(true);
       try {
          const { upsertBOM } = await import('@/services/bom.service');
 
-         // Lấy thông tin BOM hiện tại để giữ version và product_id
-         const currentVersion = bomVersions.find(v => v.id === selectedVersionId);
-         if (!currentVersion) return;
+         let targetVersionId = selectedVersionId;
+         let targetVersionNumber = 1;
+         let targetIsActive = true;
 
-         await upsertBOM(
-            {
-               id: selectedVersionId,
-               product_id: product.id,
-               version: currentVersion.version,
-               is_active: currentVersion.is_active
-            },
+         if (targetVersionId) {
+            const currentVersion = bomVersions.find(v => v.id === targetVersionId);
+            if (!currentVersion) {
+               setIsSavingBOM(false);
+               return;
+            }
+            targetVersionNumber = currentVersion.version;
+            targetIsActive = currentVersion.is_active;
+         }
+
+         const bomData: any = {
+            product_id: product.id,
+            version: targetVersionNumber,
+            is_active: targetIsActive
+         };
+
+         if (targetVersionId) {
+            bomData.id = targetVersionId;
+         } else {
+            bomData.note = 'Initial BOM';
+         }
+
+         const updatedBom = await upsertBOM(
+            bomData,
             bomItems.map(item => ({
                material_id: item.materialId,
                qty: item.quantity,
@@ -310,27 +340,38 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
             }))
          );
 
-         const customPrices: Record<string, number> = {};
+         if (!targetVersionId && updatedBom) {
+            setSelectedVersionId(updatedBom.id);
+            setBomVersions([updatedBom as unknown as BOMVersion]);
+         }
+
+         const newCustomPrices = { ...customPrices };
          bomItems.forEach(item => {
             if (item.material.unitPrice !== item.material.referencePrice) {
-               customPrices[item.materialId] = item.material.unitPrice;
+               newCustomPrices[item.materialId] = item.material.unitPrice;
             }
          });
          bomOperations.forEach(op => {
-            customPrices[op.operationId] = op.operation.price;
+            newCustomPrices[op.operationId] = op.operation.price;
          });
+
+         setCustomPrices(newCustomPrices);
 
          await upsertProduct({
             id: product.id,
             cogsConfig: {
-               ...(product.cogsConfig || {}),
-               customPrices
+               wasteRatio,
+               customCosts,
+               productionNotes,
+               customPrices: newCustomPrices
             }
          } as any);
 
          await recalculateProductCostPrice(product.id);
          onUpdate();
-         showToast('success', `Đã cập nhật BOM v${currentVersion.version} thành công`);
+         setTimeout(() => {
+            showToast('success', `Đã cập nhật BOM v${currentVersion.version} thành công`);
+         }, 100);
       } catch (error) {
          console.error('Failed to save BOM:', error);
          showModal('error', 'Lỗi lưu BOM', String(error));
@@ -342,21 +383,21 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    const handleSaveCOGS = async () => {
       setIsSavingCOGS(true);
       try {
-         const customPrices: Record<string, number> = {};
+         const newCustomPrices = { ...customPrices };
          bomItems.forEach(item => {
             if (item.material.unitPrice !== item.material.referencePrice) {
-               customPrices[item.materialId] = item.material.unitPrice;
+               newCustomPrices[item.materialId] = item.material.unitPrice;
             }
          });
          bomOperations.forEach(op => {
-            customPrices[op.operationId] = op.operation.price;
+            newCustomPrices[op.operationId] = op.operation.price;
          });
 
          const cogsConfig = {
             wasteRatio,
             customCosts,
             productionNotes,
-            customPrices
+            customPrices: newCustomPrices
          };
 
          const calculatedBasePrice = totalCOGS;
@@ -369,14 +410,20 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
             basePrice: calculatedBasePrice,
             wholesalePrice: calculatedWholesalePrice,
             exportPrice: calculatedExportPrice,
+            costPrice: calculatedBasePrice,
             cogsConfig: {
                ...cogsConfig,
                totalCOGS: calculatedBasePrice
             }
          });
 
+         setCustomPrices(newCustomPrices);
+         setBasePrice(calculatedBasePrice);
+         setWholesalePrice(calculatedWholesalePrice);
+         setExportPrice(calculatedExportPrice);
+
          onUpdate();
-         showToast('success', 'Đã niêm yết giá thành công');
+         showToast('success', 'Đã niêm yết giá & lưu Snapshot thành công');
       } catch (error) {
          console.error('Failed to save COGS:', error);
       } finally {
@@ -389,10 +436,15 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
       try {
          await upsertProduct({
             id: product.id,
+            name: productName,
+            sku: productSKU,
+            unit: productUnit,
             productionTimeStd,
             cogsConfig: {
-               ...product.cogsConfig,
-               productionNotes
+               wasteRatio,
+               customCosts,
+               productionNotes,
+               customPrices
             }
          } as any);
          onUpdate();
@@ -454,7 +506,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    }, [totalCOGS]);
 
    const tabs = [
-      { id: 'general', label: 'Thông số Kỹ nghệ', icon: Settings },
+      { id: 'general', label: 'Thông tin SP', icon: Settings },
       { id: 'bom', label: 'Định mức Vật tư', icon: Layers },
       { id: 'cogs', label: 'Tính toán Giá thành', icon: DollarSign }
    ];
@@ -462,10 +514,10 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    if (!isOpen) return null;
 
    return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
+      <div className="fixed inset-0 lg:left-[var(--sidebar-width)] z-[500] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
 
-         <div className="relative w-full max-w-6xl h-[90vh] bg-white border-[2.5px] border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] rounded-xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">
+         <div className="relative w-full max-w-[95vw] h-[95vh] bg-white border-[2.5px] border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] rounded-xl flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">
 
             {/* HEADER */}
             <div className="px-8 py-6 border-b-[2.5px] border-black flex justify-between items-center bg-white shrink-0">
@@ -475,10 +527,10 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                   </div>
                   <div>
                      <h2 className="text-2xl font-black text-black tracking-tighter uppercase italic leading-none">
-                        {product.name || 'Chi tiết Sản phẩm'}
+                        {productName || 'Chi tiết Sản phẩm'}
                      </h2>
                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] leading-none">{product.sku || 'N/A'}</span>
+                        <span className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] leading-none">{productSKU || 'N/A'}</span>
                         <span className="w-1.5 h-1.5 bg-black/10 rounded-full" />
 
                         {/* VERSION SWITCHER */}
@@ -629,7 +681,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                     </div>
                                     <div className="flex-1">
                                        <p className="text-5xl font-black text-black tabular-nums tracking-tighter italic">
-                                          {formatNumber(Math.round(Number((product as any).basePrice || 0)))}
+                                          {formatNumber(Math.round(basePrice))}
                                        </p>
                                        <span className="text-[10px] text-black uppercase font-black tracking-widest italic block leading-none whitespace-nowrap">VNĐ / Sản phẩm</span>
                                     </div>
@@ -645,7 +697,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                     </div>
                                     <div className="flex-1">
                                        <p className="text-5xl font-black text-black tabular-nums tracking-tighter">
-                                          {formatNumber(Math.round(Number((product as any).wholesalePrice || 0)))}
+                                          {formatNumber(Math.round(wholesalePrice))}
                                        </p>
                                        <p className="text-[10px] text-black font-black uppercase tracking-widest mt-1 italic block leading-none whitespace-nowrap">BIÊN LỢI NHUẬN ĐỀ XUẤT OK</p>
                                     </div>
@@ -661,7 +713,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                     </div>
                                     <div className="flex-1">
                                        <p className="text-5xl font-black text-black tabular-nums tracking-tighter">
-                                          {formatNumber(Math.round(Number((product as any).exportPrice || 0)))}
+                                          {formatNumber(Math.round(exportPrice))}
                                        </p>
                                        <p className="text-[10px] text-black font-black uppercase tracking-widest mt-1 italic block leading-none whitespace-nowrap">GIÁ CHUẨN TOÀN CẦU</p>
                                     </div>
@@ -670,9 +722,45 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                            </div>
                         </div>
 
-                        {/* Right Column: Product Image & Technical Notes */}
-                        <div className="space-y-12">
-                           {/* 1. Large Product Image Display */}
+                         {/* Right Column: Basic Info & Image & Technical Notes */}
+                         <div className="space-y-12">
+                            {/* 0. Basic Info Section */}
+                            <div className="space-y-6">
+                               <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
+                                  <Package size={14} strokeWidth={3} /> Thông tin hồ sơ Sản phẩm
+                               </div>
+                               <div className="bg-white border-[2.5px] border-black rounded-2xl p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div className="md:col-span-2 space-y-2">
+                                     <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Tên Sản phẩm (*)</label>
+                                     <input
+                                        value={productName}
+                                        onChange={(e) => setProductName(e.target.value)}
+                                        placeholder="Nhập tên sản phẩm..."
+                                        className="w-full h-12 bg-[#FAF7F2] border-[2px] border-black rounded-xl px-4 text-sm font-bold focus:bg-white outline-none transition-all italic text-black"
+                                     />
+                                  </div>
+                                  <div className="space-y-2">
+                                     <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Mã SKU / Định danh</label>
+                                     <input
+                                        value={productSKU}
+                                        onChange={(e) => setProductSKU(e.target.value)}
+                                        placeholder="Mã SKU..."
+                                        className="w-full h-12 bg-[#FAF7F2] border-[2px] border-black rounded-xl px-4 text-sm font-bold focus:bg-white outline-none transition-all italic text-black"
+                                     />
+                                  </div>
+                                  <div className="space-y-2">
+                                     <label className="text-[10px] font-black text-black/40 uppercase tracking-widest ml-1 italic">Đơn vị tính</label>
+                                     <input
+                                        value={productUnit}
+                                        onChange={(e) => setProductUnit(e.target.value)}
+                                        placeholder="Tờ, Cuộn, Bộ..."
+                                        className="w-full h-12 bg-[#FAF7F2] border-[2px] border-black rounded-xl px-4 text-sm font-bold focus:bg-white outline-none transition-all italic text-black"
+                                     />
+                                  </div>
+                               </div>
+                            </div>
+
+                            {/* 1. Large Product Image Display */}
                            <div className="space-y-6">
                               <div className="flex items-center gap-3 text-[11px] font-black text-black/20 uppercase tracking-[0.3em] pb-4 border-b-[2px] border-black/5 italic">
                                  <Tag size={14} strokeWidth={3} /> Hình ảnh Sản phẩm
@@ -739,45 +827,35 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                ) : activeTab === 'bom' ? (
                   <div className="space-y-10 animate-in fade-in duration-500 h-full flex flex-col pb-10">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="relative group/field">
-                           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" size={24} />
-                           <select
-                              onChange={(e) => {
-                                 const mat = materials.find(m => m.id === e.target.value);
-                                 if (mat) handleAddMaterial(mat);
-                                 e.target.value = "";
-                              }}
-                              className="w-full h-16 pl-16 pr-12 bg-white border-[2.5px] border-black rounded-xl appearance-none cursor-pointer font-black text-black tracking-tight focus:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all uppercase"
-                           >
-                              <option value="">-- Phân bổ Vật tư --</option>
-                              {materials.map(m => (
-                                 <option key={m.id} value={m.id} disabled={bomItems.some(bi => bi.materialId === m.id)}>
-                                    {m.specification} [{m.type || 'N/A'}]
-                                 </option>
-                              ))}
-                           </select>
-                           <ChevronDown size={24} strokeWidth={3} className="absolute right-6 top-1/2 -translate-y-1/2 text-black pointer-events-none" />
-                        </div>
+                        <SearchableSelect
+                           options={materials.map(m => ({
+                              id: m.id,
+                              label: m.specification || m.name || 'Vật tư chưa đặt tên',
+                              sublabel: `${m.sku || 'N/A'} • ${m.type || 'RAW'}`,
+                              disabled: bomItems.some(bi => bi.materialId === m.id)
+                           }))}
+                           onSelect={(id) => {
+                              const mat = materials.find(m => m.id === id);
+                              if (mat) handleAddMaterial(mat);
+                           }}
+                           placeholder="Phân bổ Vật tư"
+                           icon={<Search size={24} />}
+                        />
 
-                        <div className="relative group/field">
-                           <Cpu className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within/field:text-black transition-colors" size={24} />
-                           <select
-                              onChange={(e) => {
-                                 const op = allOperations.find((o: any) => o.id === e.target.value);
-                                 if (op) handleAddOperation(op);
-                                 e.target.value = "";
-                              }}
-                              className="w-full h-16 pl-16 pr-12 bg-white border-[2.5px] border-black rounded-xl appearance-none cursor-pointer font-black text-black tracking-tight focus:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all uppercase"
-                           >
-                              <option value="">-- Thêm Công đoạn --</option>
-                              {allOperations.map((o: any) => (
-                                 <option key={o.id} value={o.id} disabled={bomOperations.some(bo => bo.operationId === o.id)}>
-                                    {o.specification} [{formatNumber(o.price || 0)} VNĐ]
-                                 </option>
-                              ))}
-                           </select>
-                           <ChevronDown size={24} strokeWidth={3} className="absolute right-6 top-1/2 -translate-y-1/2 text-black pointer-events-none" />
-                        </div>
+                        <SearchableSelect
+                           options={allOperations.map(op => ({
+                              id: op.id,
+                              label: op.specification || op.name || 'Công đoạn chưa đặt tên',
+                              sublabel: `Mặc định: ${formatNumber(op.price || 0)} VNĐ`,
+                              disabled: bomOperations.some(bo => bo.operationId === op.id)
+                           }))}
+                           onSelect={(id) => {
+                              const op = allOperations.find(o => o.id === id);
+                              if (op) handleAddOperation(op);
+                           }}
+                           placeholder="Thêm Công đoạn"
+                           icon={<Cpu size={24} />}
+                        />
                      </div>
 
                      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 overflow-hidden min-h-0">
@@ -805,14 +883,15 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                              <p className="font-black text-black text-xs uppercase italic">{item.material.specification}</p>
                                              <p className="text-[9px] text-black/40 font-black uppercase tracking-tighter mt-0.5">{item.material.type || 'N/A'}</p>
                                           </td>
-                                          <td className="px-6 py-4">
-                                             <div className="flex items-center gap-2 bg-white border border-black/20 rounded px-2 py-1">
+                                          <td className="px-6 py-4 text-center">
+                                             <div className="w-[85px] mx-auto">
                                                 <NumericInput
                                                    value={item.quantity}
                                                    onChange={(val) => handleUpdateQuantity(item.materialId, val)}
-                                                   className="w-16 bg-transparent text-center font-black text-black outline-none tabular-nums text-xs border-none p-0 !pl-0 !pr-0"
+                                                   suffix={item.material.unit}
+                                                   className="w-full bg-white border border-black/20 rounded px-2 py-1 text-center font-black text-black outline-none tabular-nums text-xs !pl-2 !pr-8 shadow-none focus:border-neo-purple"
+                                                   hideWrapper
                                                 />
-                                                <span className="text-[9px] font-black text-black/30 uppercase">{item.material.unit}</span>
                                              </div>
                                           </td>
                                           <td className="px-6 py-4 text-right tabular-nums text-black/40 font-black italic text-xs">
@@ -821,6 +900,7 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                                    value={item.material.unitPrice}
                                                    onChange={(val) => handleUpdateMaterialPrice(item.materialId, val)}
                                                    className="w-full bg-white border border-black/20 rounded px-2 py-1 text-right font-black text-black outline-none tabular-nums text-xs !pl-2 !pr-2 shadow-none focus:border-neo-purple"
+                                                   hideWrapper
                                                 />
                                              </div>
                                           </td>
@@ -859,203 +939,147 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
                                           <Trash2 size={14} strokeWidth={3} />
                                        </button>
                                     </div>
-                                    <div className="flex justify-between items-center bg-white border border-black/10 rounded-lg p-3">
-                                       <div className="flex flex-col w-[120px]">
-                                          <span className="text-[8px] font-black text-black/40 uppercase italic mb-1">Chi phí/SP (VNĐ)</span>
+                                    <div className="flex justify-between items-center tabular-nums">
+                                       <span className="text-[9px] font-black text-black/30 uppercase tracking-widest italic">Đơn giá nhân công</span>
+                                       <div className="w-32">
                                           <NumericInput
                                              value={op.operation.price}
                                              onChange={(val) => handleUpdateOperationPrice(op.id, val)}
-                                             className="w-full bg-white border border-black/20 rounded px-2 py-1 text-left font-black text-black outline-none tabular-nums text-xs !pl-2 !pr-2 shadow-none focus:border-neo-purple"
+                                             className="w-full bg-white border border-black/20 rounded px-2 py-1 text-right font-black text-black outline-none tabular-nums text-xs !pl-2 !pr-2 shadow-none focus:border-neo-purple"
+                                             hideWrapper
                                           />
-                                       </div>
-                                       <div className="flex flex-col items-end text-right">
-                                          <span className="text-[8px] font-black text-black/40 uppercase italic">Thứ tự</span>
-                                          <span className="text-xs font-black text-black italic tabular-nums">{op.sequence}</span>
                                        </div>
                                     </div>
                                  </div>
                               ))}
-                              {bomOperations.length === 0 && (
-                                 <div className="py-12 text-center opacity-20">
-                                    <Cpu size={32} className="mx-auto mb-3" />
-                                    <p className="text-[10px] font-black uppercase italic tracking-widest">N/A Operations</p>
-                                 </div>
-                              )}
-                           </div>
-                        </div>
-                     </div>
-
-                     <div className="p-8 bg-[#F1F5F9] border-[2.5px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-xl flex justify-between items-center mt-auto">
-                        <div className="flex gap-12">
-                           <div>
-                              <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Vật tư</p>
-                              <p className="text-2xl font-black text-black italic tabular-nums">{totalMaterialCost.toLocaleString()} <span className="text-[10px] not-italic text-black/30">VNĐ</span></p>
-                           </div>
-                           <div className="w-px h-full bg-black/10" />
-                           <div>
-                              <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1 italic">Gia công</p>
-                              <p className="text-2xl font-black text-black italic tabular-nums">
-                                 {bomOperations.reduce((sum, item) => sum + (item.operation.price || 0), 0).toLocaleString()} <span className="text-[10px] not-italic text-black/30">VNĐ</span>
-                              </p>
-                           </div>
-                        </div>
-                        <div className="flex items-center gap-4 bg-black text-white px-6 py-4 rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_0px_rgba(139,92,246,1)]">
-                           <Calculator size={24} strokeWidth={3} className="text-neo-yellow" />
-                           <div>
-                              <p className="text-[9px] font-black text-white/40 uppercase italic">Tổng giá trị v{bomVersions.find(v => v.id === selectedVersionId)?.version}</p>
-                              <p className="text-xl font-black text-white tabular-nums italic">
-                                 {(totalMaterialCost + bomOperations.reduce((sum, item) => sum + (item.operation.price || 0), 0)).toLocaleString()} VNĐ
-                              </p>
                            </div>
                         </div>
                      </div>
                   </div>
                ) : (
-                  <div className="space-y-12 animate-in fade-in duration-500 pb-10">
-                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                        {/* Total Card */}
-                        <div className="lg:col-span-2 p-12 bg-black text-white rounded-xl border-[2.5px] border-black shadow-[10px_10px_0px_0px_rgba(139,92,246,1)] relative overflow-hidden flex flex-col justify-between min-h-[300px]">
-                           <div className="absolute top-[-20%] right-[-10%] p-12 opacity-10 pointer-events-none scale-[2]">
-                              <Activity size={200} />
-                           </div>
-                           <div className="relative z-10">
-                              <p className="text-[12px] font-black uppercase tracking-[0.5em] text-neo-purple/60 mb-6 italic">Giá thành Mục tiêu (COGS)</p>
-                              <h3 className="text-7xl font-black tracking-tighter tabular-nums italic text-[#FACC15]">
-                                 {Math.round(totalCOGS).toLocaleString()} <span className="text-2xl font-black text-white not-italic ml-2 uppercase">VNĐ/SP</span>
-                              </h3>
-                           </div>
-                           <div className="relative z-10 flex gap-20 pt-10 border-t-[2.5px] border-white/10 mt-8">
-                              <div className="flex flex-col">
-                                 <span className="text-[10px] font-black uppercase text-white/50 tracking-widest mb-3 italic underline decoration-neo-yellow decoration-[3px] underline-offset-4">Chi phí Chung & Hao hụt</span>
-                                 <span className="text-3xl font-black text-white tabular-nums italic">{(wasteCost + customTotal).toLocaleString()}</span>
-                              </div>
-                           </div>
-                        </div>
-
-                        {/* Waste Ratio Card */}
-                        <div className="p-12 bg-white border-[2.5px] border-black rounded-xl flex flex-col justify-between shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFFBEB] transition-all">
-                           <div>
-                              <p className="text-[11px] font-black text-black/40 uppercase tracking-[0.2em] mb-8 italic">Tỉ lệ Hao hụt/Dự phòng (%)</p>
-                              <div className="flex items-center gap-6 p-6 bg-white border-[2.5px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-fit">
-                                 <input
-                                    type="number"
-                                    value={Math.round(wasteRatio * 100)}
-                                    onChange={(e) => setWasteRatio(Number(e.target.value) / 100)}
-                                    className="w-24 text-6xl font-black text-black bg-transparent outline-none tabular-nums tracking-tighter italic"
-                                 />
-                                 <span className="text-4xl font-black text-black italic">%</span>
-                              </div>
-                           </div>
-                           <div className="flex items-center gap-3 mt-10 py-5 px-6 bg-black text-white rounded-xl border-[2.5px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
-                              <Info size={20} strokeWidth={3} className="text-neo-yellow" />
-                              <p className="text-[11px] font-black uppercase tracking-widest italic">An toàn Biến phí</p>
-                           </div>
-                        </div>
-                     </div>
-
-                     {/* Custom Costs Table */}
-                     <div className="border-[2.5px] border-black rounded-xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-white">
-                        <div className="px-10 py-8 bg-[#F8FAFC] border-b-[2.5px] border-black flex justify-between items-center sm:flex-row flex-col gap-8">
-                           <div>
-                              <h4 className="text-[12px] font-black text-black uppercase tracking-[0.3em] italic">Phân bổ Hoạt động (Chi phí chung)</h4>
-                              <p className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em] mt-2 italic flex items-center gap-2">
-                                 <Cpu size={14} /> Nguồn lực Sản xuất Gián tiếp
-                              </p>
-                           </div>
-                           <button onClick={addCustomCost} className="h-12 px-8 bg-black text-white border-[2px] border-black rounded-xl font-black text-[11px] uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(139,92,246,1)] hover:bg-neo-purple transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-3">
-                              <Plus size={20} strokeWidth={4} />
-                              Thêm Nguồn lực
-                           </button>
-                        </div>
-                        <div className="overflow-x-auto">
-                           <table className="w-full !mt-0 text-left border-collapse">
-                              <thead>
-                                 <tr className="bg-white text-[11px] font-black text-black/40 uppercase tracking-[0.2em] border-b-[2.5px] border-black italic">
-                                    <th className="px-10 py-6">Trung tâm Chi phí</th>
-                                    <th className="px-10 py-6">Chi tiết Hoạt động</th>
-                                    <th className="px-10 py-6 text-right w-64">Ngân sách Phân bổ (VNĐ)</th>
-                                    <th className="px-10 py-6 w-20"></th>
-                                 </tr>
-                              </thead>
-                              <tbody className="divide-y-[2.5px] divide-black/5">
-                                 {/* Row: Direct Materials (BOM) */}
-                                 <tr className="bg-[#F8FAFC]">
-                                    <td className="px-10 py-7">
-                                       <span className="font-black text-black italic uppercase text-base">Định mức vật tư (BOM)</span>
-                                    </td>
-                                    <td className="px-10 py-7">
-                                       <span className="text-black/60 font-black italic text-sm"> Theo định mức BOM </span>
-                                    </td>
-                                    <td className="px-10 py-7 text-right">
-                                       <div className="relative group/input max-w-[240px] ml-auto">
-                                          <div className="w-full h-14 bg-black/5 border-[2.5px] border-black/10 rounded-xl px-12 flex items-center justify-end font-black text-black/40 tabular-nums text-xl italic">
-                                             {totalMaterialCost.toLocaleString()}
-                                          </div>
-                                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-black/20 uppercase tracking-widest pointer-events-none">VNĐ</span>
-                                       </div>
-                                    </td>
-                                    <td className="px-10 py-7"></td>
-                                 </tr>
-
-                                 {/* Row: Waste Contingency */}
-                                 <tr className="bg-[#FEFCE8]">
-                                    <td className="px-10 py-7">
-                                       <span className="font-black text-black italic uppercase text-base">Chi phí hao hụt & dự phòng</span>
-                                    </td>
-                                    <td className="px-10 py-7">
-                                       <div className="flex items-center gap-2">
-                                          <span className="badge-warning text-[10px] font-black uppercase tracking-widest italic">{Math.round(wasteRatio * 100)}%</span>
-                                          <span className="text-black/60 font-black italic text-sm">trên tổng vật tư</span>
-                                       </div>
-                                    </td>
-                                    <td className="px-10 py-7 text-right">
-                                       <div className="relative group/input max-w-[240px] ml-auto">
-                                          <div className="w-full h-14 bg-black/5 border-[2.5px] border-black/10 rounded-xl px-12 flex items-center justify-end font-black text-black/40 tabular-nums text-xl italic">
-                                             {wasteCost.toLocaleString()}
-                                          </div>
-                                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-black/20 uppercase tracking-widest pointer-events-none">VNĐ</span>
-                                       </div>
-                                    </td>
-                                    <td className="px-10 py-7"></td>
-                                 </tr>
-                                 {customCosts.map(cost => (
-                                    <tr key={cost.id} className="group hover:bg-neo-yellow/5 transition-colors">
-                                       <td className="px-10 py-7">
-                                          <input
-                                             value={cost.name}
-                                             onChange={(e) => updateCustomCost(cost.id, 'name', e.target.value)}
-                                             className="w-full bg-transparent font-black text-black outline-none text-base italic uppercase placeholder:text-black/10 focus:underline decoration-neo-purple decoration-[3px] underline-offset-4"
-                                             placeholder="VD: Nhân công trực tiếp..."
+                  <div className="space-y-10 animate-in fade-in duration-500 pb-10">
+                     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+                        {/* COGS DETAILS */}
+                        <div className="space-y-8">
+                           <div className="bg-white border-[2.5px] border-black rounded-xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                              <div className="px-8 py-5 bg-[#F8FAFC] border-b-[2.5px] border-black flex justify-between items-center">
+                                 <div className="flex items-center gap-3">
+                                    <Calculator size={18} />
+                                    <span className="text-[11px] font-black uppercase tracking-widest italic">Cấu trúc Giá vốn thực tế</span>
+                                 </div>
+                                 <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                       <span className="text-[9px] font-black text-black/40 uppercase uppercase">Tỉ lệ Hao hụt (%)</span>
+                                       <div className="w-20">
+                                          <NumericInput
+                                             value={wasteRatio * 100}
+                                             onChange={(val) => setWasteRatio(val / 100)}
+                                             suffix="%"
+                                             className="h-8 text-xs text-right !pr-8 border-black/20"
+                                             hideWrapper
                                           />
-                                       </td>
-                                       <td className="px-10 py-7">
-                                          <input
-                                             value={cost.details}
-                                             onChange={(e) => updateCustomCost(cost.id, 'details', e.target.value)}
-                                             className="w-full bg-transparent text-black/60 font-black italic outline-none text-sm placeholder:text-black/10"
-                                             placeholder="Phân bổ dựa trên STD..."
-                                          />
-                                       </td>
-                                       <td className="px-10 py-7 text-right">
-                                          <div className="relative group/input">
+                                       </div>
+                                    </div>
+                                 </div>
+                              </div>
+
+                              <div className="p-8 space-y-6">
+                                 <div className="space-y-4">
+                                    <div className="flex justify-between items-center p-4 bg-[#FAF7F2] border-[2px] border-black rounded-xl">
+                                       <span className="text-sm font-black text-black">Tổng Vật tư (BOM Materials)</span>
+                                       <span className="text-lg font-black italic">{formatNumber(totalMaterialCost)}đ</span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-4 bg-[#FAF7F2] border-[2px] border-black rounded-xl">
+                                       <span className="text-sm font-black text-black">Tổng Nhân công (BOM Operations)</span>
+                                       <span className="text-lg font-black italic">{formatNumber(totalOperationCost)}đ</span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-4 bg-rose-50 border-[2px] border-rose-300 border-dashed rounded-xl">
+                                       <span className="text-sm font-black text-rose-700 italic">Hao hụt ước tính ({wasteRatio * 100}%)</span>
+                                       <span className="text-lg font-black text-rose-700 italic">+{formatNumber(wasteCost)}đ</span>
+                                    </div>
+                                 </div>
+
+                                 <div className="pt-6 border-t-[2.5px] border-black/5 space-y-4">
+                                    <div className="flex justify-between items-center">
+                                       <span className="text-[11px] font-black uppercase text-black/30">Chi phí bổ sung (Custom)</span>
+                                       <button onClick={addCustomCost} className="text-xs font-black text-neo-purple uppercase italic flex items-center gap-1">
+                                          <Plus size={14} /> Thêm chi phí
+                                       </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                       {customCosts.map(c => (
+                                          <div key={c.id} className="flex gap-4 items-center">
                                              <input
-                                                type="number"
-                                                value={cost.amount || ''}
-                                                onChange={(e) => updateCustomCost(cost.id, 'amount', Number(e.target.value))}
-                                                className="w-full h-14 bg-white border-[2.5px] border-black rounded-xl px-12 text-right font-black text-[#000000] outline-none focus:border-[#D8B4FE] focus:shadow-[6px_6px_0px_0px_rgba(216,180,254,0.3)] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] tabular-nums text-xl italic transition-all"
-                                                placeholder="0"
+                                                value={c.name}
+                                                onChange={(e) => updateCustomCost(c.id, 'name', e.target.value)}
+                                                placeholder="Tên chi phí..."
+                                                className="flex-1 h-10 bg-white border border-black/20 rounded px-3 text-xs outline-none focus:border-black"
                                              />
+                                             <div className="w-32">
+                                                <NumericInput
+                                                   value={c.amount}
+                                                   onChange={(val) => updateCustomCost(c.id, 'amount', val)}
+                                                   className="h-10 text-xs text-right border-black/20"
+                                                   hideWrapper
+                                                />
+                                             </div>
+                                             <button onClick={() => removeCustomCost(c.id)} className="text-black/20 hover:text-neo-red">
+                                                <Trash2 size={16} />
+                                             </button>
                                           </div>
-                                       </td>
-                                       <td className="px-10 py-7 text-right">
-                                          <button onClick={() => removeCustomCost(cost.id)} className="w-12 h-12 flex items-center justify-center bg-[#FEE2E2] border-[2.5px] border-black rounded-xl text-black hover:bg-rose-500 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ml-auto">
-                                             <Trash2 size={20} strokeWidth={3} />
-                                          </button>
-                                       </td>
-                                    </tr>
-                                 ))}
-                              </tbody>
-                           </table>
+                                       ))}
+                                    </div>
+                                 </div>
+                              </div>
+
+                              <div className="p-8 bg-black text-white flex justify-between items-center tabular-nums shadow-[0px_-4px_10px_0px_rgba(0,0,0,0.1)]">
+                                 <div>
+                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">Giá thành Sản xuất (COGS)</p>
+                                    <p className="text-3xl font-black italic leading-none">{formatVND(totalCOGS)}</p>
+                                 </div>
+                                 <div className="text-right">
+                                    <p className="text-[10px] font-black text-neo-purple uppercase tracking-[0.2em] mb-1">Dành cho Master Record</p>
+                                    <p className="text-xs font-black text-white/60 italic uppercase tracking-widest">Update via listing button</p>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* PRICE LISTING SUGGESTIONS */}
+                        <div className="space-y-8">
+                           <div className="w-full p-8 rounded-xl bg-white border-[2.5px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-8">
+                              <h3 className="text-[11px] font-black uppercase tracking-widest italic flex items-center gap-2">
+                                 <ArrowUpRight size={16} className="text-neo-purple" /> Khuyến nghị Niêm yết
+                              </h3>
+
+                              <div className="space-y-6">
+                                 <div className="p-6 bg-[#FEF3C7] border-[2px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                    <div className="flex justify-between items-center mb-4">
+                                       <span className="text-[10px] font-black text-black/40 uppercase">Giá sỉ (130% COGS)</span>
+                                       <span className="px-2 py-0.5 bg-black text-white text-[9px] font-black rounded italic">Margin 30%</span>
+                                    </div>
+                                    <p className="text-3xl font-black text-black tabular-nums tracking-tighter italic">{formatVND(totalCOGS * 1.3)}</p>
+                                 </div>
+
+                                 <div className="p-6 bg-[#D1FAE5] border-[2px] border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                    <div className="flex justify-between items-center mb-4">
+                                       <span className="text-[10px] font-black text-black/40 uppercase">Giá XK (240% COGS)</span>
+                                       <span className="px-2 py-0.5 bg-black text-white text-[9px] font-black rounded italic">Global Std</span>
+                                    </div>
+                                    <p className="text-3xl font-black text-black tabular-nums tracking-tighter italic">{formatVND(totalCOGS * 2.4)}</p>
+                                 </div>
+                              </div>
+
+                              <div className="p-6 bg-[#F8FAFC] border-2 border-black border-dashed rounded-xl">
+                                 <div className="flex items-center gap-3 text-neo-red mb-4">
+                                    <Info size={16} />
+                                    <span className="text-[10px] font-black uppercase">Chính sách niêm yết</span>
+                                 </div>
+                                 <p className="text-[11px] font-medium text-black/60 italic leading-relaxed">
+                                    * Giá niêm yết khi được lưu sẽ cập nhật trực tiếp vào Master Data sản phẩm. Các báo giá cũ vẫn giữ nguyên Snapshot để đối soát lịch sử.
+                                 </p>
+                              </div>
+                           </div>
                         </div>
                      </div>
                   </div>

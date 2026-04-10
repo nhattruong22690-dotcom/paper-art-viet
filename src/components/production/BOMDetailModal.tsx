@@ -61,8 +61,8 @@ export default function BOMDetailModal({ bomId, isOpen, onClose }: BOMDetailModa
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      <div className="w-full max-w-7xl h-[90vh] bg-[#FAF7F2] border-[3px] border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden relative">
+    <div className="fixed inset-0 lg:left-[var(--sidebar-width)] z-[500] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+      <div className="w-full max-w-[95vw] h-[95vh] bg-[#FAF7F2] border-[3px] border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden relative">
         
         {/* Header */}
         <div className="px-8 py-6 border-b-[3px] border-black flex justify-between items-center bg-[#D8B4FE]/20">

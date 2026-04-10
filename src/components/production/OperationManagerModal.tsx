@@ -111,7 +111,7 @@ export default function OperationManagerModal({ isOpen, onClose }: OperationMana
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 lg:left-[var(--sidebar-width)] z-[500] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
       <div className="w-full max-w-5xl h-[85vh] bg-[#FAF7F2] border-[3px] border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden">
 
         {/* HEADER */}

@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function MaterialsPage() {
   return (
-    <div className="p-8">
+    <div>
       <MaterialMasterList />
     </div>
   );

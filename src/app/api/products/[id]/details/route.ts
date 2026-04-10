@@ -20,7 +20,7 @@ export async function GET(
 
     return NextResponse.json({
       ...product,
-      costPrice: Number(product.costPrice || calculatedCogs || 0),
+      costPrice: Number(calculatedCogs || product.costPrice || 0),
       wholesalePrice: Number(product.wholesalePrice || 0),
       exportPrice: Number(product.exportPrice || 0),
       calculatedCogs // Keep for backward compatibility if needed

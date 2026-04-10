@@ -25,10 +25,20 @@ export const formatNumber = (val: number | string | null | undefined): string =>
 export const parseNumber = (val: string | null | undefined): number => {
   if (!val) return 0;
   
-  // Replace dots with empty string and comma with dot
-  const clean = val.replace(/\./g, '').replace(/,/g, '.');
-  const num = parseFloat(clean);
+  // If there's only one dot and no commas, it's likely a decimal separator (international style)
+  const hasComma = val.includes(',');
+  const dotCount = (val.match(/\./g) || []).length;
   
+  let clean = val;
+  if (!hasComma && dotCount === 1) {
+    // Treat the single dot as a decimal point
+    clean = val;
+  } else {
+    // Traditional Vietnamese: dots are thousands, comma is decimal
+    clean = val.replace(/\./g, '').replace(/,/g, '.');
+  }
+  
+  const num = parseFloat(clean);
   return isNaN(num) ? 0 : num;
 };
 

@@ -29,7 +29,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
       <div className="flex-1 flex flex-col min-w-0 lg:pl-[var(--sidebar-width)] transition-[padding] duration-300">
         <MobileHeader />
         
-        <main className="flex-1 p-4 pt-20 lg:p-8 pb-32 relative z-0">
+        <main className="flex-1 p-4 pt-20 lg:p-8 pb-32 relative">
           {children}
         </main>
       </div>

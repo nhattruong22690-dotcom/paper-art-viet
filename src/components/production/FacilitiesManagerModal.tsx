@@ -85,7 +85,7 @@ export default function FacilitiesManagerModal({ isOpen, onClose }: FacilitiesMa
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+    <div className="fixed inset-0 lg:left-[var(--sidebar-width)] z-[500] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       
       <div className="relative bg-[#F5F5DC] border-neo border-black w-full max-w-4xl h-[90vh] rounded-[32px] 
@@ -215,7 +215,7 @@ export default function FacilitiesManagerModal({ isOpen, onClose }: FacilitiesMa
 
         {/* Nestable Edit Modal */}
         {isEditingModalOpen && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="fixed inset-0 lg:left-[var(--sidebar-width)] z-[600] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsEditingModalOpen(false)} />
             <div className="relative bg-white border-neo border-black rounded-[32px] w-full max-w-md shadow-neo p-8 animate-in zoom-in-95 duration-300">
               <h3 className="text-xl font-black uppercase mb-8 italic tracking-tighter">⚡ {editingItem ? 'Hiệu chỉnh' : 'Khai báo'} {activeTab === 'workshops' ? 'Xưởng' : 'Cơ sở'}</h3>

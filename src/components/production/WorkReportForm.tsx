@@ -56,7 +56,7 @@ export default function WorkReportForm({ productionOrderId, sku, productName, on
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-in fade-in duration-300">
+    <div className="fixed inset-0 lg:left-[var(--sidebar-width)] z-[500] flex items-center justify-center p-6 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
       
       <div className="relative bg-white w-full max-w-xl rounded-[40px] shadow-2xl border border-gray-100 flex flex-col animate-in zoom-in-95 duration-500 overflow-hidden">

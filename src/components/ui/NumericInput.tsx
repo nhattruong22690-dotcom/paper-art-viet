@@ -17,6 +17,8 @@ interface NumericInputProps {
   icon?: any;
   suffix?: string;
   disabled?: boolean;
+  hideWrapper?: boolean;
+  inputClassName?: string;
 }
 
 export function NumericInput({ 
@@ -26,7 +28,9 @@ export function NumericInput({
   placeholder,
   icon: Icon,
   suffix,
-  disabled = false
+  disabled = false,
+  hideWrapper = false,
+  inputClassName
 }: NumericInputProps) {
   // Local state to manage the display string with separators
   const [displayValue, setDisplayValue] = useState(formatNumber(value));
@@ -39,6 +43,13 @@ export function NumericInput({
         const formatted = formatNumber(value);
         if (formatted !== displayValue) {
             setDisplayValue(formatted);
+        }
+    } else {
+        // While focused, only update if the external value differs significantly 
+        // from what we've already parsed internally (to handle external resets/changes)
+        const currentInternalNum = parseNumber(displayValue);
+        if (value !== currentInternalNum) {
+            setDisplayValue(formatNumber(value));
         }
     }
   }, [value]);
@@ -76,7 +87,7 @@ export function NumericInput({
   };
 
   return (
-    <div className="relative group/field w-full">
+    <div className={cn("relative group/field", !hideWrapper && "w-full")}>
       <input 
         disabled={disabled}
         type="text" 
@@ -85,7 +96,9 @@ export function NumericInput({
         onFocus={handleFocus}
         onBlur={handleBlur}
         className={cn(
-          "form-input pl-12 pr-12 font-black tabular-nums transition-all",
+          "form-input font-black tabular-nums transition-all",
+          Icon ? "pl-12" : "pl-4",
+          suffix ? "pr-12" : "pr-4",
           disabled && "opacity-50 cursor-not-allowed bg-black/5",
           className
         )}
