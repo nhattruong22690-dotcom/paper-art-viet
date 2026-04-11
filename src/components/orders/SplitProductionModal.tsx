@@ -15,6 +15,7 @@ interface SplitAllocation {
   facilityId: string;
   type: 'internal' | 'outsourced';
   quantity: number;
+  deadline: string;
 }
 
 interface SplitProductionModalProps {
@@ -29,6 +30,7 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
   const { showToast, showModal } = useNotification();
   const [internalAllocations, setInternalAllocations] = useState<SplitAllocation[]>([]);
   const [outsourcedAllocations, setOutsourcedAllocations] = useState<SplitAllocation[]>([]);
+  const orderDeadline = orderItem?.order?.deadlineDelivery || orderItem?.deadlineDelivery || '';
   const [workshops, setWorkshops] = useState<any[]>([]);
   const [outsourcers, setOutsourcers] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +63,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           id: po.id || Math.random().toString(36).substr(2, 9),
           facilityId: po.assignedTo || po.workshop_id || '',
           type: 'internal' as const,
-          quantity: po.quantityTarget || 0
+          quantity: po.quantityTarget || 0,
+          deadline: (po.deadlineProduction || orderDeadline)?.slice(0, 10) || ''
         }));
 
       const externals = existingPOs
@@ -70,14 +73,16 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           id: po.id || Math.random().toString(36).substr(2, 9),
           facilityId: po.outsourcedName || po.outsourcer_id || '',
           type: 'outsourced' as const,
-          quantity: po.quantityTarget || 0
+          quantity: po.quantityTarget || 0,
+          deadline: (po.deadlineProduction || orderDeadline)?.slice(0, 10) || ''
         }));
 
       setInternalAllocations(internals.length > 0 ? internals : [{
         id: 'init-1',
         facilityId: '',
         type: 'internal',
-        quantity: 0
+        quantity: 0,
+        deadline: orderDeadline?.slice(0, 10) || ''
       }]);
       setOutsourcedAllocations(externals);
     }
@@ -88,7 +93,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
       id: Math.random().toString(36).substr(2, 9),
       facilityId: '',
       type,
-      quantity: 0
+      quantity: 0,
+      deadline: orderDeadline?.slice(0, 10) || ''
     };
     if (type === 'internal') setInternalAllocations([...internalAllocations, newRow]);
     else setOutsourcedAllocations([...outsourcedAllocations, newRow]);
@@ -130,7 +136,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
             .map(a => ({
               assignedTo: a.facilityId,
               type: a.type,
-              quantity: a.quantity
+              quantity: a.quantity,
+              deadline: a.deadline
             }))
         })
       });
@@ -210,6 +217,15 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
                        value={alloc.quantity || ''}
                        onChange={(e) => updateRow('internal', alloc.id, 'quantity', parseInt(e.target.value) || 0)}
                        className="w-full bg-slate-50 border-neo border-black rounded-xl px-4 py-3 text-sm font-black text-center focus:bg-white transition-all shadow-neo-active"
+                       placeholder="S.Lượng"
+                     />
+                  </div>
+                  <div className="w-40 relative">
+                     <input 
+                       type="date"
+                       value={alloc.deadline}
+                       onChange={(e) => updateRow('internal', alloc.id, 'deadline', e.target.value)}
+                       className="w-full bg-slate-50 border-neo border-black rounded-xl px-4 py-3 text-[11px] font-black focus:bg-white transition-all shadow-neo-active"
                      />
                   </div>
                   <button onClick={() => removeRow('internal', alloc.id)} className="p-3 text-gray-300 hover:text-rose-500 transition-colors">
@@ -249,6 +265,15 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
                        value={alloc.quantity || ''}
                        onChange={(e) => updateRow('outsourced', alloc.id, 'quantity', parseInt(e.target.value) || 0)}
                        className="w-full bg-slate-50 border-neo border-black rounded-xl px-4 py-3 text-sm font-black text-center focus:bg-white transition-all shadow-neo-active"
+                       placeholder="S.Lượng"
+                     />
+                  </div>
+                  <div className="w-40">
+                     <input 
+                       type="date"
+                       value={alloc.deadline}
+                       onChange={(e) => updateRow('outsourced', alloc.id, 'deadline', e.target.value)}
+                       className="w-full bg-slate-50 border-neo border-black rounded-xl px-4 py-3 text-[11px] font-black focus:bg-white transition-all shadow-neo-active"
                      />
                   </div>
                   <button onClick={() => removeRow('outsourced', alloc.id)} className="p-3 text-gray-300 hover:text-rose-500 transition-colors">

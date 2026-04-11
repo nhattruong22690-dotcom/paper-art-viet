@@ -385,9 +385,10 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
          setTimeout(() => {
             showToast('success', `Đã cập nhật BOM v${targetVersionNumber} thành công`);
          }, 100);
-      } catch (error) {
+      } catch (error: any) {
          console.error('Failed to save BOM:', error);
-         showModal('error', 'Lỗi lưu BOM', String(error));
+         const errorMessage = error?.message || error?.error_description || String(error);
+         showModal('error', 'Lỗi lưu BOM', `Chi tiết: ${errorMessage}`);
       } finally {
          setIsSavingBOM(false);
       }
@@ -437,8 +438,10 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
 
          onUpdate();
          showToast('success', 'Đã niêm yết giá & lưu Snapshot thành công');
-      } catch (error) {
+      } catch (error: any) {
          console.error('Failed to save COGS:', error);
+         const errorMessage = error?.message || error?.error_description || String(error);
+         showToast('error', `Lỗi niêm yết giá: ${errorMessage}`);
       } finally {
          setIsSavingCOGS(false);
       }

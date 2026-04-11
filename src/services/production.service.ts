@@ -1,3 +1,4 @@
+"use server";
 import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 export async function getProductionOrdersWithDeadline() {
@@ -220,7 +221,7 @@ export async function updateProductionOrder(id: string, data: any) {
 export async function splitProductionOrders(
   orderId: string, 
   productId: string, 
-  allocations: { assignedTo: string; type: 'internal' | 'outsourced'; quantity: number }[]
+  allocations: { assignedTo: string; type: 'internal' | 'outsourced'; quantity: number; deadline?: string }[]
 ) {
   // 1. Kiểm tra xem có lệnh nào của sản phẩm này đã có Work Log chưa
   const { data: existingPOs, error: fetchError } = await supabase
@@ -263,7 +264,7 @@ export async function splitProductionOrders(
       workshop_id: alloc.type === 'internal' ? alloc.assignedTo : null,
       outsourcer_id: alloc.type === 'outsourced' ? alloc.assignedTo : null,
       current_status: alloc.type === 'internal' ? 'pending' : 'outsourced',
-      deadline_production: order?.deadline_delivery || new Date()
+      deadline_production: alloc.deadline || order?.deadline_delivery || new Date()
     })))
     .select();
 

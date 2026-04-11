@@ -1,3 +1,4 @@
+"use server";
 import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 /**

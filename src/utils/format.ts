@@ -12,9 +12,19 @@ export const formatNumber = (
   if (isNaN(num)) return '';
 
   const isUSD = options.currency === 'USD';
-  const decimals = options.decimals !== undefined 
-    ? options.decimals 
-    : (isUSD ? 2 : 0);
+  
+  // If decimals is not specified, try to preserve decimals if they exist
+  let decimals = options.decimals;
+  if (decimals === undefined) {
+    if (isUSD) {
+      decimals = 2;
+    } else {
+      // Auto-detect number of decimals from the value, maxing out at 6
+      const str = num.toString();
+      const decimalPart = str.split('.')[1];
+      decimals = decimalPart ? Math.min(decimalPart.length, 6) : 0;
+    }
+  }
 
   // Round to specified decimals
   const fixed = num.toFixed(decimals);

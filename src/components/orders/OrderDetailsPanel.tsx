@@ -1025,7 +1025,10 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                   </div>
                                   <button
                                     onClick={() => {
-                                      setActiveItemForSplit(item);
+                                      setActiveItemForSplit({
+                                        ...item,
+                                        deadlineDelivery: order.deadlineDelivery
+                                      });
                                       setIsSplitModalOpen(true);
                                     }}
                                     className="flex items-center gap-2 px-4 py-2 bg-foreground text-white rounded text-[10px] font-bold uppercase tracking-widest hover:bg-primary transition-all shadow-sm"
