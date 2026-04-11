@@ -248,7 +248,7 @@ export async function upsertProduct(data: any) {
   if ('wholesalePrice' in updateData) dbData.wholesale_price = updateData.wholesalePrice;
   if ('exportPrice' in updateData) dbData.export_price = updateData.exportPrice;
   if ('costPrice' in updateData) dbData.cost_price = updateData.costPrice;
-  if ('productionTimeStd' in updateData) dbData.production_time_std = updateData.productionTimeStd;
+  if ('productionTimeStd' in updateData) dbData.production_time_std = Number(updateData.productionTimeStd || 0);
   if ('cogsConfig' in updateData) dbData.cogs_config = updateData.cogsConfig;
 
   let result;

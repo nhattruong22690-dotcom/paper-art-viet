@@ -461,8 +461,11 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
             }
          } as any);
          onUpdate();
+         showToast('success', 'Đã lưu hồ sơ sản phẩm thành công');
       } catch (error) {
          console.error('Failed to save general info:', error);
+         const errorMessage = error instanceof Error ? error.message : (typeof error === 'object' ? JSON.stringify(error) : String(error));
+         showToast('error', `Lỗi khi lưu thông tin: ${errorMessage}`);
       } finally {
          setIsSavingGeneral(false);
       }
