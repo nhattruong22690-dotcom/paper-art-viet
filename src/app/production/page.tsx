@@ -65,6 +65,7 @@ export default function ProductionPage() {
   const [logsLoading, setLogsLoading] = useState(false);
   const [showLogsDetail, setShowLogsDetail] = useState(false);
   const [showBatchForm, setShowBatchForm] = useState(false);
+  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (selectedOrder) {
@@ -170,10 +171,10 @@ export default function ProductionPage() {
     if (!searchTerm) return true;
     const s = searchTerm.toLowerCase();
     return (
-      order.title?.toLowerCase().includes(s) ||
-      order.sku.toLowerCase().includes(s) ||
-      order.customer?.toLowerCase().includes(s) ||
-      order.contractCode?.toLowerCase().includes(s)
+      (order.title?.toLowerCase() || '').includes(s) ||
+      (order.sku?.toLowerCase() || '').includes(s) ||
+      (order.customer?.toLowerCase() || '').includes(s) ||
+      (order.contractCode?.toLowerCase() || '').includes(s)
     );
   });
 
@@ -578,7 +579,7 @@ export default function ProductionPage() {
                                 <th className="px-5 py-4 border-b border-black/5 font-black">Ghi chú</th>
                              </tr>
                           </thead>
-                          <tbody className="divide-y divide-gray-50">
+                          <tbody className="divide-y divide-gray-100">
                              {logsLoading ? (
                                 <tr>
                                    <td colSpan={5} className="px-5 py-16 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Đang tải lịch sử...</td>
@@ -587,33 +588,76 @@ export default function ProductionPage() {
                                 <tr>
                                    <td colSpan={5} className="px-5 py-16 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">Chưa có ghi nhận nào cho lệnh này</td>
                                 </tr>
-                             ) : logs.map((log) => (
-                                <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
-                                   <td className="px-5 py-4">
-                                      <p className="text-xs font-bold text-foreground">{new Date(log.createdAt).toLocaleDateString('vi-VN')}</p>
-                                      <p className="text-[9px] text-muted-foreground font-black">{new Date(log.createdAt).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</p>
-                                   </td>
-                                   <td className="px-5 py-4">
-                                      <div className="flex items-center gap-2">
-                                         <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center text-[8px] font-black text-muted-foreground">{log.staffName?.substring(0,2).toUpperCase() || '??'}</div>
-                                         <span className="text-[11px] font-bold text-foreground whitespace-nowrap">{log.staffName || 'N/A'}</span>
-                                      </div>
-                                   </td>
-                                   <td className="px-5 py-4 text-center">
-                                      <span className="text-xs font-black text-primary bg-primary/5 px-2 py-1 rounded tabular-nums border border-primary/10">{log.quantityProduced}</span>
-                                   </td>
-                                   <td className="px-5 py-4 text-center">
-                                      <div className="flex items-center justify-center gap-2 font-bold tabular-nums">
-                                         <span className={cn("text-[10px]", (log.technicalErrorCount || 0) > 0 ? "text-red-500" : "text-gray-300")}>{log.technicalErrorCount || 0}</span>
-                                         <span className="text-gray-200">/</span>
-                                         <span className={cn("text-[10px]", (log.materialErrorCount || 0) > 0 ? "text-amber-500" : "text-gray-300")}>{log.materialErrorCount || 0}</span>
-                                      </div>
-                                   </td>
-                                   <td className="px-5 py-4">
-                                      <p className="text-[10px] text-muted-foreground line-clamp-1 max-w-[150px] italic">{log.note || '---'}</p>
-                                   </td>
-                                </tr>
-                             ))}
+                             ) : (() => {
+                                const grouped = logs.reduce((acc: any, log: any) => {
+                                  const d = new Date(log.startTime || log.createdAt).toLocaleDateString('vi-VN');
+                                  if (!acc[d]) acc[d] = { logs: [], total: 0 };
+                                  acc[d].logs.push(log);
+                                  acc[d].total += (log.quantityProduced || 0);
+                                  return acc;
+                                }, {});
+
+                                return Object.keys(grouped).map(dateStr => (
+                                  <React.Fragment key={dateStr}>
+                                    {/* Date Group Header */}
+                                    <tr 
+                                      className="bg-gray-50/80 cursor-pointer hover:bg-gray-100 transition-colors"
+                                      onClick={() => setExpandedDates(prev => ({ ...prev, [dateStr]: !prev[dateStr] }))}
+                                    >
+                                      <td colSpan={5} className="px-5 py-3 border-y border-black/10">
+                                         <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                               <div className={cn("transition-transform duration-200", expandedDates[dateStr] ? "rotate-90" : "rotate-0")}>
+                                                  <ChevronRight size={16} strokeWidth={3} className="text-primary" />
+                                               </div>
+                                               <span className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                                  <Calendar size={14} />
+                                                  NGÀY {dateStr}
+                                               </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                               <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Tổng sản lượng trong ngày:</span>
+                                               <span className="text-xs font-black text-primary tabular-nums bg-white border border-primary/20 px-2 py-0.5 rounded shadow-sm">{grouped[dateStr].total}</span>
+                                            </div>
+                                         </div>
+                                      </td>
+                                    </tr>
+                                    
+                                    {/* Group Logs */}
+                                    {expandedDates[dateStr] && grouped[dateStr].logs.map((log: any) => (
+                                      <tr key={log.id} className="hover:bg-gray-50/30 transition-colors bg-white">
+                                         <td className="px-5 py-4 pl-12 border-b border-gray-50">
+                                            <p className="text-[10px] text-muted-foreground font-black flex items-center gap-1.5">
+                                               <Clock size={10} strokeWidth={3} />
+                                               {new Date(log.createdAt || log.startTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
+                                            </p>
+                                         </td>
+                                         <td className="px-5 py-4 border-b border-gray-50">
+                                            <div className="flex items-center gap-2">
+                                               <div className="w-6 h-6 rounded bg-black/5 flex items-center justify-center text-[8px] font-black text-muted-foreground border border-black/5">
+                                                  {log.staffName?.substring(0,2).toUpperCase() || '??'}
+                                               </div>
+                                               <span className="text-[11px] font-bold text-foreground whitespace-nowrap">{log.staffName || 'N/A'}</span>
+                                            </div>
+                                         </td>
+                                         <td className="px-5 py-4 text-center border-b border-gray-50">
+                                            <span className="text-xs font-black text-primary bg-primary/5 px-2 py-1 rounded tabular-nums border border-primary/10">{log.quantityProduced}</span>
+                                         </td>
+                                         <td className="px-5 py-4 text-center border-b border-gray-50">
+                                            <div className="flex items-center justify-center gap-2 font-bold tabular-nums">
+                                               <span className={cn("text-[10px]", (log.technicalErrorCount || 0) > 0 ? "text-red-500" : "text-gray-300")}>{log.technicalErrorCount || 0}</span>
+                                               <span className="text-gray-200">/</span>
+                                               <span className={cn("text-[10px]", (log.materialErrorCount || 0) > 0 ? "text-amber-500" : "text-gray-300")}>{log.materialErrorCount || 0}</span>
+                                            </div>
+                                         </td>
+                                         <td className="px-5 py-4 border-b border-gray-50">
+                                            <p className="text-[10px] text-muted-foreground line-clamp-1 max-w-[200px] italic">{log.note || '---'}</p>
+                                         </td>
+                                      </tr>
+                                    ))}
+                                  </React.Fragment>
+                                ));
+                             })()}
                           </tbody>
                        </table>
                     </div>

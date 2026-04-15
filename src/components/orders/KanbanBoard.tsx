@@ -73,9 +73,9 @@ export default function KanbanBoard({
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
-      order.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.contractCode && order.contractCode.toLowerCase().includes(searchTerm.toLowerCase()));
+      (order.customer?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (order.id?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (order.contractCode?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     
     if (filterDelay) {
       const hoursLeft = (new Date(order.deadlineDelivery).getTime() - new Date().getTime()) / (1000 * 60 * 60);

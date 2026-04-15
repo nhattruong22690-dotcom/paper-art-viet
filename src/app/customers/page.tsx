@@ -283,14 +283,14 @@ export default function CustomersPage() {
 
   const groupedCustomers = useMemo(() => {
     const filtered = customers.filter(c =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.name?.toLowerCase() || '').includes(search.toLowerCase()) ||
       (c.customerCode || (c as any).customer_code || '').toLowerCase().includes(search.toLowerCase())
     );
 
     const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
     const groups: { [key: string]: Customer[] } = {};
     sorted.forEach(c => {
-      const firstLetter = c.name.trim().charAt(0).toUpperCase() || '#';
+      const firstLetter = c.name?.trim().charAt(0).toUpperCase() || '#';
       if (!groups[firstLetter]) groups[firstLetter] = [];
       groups[firstLetter].push(c);
     });

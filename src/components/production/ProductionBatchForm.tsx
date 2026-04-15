@@ -30,6 +30,7 @@ interface Worker {
 interface BatchLogEntry {
   employeeId: string;
   staffName: string;
+  date: string;
   quantityProduced: number;
   technicalErrorCount: number;
   materialErrorCount: number;
@@ -59,14 +60,28 @@ export default function ProductionBatchForm({
   const [loadingWorkers, setLoadingWorkers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [entries, setEntries] = useState<BatchLogEntry[]>([
-    { employeeId: '', staffName: '', quantityProduced: 0, technicalErrorCount: 0, materialErrorCount: 0, note: '' }
+    { 
+      employeeId: '', 
+      staffName: '', 
+      date: new Date().toISOString().split('T')[0],
+      quantityProduced: 0, 
+      technicalErrorCount: 0, 
+      materialErrorCount: 0, 
+      note: '' 
+    }
   ]);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       loadWorkers();
+    } else {
+      document.body.style.overflow = 'auto';
     }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
   }, [isOpen]);
 
   const loadWorkers = async () => {
@@ -85,7 +100,15 @@ export default function ProductionBatchForm({
   };
 
   const addEntry = () => {
-    setEntries([...entries, { employeeId: '', staffName: '', quantityProduced: 0, technicalErrorCount: 0, materialErrorCount: 0, note: '' }]);
+    setEntries([...entries, { 
+      employeeId: '', 
+      staffName: '', 
+      date: entries.length > 0 ? entries[entries.length - 1].date : new Date().toISOString().split('T')[0],
+      quantityProduced: 0, 
+      technicalErrorCount: 0, 
+      materialErrorCount: 0, 
+      note: '' 
+    }]);
   };
 
   const removeEntry = (index: number) => {
@@ -126,6 +149,8 @@ export default function ProductionBatchForm({
             productionOrderId: productionOrder.id,
             employeeId: e.employeeId,
             staffName: e.staffName,
+            startTime: new Date(e.date + "T08:00:00Z"),
+            endTime: new Date(e.date + "T17:00:00Z"),
             quantityProduced: Number(e.quantityProduced),
             technicalErrorCount: Number(e.technicalErrorCount),
             materialErrorCount: Number(e.materialErrorCount),
@@ -158,7 +183,7 @@ export default function ProductionBatchForm({
     <div className="fixed inset-0 lg:left-[var(--sidebar-width)] z-[500] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative w-full max-w-6xl bg-white border-[2.5px] border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col animate-in zoom-in duration-200">
+      <div className="relative w-[98vw] max-w-[1600px] h-[92vh] bg-white border-[2.5px] border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col animate-in zoom-in duration-200">
 
         {/* Header */}
         <div className="p-6 border-b-[2.5px] border-black flex justify-between items-center bg-neo-yellow/30">
@@ -203,11 +228,12 @@ export default function ProductionBatchForm({
         </div>
 
         {/* Dynamic Table */}
-        <div className="flex-1 overflow-y-auto max-h-[50vh] p-6">
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0">
           <table className="w-full border-collapse">
             <thead>
               <tr className="text-[10px] font-black uppercase tracking-[0.1em] text-gray-500">
-                <th className="pb-4 text-left min-w-[260px]">Nhân viên</th>
+                <th className="pb-4 text-left min-w-[240px]">Nhân viên</th>
+                <th className="pb-4 text-center w-40">Ngày ghi nhận</th>
                 <th className="pb-4 text-center w-32">Sản lượng đạt</th>
                 <th className="pb-4 text-center w-32">Lỗi KT</th>
                 <th className="pb-4 text-center w-32">Lỗi VT</th>
@@ -219,19 +245,19 @@ export default function ProductionBatchForm({
               {entries.map((entry, idx) => (
                 <tr key={idx} className="group border-b border-gray-100 last:border-none">
                   <td className="py-3 pr-4">
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                      <select
-                        className="form-input !pl-10 h-11 w-full font-bold bg-white text-sm"
-                        value={entry.employeeId}
-                        onChange={(e) => updateEntry(idx, 'employeeId', e.target.value)}
-                      >
-                        <option value="" disabled>--- Chọn nhân sự ---</option>
-                        {workers.map(w => (
-                          <option key={w.id} value={w.id}>{w.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                    <WorkerSearchableSelect 
+                      workers={workers}
+                      selectedId={entry.employeeId}
+                      onSelect={(val) => updateEntry(idx, 'employeeId', val)}
+                    />
+                  </td>
+                  <td className="py-3 px-2">
+                    <input
+                      type="date"
+                      className="form-input h-11 w-full text-center font-bold text-xs border-black active:shadow-neo transition-all"
+                      value={entry.date}
+                      onChange={(e) => updateEntry(idx, 'date', e.target.value)}
+                    />
                   </td>
                   <td className="py-3 px-2">
                     <input
@@ -344,3 +370,110 @@ export default function ProductionBatchForm({
     </div>
   );
 }
+function WorkerSearchableSelect({ workers, selectedId, onSelect }: { workers: Worker[], selectedId: string, onSelect: (id: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const selectedWorker = workers.find(w => w.id === selectedId);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    
+    // Update position on scroll or resize if open
+    const handleUpdate = () => {
+      if (isOpen && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setCoords({
+          top: rect.bottom + 8,
+          left: rect.left,
+          width: rect.width
+        });
+      }
+    };
+
+    if (isOpen) {
+      handleUpdate();
+      window.addEventListener('scroll', handleUpdate, true);
+      window.addEventListener('resize', handleUpdate);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      window.removeEventListener('scroll', handleUpdate, true);
+      window.removeEventListener('resize', handleUpdate);
+    };
+  }, [isOpen]);
+
+  const filtered = workers.filter(w => 
+    w.name.toLowerCase().includes(search.toLowerCase()) || 
+    (w as any).code?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="form-input !pl-10 h-11 w-full font-bold bg-white text-sm flex items-center cursor-pointer overflow-hidden border-2 border-black"
+      >
+        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+        <span className={cn("truncate", !selectedWorker && "text-gray-400 font-normal")}>
+          {selectedWorker ? selectedWorker.name : "--- Chọn nhân sự ---"}
+        </span>
+        <ChevronRight size={14} className={cn("absolute right-3 top-1/2 -translate-y-1/2 transition-transform", isOpen ? "rotate-90" : "rotate-0")} />
+      </div>
+
+      {isOpen && (
+        <div 
+          style={{ 
+            position: 'fixed',
+            top: coords.top,
+            left: coords.left,
+            width: coords.width,
+          }}
+          className="z-[9999] bg-white border-2 border-black rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200"
+        >
+          <div className="p-2 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
+            <Search size={14} className="text-gray-400 ml-1" />
+            <input 
+              autoFocus
+              className="flex-1 bg-transparent border-none focus:ring-0 text-xs font-bold"
+              placeholder="Tìm theo tên hoặc mã..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto custom-scrollbar">
+            {filtered.length > 0 ? filtered.map(w => (
+              <button
+                key={w.id}
+                onClick={() => {
+                  onSelect(w.id);
+                  setIsOpen(false);
+                  setSearch('');
+                }}
+                className={cn(
+                  "w-full px-4 py-2.5 text-left hover:bg-neo-purple/10 flex flex-col gap-0.5 transition-colors border-b border-gray-50 last:border-0",
+                  selectedId === w.id && "bg-neo-purple/5"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                   <span className="text-xs font-black text-black">{w.name}</span>
+                   <span className="text-[10px] font-black bg-black text-white px-1.5 py-0.5 rounded leading-none">{(w as any).code}</span>
+                </div>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest italic">{w.role || w.position}</span>
+              </button>
+            )) : (
+              <div className="p-4 text-center text-[9px] font-black text-gray-300 uppercase italic">Không tìm thấy</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

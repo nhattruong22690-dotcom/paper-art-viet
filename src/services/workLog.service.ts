@@ -242,8 +242,8 @@ export async function createBatchWorkLogs(
         error_note: log.errorNote,
         note: log.note,
         status: 'completed',
-        start_time: (log.startTime || new Date()).toISOString(),
-        end_time: (log.endTime || new Date()).toISOString(),
+        start_time: new Date(log.startTime || new Date()).toISOString(),
+        end_time: new Date(log.endTime || new Date()).toISOString(),
       })
       .select()
       .single();

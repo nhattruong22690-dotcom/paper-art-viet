@@ -383,13 +383,12 @@ export async function getProductionWorkers() {
     .from('Employees')
     .select('id, full_name, employee_code, department, position, is_kpi')
     .eq('status', 'active')
-    .eq('is_kpi', true)
+    .or('is_kpi.eq.true,department.ilike.Sản xuất%')
     .order('full_name', { ascending: true });
 
   if (error) throw error;
   
-  // Lọc thêm một lần nữa bằng code để đảm bảo tuyệt đối không có sai sót
-  const filteredData = (data || []).filter(emp => emp.is_kpi === true);
+  const filteredData = data || [];
   
   return filteredData.map(emp => ({
     id: emp.id,

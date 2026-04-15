@@ -84,9 +84,9 @@ export default function EmployeesPage() {
   };
 
   const filteredEmployees = employees.filter(emp => 
-    emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.department.toLowerCase().includes(searchQuery.toLowerCase())
+    (emp.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (emp.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (emp.department?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   const handleDelete = async (id: string) => {
@@ -191,7 +191,7 @@ export default function EmployeesPage() {
                 <div className="block md:table-cell px-2 py-3 md:px-8 md:py-6 border-b-2 border-black/5 md:border-0 border-dashed">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-white border-2 border-black text-black flex items-center justify-center font-black text-sm shrink-0 uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:bg-black group-hover:text-white transition-all duration-300 italic">
-                      {emp.name.substring(0, 2)}
+                      {emp.name?.substring(0, 2) || '??'}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">

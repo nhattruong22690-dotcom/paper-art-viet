@@ -61,7 +61,7 @@ export async function getWorkLogs(params: { date?: string; productionOrderId?: s
       employee:Employees(*)
     `)
     .range(skip, skip + take - 1)
-    .order('created_at', { ascending: false });
+    .order('start_time', { ascending: false });
 
   if (date) {
     const startOfDay = new Date(date);
