@@ -465,7 +465,7 @@ function WorkerSearchableSelect({ workers, selectedId, onSelect }: { workers: Wo
                    <span className="text-xs font-black text-black">{w.name}</span>
                    <span className="text-[10px] font-black bg-black text-white px-1.5 py-0.5 rounded leading-none">{(w as any).code}</span>
                 </div>
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest italic">{w.role || w.position}</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest italic">{(w as any).role || (w as any).position}</span>
               </button>
             )) : (
               <div className="p-4 text-center text-[9px] font-black text-gray-300 uppercase italic">Không tìm thấy</div>
