@@ -32,6 +32,7 @@ import OrderDetailsPanel from "@/components/orders/OrderDetailsPanel";
 import ProductionBatchForm from "@/components/production/ProductionBatchForm";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useNotification } from "@/context/NotificationContext";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -46,6 +47,7 @@ const statusConfig = {
 };
 
 export default function ProductionPage() {
+  const { confirm, showToast } = useNotification();
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [showFacilitiesModal, setShowFacilitiesModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -164,18 +166,22 @@ export default function ProductionPage() {
   };
 
   const handleDeleteLog = async (logId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa ghi nhận sản xuất này? Hệ thống sẽ tự động tính toán lại sản lượng.")) return;
+    if (!await confirm("Bạn có chắc chắn muốn xóa ghi nhận sản xuất này? Hệ thống sẽ tự động tính toán lại sản lượng.")) return;
     
     try {
       const res = await fetch(`/api/production/logs?id=${logId}`, { method: 'DELETE' });
       if (res.ok) {
+        showToast('success', 'Đã xóa ghi nhận sản xuất thành công');
         if (selectedOrder) {
           loadLogs(selectedOrder.id);
           loadOrders(); // Refresh to get updated completed quantity
         }
+      } else {
+        throw new Error('Xóa thất bại');
       }
     } catch (err) {
       console.error("Failed to delete log:", err);
+      showToast('error', 'Không thể xóa ghi nhận. Vui lòng thử lại.');
     }
   };
 
@@ -659,8 +665,8 @@ export default function ProductionPage() {
                  </button>
 
                  {showLogsDetail && (
-                    <div className="mt-4 border-2 border-black rounded-2xl overflow-hidden animate-in slide-in-from-top duration-300">
-                       <table className="w-full text-left border-collapse">
+                    <div className="mt-4 border-2 border-black rounded-2xl overflow-x-auto custom-scrollbar animate-in slide-in-from-top duration-300">
+                       <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
                           <thead>
                              <tr className="bg-gray-100 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                                 <th className="px-5 py-4 border-b border-black/5 font-black">Thời gian</th>
@@ -668,7 +674,7 @@ export default function ProductionPage() {
                                 <th className="px-5 py-4 border-b border-black/5 font-black text-center">SL</th>
                                 <th className="px-5 py-4 border-b border-black/5 font-black text-center">Lỗi (K/V)</th>
                                 <th className="px-5 py-4 border-b border-black/5 font-black">Ghi chú</th>
-                                <th className="px-5 py-4 border-b border-black/5 font-black w-24 text-right">Thao tác</th>
+                                <th className="px-5 py-4 border-b border-black/5 font-black w-32 text-right shrink-0">Thao tác</th>
                              </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100">
@@ -745,8 +751,8 @@ export default function ProductionPage() {
                                          <td className="px-5 py-4 border-b border-gray-50">
                                             <p className="text-[10px] text-muted-foreground line-clamp-1 max-w-[200px] italic">{log.note || '---'}</p>
                                          </td>
-                                         <td className="px-5 py-4 border-b border-gray-50 text-right">
-                                            <div className="flex items-center justify-end gap-2">
+                                         <td className="px-5 py-4 border-b border-gray-50 text-right w-32 shrink-0">
+                                            <div className="flex items-center justify-end gap-3">
                                                <button 
                                                  onClick={() => handleEditLog(log)}
                                                  className="p-1.5 hover:bg-neo-blue/10 hover:text-neo-blue rounded-lg transition-colors"
@@ -816,7 +822,7 @@ export default function ProductionPage() {
 
       {/* Edit Log Modal */}
       {showEditModal && editingLog && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
            <div className="bg-white border-4 border-black rounded-[2.5rem] w-full max-w-xl shadow-neo overflow-hidden animate-in zoom-in-95 duration-300">
               <div className="bg-neo-blue p-6 border-b-4 border-black flex items-center justify-between">
                  <div className="flex items-center gap-3">
@@ -824,8 +830,8 @@ export default function ProductionPage() {
                        <PencilLine size={20} className="text-neo-blue" />
                     </div>
                     <div>
-                       <h2 className="text-lg font-black uppercase tracking-tight text-white">Chỉnh sửa ghi nhận</h2>
-                       <p className="text-[10px] text-white/70 font-bold uppercase tracking-widest">Hiệu chỉnh sản lượng và thông tin chi tiết</p>
+                       <h2 className="text-lg font-black uppercase tracking-tight text-black">Chỉnh sửa ghi nhận</h2>
+                       <p className="text-[10px] text-black/60 font-bold uppercase tracking-widest">Hiệu chỉnh sản lượng và thông tin chi tiết</p>
                     </div>
                  </div>
                  <button 
@@ -912,7 +918,7 @@ export default function ProductionPage() {
                        note: note
                      });
                    }}
-                   className="flex-[2] bg-neo-blue text-white border-2 border-black px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-neo hover:shadow-neo-hover active:translate-x-[2px] active:translate-y-[2px] transition-all font-bold"
+                   className="flex-[2] bg-neo-blue text-black border-2 border-black px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-neo hover:shadow-neo-hover active:translate-x-[2px] active:translate-y-[2px] transition-all font-bold"
                  >
                     Lưu thay đổi
                  </button>

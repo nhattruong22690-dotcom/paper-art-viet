@@ -351,7 +351,7 @@ export default function ProductionBatchForm({
               onClick={handleSubmit}
               disabled={isSubmitting}
               className={cn(
-                "px-8 py-3 rounded-xl border-[2.5px] border-black bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-neo hover:shadow-neo-active active:translate-y-0.5 transition-all flex items-center gap-2",
+                "px-8 py-3 rounded-xl border-[2.5px] border-black bg-primary text-black font-black text-[10px] uppercase tracking-widest shadow-neo hover:shadow-neo-active active:translate-y-0.5 transition-all flex items-center gap-2",
                 isSubmitting && "opacity-50 cursor-not-allowed"
               )}
             >

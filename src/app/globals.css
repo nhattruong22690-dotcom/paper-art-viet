@@ -56,6 +56,7 @@ html {
   --color-neo-mint: #D1FAE5;
   --color-neo-yellow: #FEF3C7;
   --color-neo-red: #FEE2E2;
+  --color-neo-blue: #B4E4FE;
 
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);

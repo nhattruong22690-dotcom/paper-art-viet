@@ -65,8 +65,8 @@ export default function ProductionListView({
   }
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-black shadow-neo-active overflow-hidden">
-      <div className="w-full flex flex-col md:table md:border-collapse space-y-4 md:space-y-0 p-4 md:p-0">
+    <div className="bg-white rounded-2xl border-2 border-black shadow-neo-active overflow-x-auto custom-scrollbar">
+      <div className="w-full flex flex-col md:table md:border-collapse space-y-4 md:space-y-0 p-4 md:p-0 min-w-full md:min-w-[1000px]">
         <div className="hidden md:table-header-group bg-slate-50 text-black border-y-2 border-black">
           <div className="table-row">
             <div className="table-cell px-6 py-4 text-[10px] font-black uppercase tracking-widest border-r border-black/10">SKU / Sản phẩm</div>
