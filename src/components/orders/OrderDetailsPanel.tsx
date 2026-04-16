@@ -296,7 +296,11 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
 
   const toggleMilestone = async (milestoneId: string) => {
     const updatedStages = order.estimatedStages.map((m: any) =>
-      m.id === milestoneId ? { ...m, isCompleted: !m.isCompleted } : m
+      m.id === milestoneId ? { 
+        ...m, 
+        isCompleted: !m.isCompleted,
+        completedAt: !m.isCompleted ? new Date().toISOString().split('T')[0] : null
+      } : m
     );
 
     // Quick update to UI
@@ -1590,7 +1594,8 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                       <thead>
                         <tr className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
                           <th>Công đoạn</th>
-                          <th className="w-32 text-center">Thời hạn</th>
+                          <th className="w-28 text-center">Thời hạn</th>
+                          <th className="w-28 text-center">HT Thực tế</th>
                           <th className="w-20 text-center">Xong</th>
                           {isEditing && <th className="w-10"></th>}
                         </tr>
@@ -1628,6 +1633,21 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                   }}
                                 />
                               ) : m.deadline ? new Date(m.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '---'}
+                            </td>
+                            <td className="px-4 py-3 text-center tabular-nums font-bold text-emerald-600">
+                              {isEditing ? (
+                                <input
+                                  type="date"
+                                  className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-bold text-center text-emerald-600"
+                                  value={m.completedAt || ''}
+                                  onChange={(e) => {
+                                    const newMilestones = editData.estimatedStages.map((ms: any) =>
+                                      ms.id === m.id ? { ...ms, completedAt: e.target.value, isCompleted: !!e.target.value } : ms
+                                    );
+                                    setEditData({ ...editData, estimatedStages: newMilestones });
+                                  }}
+                                />
+                              ) : m.completedAt ? new Date(m.completedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '---'}
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex justify-center">

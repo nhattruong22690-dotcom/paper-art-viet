@@ -904,7 +904,8 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                        <thead>
                           <tr className="bg-black/5 text-[0.5625rem] font-black text-black/40 uppercase tracking-widest border-b-2 border-black">
                              <th className="px-6 py-3">Các công đoạn</th>
-                             <th className="px-6 py-3 w-48">Thời gian dự tính</th>
+                             <th className="px-6 py-3 w-40">Thời gian dự tính</th>
+                             <th className="px-6 py-3 w-40 text-center">Hoàn thành thực tế</th>
                              <th className="px-6 py-3 w-32 text-center">Hoàn thành</th>
                              <th className="px-6 py-3 w-12"></th>
                           </tr>
@@ -927,6 +928,19 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
                                      value={m.deadline}
                                      onChange={(e) => updateMilestone(m.id, 'deadline', e.target.value)}
                                      className="w-full bg-transparent border-none outline-none font-black text-xs tabular-nums"
+                                   />
+                                </td>
+                                <td className="px-6 py-3">
+                                   <input 
+                                     type="date" 
+                                     value={m.completedAt || ''}
+                                     onChange={(e) => {
+                                       updateMilestone(m.id, 'completedAt', e.target.value);
+                                       if (e.target.value) {
+                                          updateMilestone(m.id, 'isCompleted', true);
+                                       }
+                                     }}
+                                     className="w-full bg-transparent border-none outline-none font-black text-xs tabular-nums text-center text-neo-green-pure"
                                    />
                                 </td>
                                 <td className="px-6 py-3 text-center">
