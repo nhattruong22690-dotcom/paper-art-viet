@@ -251,7 +251,7 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [deadline, setDeadline] = useState('');
-  const [milestones, setMilestones] = useState<{id: string, label: string, deadline: string, isCompleted: boolean}[]>([]);
+  const [milestones, setMilestones] = useState<{id: string, label: string, deadline: string, isCompleted: boolean, completedAt?: string | null}[]>([]);
   const [notes, setNotes] = useState('');
   const [currency, setCurrency] = useState('VND');
   const [items, setItems] = useState<OrderItem[]>([]);
