@@ -75,6 +75,19 @@ export default function ProductionPipeline({
 }) {
   // Logic Modal đã được chuyển lên trang cha ProductionPage.tsx
 
+  const handleDrop = (e: React.DragEvent, newStatus: Status) => {
+    e.preventDefault();
+    const orderId = e.dataTransfer.getData("productionOrderId");
+    if (orderId && onStatusChange) {
+      onStatusChange(orderId, newStatus);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
   const renderColumn = (status: Status) => {
     const filteredOrders = orders.filter(order => {
       const statusMatch = order.status === status;
@@ -93,22 +106,14 @@ export default function ProductionPipeline({
         order.id.toLowerCase().includes(search)
       );
     });
-    const config = statusConfig[status];
 
     return (
-      <div className="flex-1 min-w-[320px] flex flex-col card !bg-gray-100/50 !p-4 border-2 border-black/5">
-        <div className="flex items-center justify-between mb-5 px-2">
-          <div className="flex items-center gap-2">
-            <span className={cn("w-2.5 h-2.5 rounded-full", status === "Pending" ? "bg-gray-400" : status === "Processing" ? "bg-primary" : status === "QualityControl" ? "bg-amber-500" : "bg-green-500")} />
-            <h3 className="font-bold text-foreground text-[11px] uppercase tracking-[0.2em]">{config.label}</h3>
-            <span className="bg-white px-2 py-0.5 rounded text-[10px] font-bold text-muted-foreground border border-border shadow-sm">{filteredOrders.length}</span>
-          </div>
-          <button className="text-gray-400 hover:text-foreground">
-             <MoreVertical size={16} />
-          </button>
-        </div>
-
-        <div className="flex-1 space-y-4 overflow-y-auto max-h-[calc(100vh-320px)] scrollbar-hide">
+      <div 
+        className="flex flex-col h-full bg-gray-50/50 rounded-lg p-2 md:p-3 border border-border transition-colors hover:bg-gray-100/30"
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, status)}
+      >
+        <div className="flex-1 space-y-3 px-1 pb-10">
           {filteredOrders.map(order => {
             const isUrgent = order.priority === 'Urgent';
             const isHigh = order.priority === 'High';
@@ -117,6 +122,11 @@ export default function ProductionPipeline({
               <div 
                 key={order.id}
                 onClick={() => onSelectOrder?.(order)}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("productionOrderId", order.id);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
                 className={cn(
                   "card !p-5 hover:-translate-y-1 transition-all cursor-pointer group relative bg-white border-2",
                   isUrgent ? "border-red-600 shadow-[4px_4px_0px_rgba(220,38,38,0.2)] bg-red-50/30" : 
@@ -223,14 +233,11 @@ export default function ProductionPipeline({
   };
 
   return (
-    <div className="relative">
-
-      <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-        {renderColumn("Pending")}
-        {renderColumn("Processing")}
-        {renderColumn("QualityControl")}
-        {renderColumn("Completed")}
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start min-h-[600px] mt-2">
+      {renderColumn("Pending")}
+      {renderColumn("Processing")}
+      {renderColumn("QualityControl")}
+      {renderColumn("Completed")}
     </div>
   );
 }

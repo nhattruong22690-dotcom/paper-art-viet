@@ -339,3 +339,178 @@ export async function updateProductionStatus(id: string, status: string) {
 
   if (error) throw error;
 }
+
+export async function createBatchWorkLogs(logs: any[]) {
+  if (!logs || logs.length === 0) return;
+
+  // 1. Chèn vào bảng WorkLog (snake_case)
+  const dbLogs = logs.map(log => ({
+    production_order_id: log.productionOrderId,
+    employee_id: log.employeeId,
+    staff_name: log.staffName,
+    start_time: log.startTime,
+    end_time: log.endTime,
+    quantity: log.quantityProduced,
+    technical_error_count: log.technicalErrorCount,
+    material_error_count: log.materialErrorCount,
+    note: log.note,
+    type: 'production', // Bổ sung cột type còn thiếu
+    status: 'completed'
+  }));
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('WorkLog')
+    .insert(dbLogs)
+    .select();
+
+  if (insertError) throw insertError;
+
+  // 2. Cập nhật quantity_completed và current_status cho từng ProductionOrder liên quan
+  const totalsByOrder = logs.reduce((acc: any, log: any) => {
+    acc[log.productionOrderId] = (acc[log.productionOrderId] || 0) + (log.quantityProduced || 0);
+    return acc;
+  }, {});
+
+  for (const [orderId, addedQty] of Object.entries(totalsByOrder)) {
+    // Lấy thông tin hiện tại để tính toán trạng thái
+    const { data: po, error: fetchError } = await supabase
+      .from('ProductionOrder')
+      .select('quantity_completed, quantity_target, current_status')
+      .eq('id', orderId)
+      .single();
+    
+    if (fetchError) continue;
+
+    const newTotal = (po.quantity_completed || 0) + (addedQty as number);
+    
+    // Logic cập nhật trạng thái tự động
+    let nextStatus = po.current_status;
+    const target = po.quantity_target || 0;
+
+    if (newTotal > 0 && target > 0) {
+      if (newTotal >= target) {
+        nextStatus = 'completed';
+      } else {
+        nextStatus = 'in_progress';
+      }
+    }
+
+    await supabase
+      .from('ProductionOrder')
+      .update({ 
+        quantity_completed: newTotal,
+        current_status: nextStatus
+      })
+      .eq('id', orderId);
+  }
+
+  return inserted;
+}
+
+export async function deleteWorkLog(id: string) {
+  // 1. Lấy thông tin log trước khi xóa
+  const { data: log, error: logError } = await supabase
+    .from('WorkLog')
+    .select('production_order_id, quantity')
+    .eq('id', id)
+    .single();
+
+  if (logError || !log) throw new Error("Work log not found");
+
+  // 2. Xóa log
+  const { error: deleteError } = await supabase
+    .from('WorkLog')
+    .delete()
+    .eq('id', id);
+
+  if (deleteError) throw deleteError;
+
+  // 3. Cập nhật lại ProductionOrder
+  const { data: po, error: poError } = await supabase
+    .from('ProductionOrder')
+    .select('quantity_completed, quantity_target, current_status')
+    .eq('id', log.production_order_id)
+    .single();
+
+  if (poError || !po) return;
+
+  const newTotal = Math.max(0, (po.quantity_completed || 0) - (log.quantity || 0));
+  
+  let nextStatus = po.current_status;
+  if (newTotal === 0) {
+    nextStatus = 'pending';
+  } else if (newTotal < (po.quantity_target || 0)) {
+    nextStatus = 'in_progress';
+  }
+
+  await supabase
+    .from('ProductionOrder')
+    .update({ 
+      quantity_completed: newTotal,
+      current_status: nextStatus
+    })
+    .eq('id', log.production_order_id);
+}
+
+export async function updateWorkLog(id: string, data: any) {
+  // 1. Lấy log cũ để tính chênh lệch
+  const { data: oldLog, error: logError } = await supabase
+    .from('WorkLog')
+    .select('production_order_id, quantity')
+    .eq('id', id)
+    .single();
+
+  if (logError || !oldLog) throw new Error("Work log not found");
+
+  // 2. Cập nhật log
+  const dbData: any = {};
+  if ('employeeId' in data) dbData.employee_id = data.employeeId;
+  if ('staffName' in data) dbData.staff_name = data.staffName;
+  if ('quantityProduced' in data) dbData.quantity = data.quantityProduced;
+  if ('technicalErrorCount' in data) dbData.technical_error_count = data.technicalErrorCount;
+  if ('materialErrorCount' in data) dbData.material_error_count = data.materialErrorCount;
+  if ('note' in data) dbData.note = data.note;
+  if ('date' in data) {
+    dbData.start_time = new Date(data.date + "T08:00:00Z");
+    dbData.end_time = new Date(data.date + "T17:00:00Z");
+  }
+
+  const { error: updateError } = await supabase
+    .from('WorkLog')
+    .update(dbData)
+    .eq('id', id);
+
+  if (updateError) throw updateError;
+
+  // 3. Nếu có đổi sản lượng, cập nhật ProductionOrder
+  if ('quantityProduced' in data) {
+    const diff = Number(data.quantityProduced) - (oldLog.quantity || 0);
+    
+    const { data: po, error: poError } = await supabase
+      .from('ProductionOrder')
+      .select('quantity_completed, quantity_target, current_status')
+      .eq('id', oldLog.production_order_id)
+      .single();
+
+    if (poError || !po) return;
+
+    const newTotal = Math.max(0, (po.quantity_completed || 0) + diff);
+    
+    let nextStatus = po.current_status;
+    if (newTotal === 0) {
+      nextStatus = 'pending';
+    } else if (newTotal >= (po.quantity_target || 0)) {
+      nextStatus = 'completed';
+    } else {
+      nextStatus = 'in_progress';
+    }
+
+    await supabase
+      .from('ProductionOrder')
+      .update({ 
+        quantity_completed: newTotal,
+        current_status: nextStatus
+      })
+      .eq('id', oldLog.production_order_id);
+  }
+}

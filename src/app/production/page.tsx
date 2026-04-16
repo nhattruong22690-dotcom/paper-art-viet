@@ -13,6 +13,8 @@ import {
   Factory,
   Clock,
   X,
+  Trash2,
+  Edit3,
   Briefcase,
   MapPin,
   AlertCircle,
@@ -66,6 +68,10 @@ export default function ProductionPage() {
   const [showLogsDetail, setShowLogsDetail] = useState(false);
   const [showBatchForm, setShowBatchForm] = useState(false);
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
+  
+  // Edit Log State
+  const [editingLog, setEditingLog] = useState<any | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (selectedOrder) {
@@ -76,7 +82,7 @@ export default function ProductionPage() {
   const loadLogs = async (id: string) => {
     setLogsLoading(true);
     try {
-      const res = await fetch(`/api/production/logs?id=${id}`);
+      const res = await fetch(`/api/production/logs?productionOrderId=${id}`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setLogs(data);
@@ -157,6 +163,46 @@ export default function ProductionPage() {
     }
   };
 
+  const handleDeleteLog = async (logId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa ghi nhận sản xuất này? Hệ thống sẽ tự động tính toán lại sản lượng.")) return;
+    
+    try {
+      const res = await fetch(`/api/production/logs?id=${logId}`, { method: 'DELETE' });
+      if (res.ok) {
+        if (selectedOrder) {
+          loadLogs(selectedOrder.id);
+          loadOrders(); // Refresh to get updated completed quantity
+        }
+      }
+    } catch (err) {
+      console.error("Failed to delete log:", err);
+    }
+  };
+
+  const handleEditLog = (log: any) => {
+    setEditingLog(log);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEditLog = async (data: any) => {
+    try {
+      const res = await fetch('/api/production/logs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingLog.id, ...data })
+      });
+      if (res.ok) {
+        setShowEditModal(false);
+        if (selectedOrder) {
+          loadLogs(selectedOrder.id);
+          loadOrders();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to save edit log:", err);
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     // Archiving logic
     if (isArchiveView) {
@@ -207,16 +253,16 @@ export default function ProductionPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       
       {/* Header Section */}
-      <div className="neo-card !p-8 !flex-col md:!flex-row justify-between items-start md:items-center gap-6 bg-neo-yellow/20">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 neo-card !p-8 bg-neo-yellow shadow-neo">
         <div className="flex items-center gap-6">
           <Link 
             href="/mobile-menu/production"
-            className="w-12 h-12 bg-white border-neo border-black rounded-xl flex items-center justify-center text-black hover:bg-neo-yellow shadow-neo-active hover:shadow-neo transition-all"
+            className="w-12 h-12 bg-white border-neo border-black rounded-xl flex items-center justify-center text-black hover:bg-black hover:text-white shadow-neo-active hover:shadow-neo transition-all shrink-0"
           >
             <ArrowLeft size={24} strokeWidth={3} />
           </Link>
           <div>
-            <nav className="flex items-center gap-2 text-[10px] font-black text-black/40 uppercase tracking-[0.2em] mb-2">
+            <nav className="flex items-center gap-2 text-[10px] font-black text-black uppercase tracking-[0.2em] mb-2">
               <Factory size={14} strokeWidth={3} />
               <span>Sản xuất</span>
               <ChevronRight size={12} strokeWidth={3} />
@@ -228,7 +274,23 @@ export default function ProductionPage() {
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full md:w-auto md:ml-10">
+        {/* Mini Stats Board - To balance the layout like the "Create Order" button */}
+        <div className="flex items-center gap-3">
+            {[
+              { label: 'Chờ xử lý', count: getStatusCount('Pending'), color: 'bg-white' },
+              { label: 'Đang chạy', count: getStatusCount('Processing'), color: 'bg-neo-mint' }
+            ].map((stat, i) => (
+              <div key={i} className={`hidden md:flex flex-col items-center justify-center min-w-[100px] p-2 rounded-xl border-2 border-black ${stat.color} shadow-neo-active`}>
+                <span className="text-[8px] font-black uppercase tracking-tighter text-black/60">{stat.label}</span>
+                <span className="text-lg font-black leading-none">{stat.count}</span>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      {/* View & Data Toggles Row */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
+        <div className="flex flex-wrap items-center gap-4 animate-in slide-in-from-left duration-500">
           {/* Nhóm 1: Chế độ xem: Kanban / Danh sách */}
           <div className="bg-black/5 p-1.5 rounded-xl border-2 border-black flex gap-2 shadow-neo-active">
             <button 
@@ -272,90 +334,119 @@ export default function ProductionPage() {
         onClose={() => setShowFacilitiesModal(false)}
       />
 
-      {/* Filter & Search */}
-      <div className="bg-white p-6 rounded-2xl border-2 border-black shadow-neo-active flex flex-col md:flex-row gap-5">
-        <div className="flex-1 relative group" ref={searchRef}>
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-black transition-colors" size={20} />
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm lệnh sản xuất, SKU, mã đơn..."
-            className="form-input pl-12 h-12 w-full font-bold uppercase placeholder:font-normal placeholder:normal-case shadow-neo-active focus:shadow-neo"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setShowSuggestions(true);
-            }}
-            onFocus={() => setShowSuggestions(true)}
-          />
+      {/* Unified Control Frame - Sticky */}
+      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md pt-4 pb-2 -mx-4 px-4">
+        <div className="bg-white border-2 border-black rounded-[32px] shadow-neo overflow-hidden flex flex-col divide-y-2 divide-black/[0.08]">
           
-          {/* Suggestions Dropdown */}
-          {showSuggestions && searchTerm.length >= 1 && filteredSuggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-black rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-               <div className="p-3 border-b border-gray-100 bg-gray-50/50">
-                  <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Gợi ý sản phẩm ({filteredSuggestions.length})</p>
-               </div>
-               <div className="max-h-60 overflow-y-auto">
-                  {filteredSuggestions.map((p, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setSearchTerm(p.name);
-                        setShowSuggestions(false);
-                      }}
-                      className="w-full p-4 flex items-center justify-between hover:bg-primary/5 transition-colors border-b border-gray-50 last:border-none group text-left"
-                    >
-                       <div className="flex flex-col gap-0.5">
-                          <span className="text-xs font-black text-foreground group-hover:text-primary transition-colors">{p.name}</span>
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{p.sku}</span>
-                       </div>
-                       <ChevronRight size={14} className="text-gray-300 group-hover:text-primary transition-all" />
-                    </button>
-                  ))}
-               </div>
+          {/* Layer 1: Filter & Search */}
+          <div className="p-4 md:p-6 flex flex-col md:flex-row gap-4 bg-white">
+            <div className="flex-1 relative group" ref={searchRef}>
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-black transition-colors" size={20} />
+              <input 
+                type="text" 
+                placeholder="Tìm kiếm lệnh sản xuất, SKU, mã đơn..."
+                className="form-input pl-12 h-12 w-full font-bold uppercase placeholder:font-normal placeholder:normal-case shadow-neo-active focus:shadow-neo !border-black/10"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+              />
+              
+              {/* Suggestions Dropdown */}
+              {showSuggestions && searchTerm.length >= 1 && filteredSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-black rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                   <div className="p-3 border-b border-gray-100 bg-gray-50/50">
+                      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Gợi ý sản phẩm ({filteredSuggestions.length})</p>
+                   </div>
+                   <div className="max-h-60 overflow-y-auto">
+                      {filteredSuggestions.map((p, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSearchTerm(p.name);
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full p-4 flex items-center justify-between hover:bg-primary/5 transition-colors border-b border-gray-50 last:border-none group text-left"
+                        >
+                           <div className="flex flex-col gap-0.5">
+                              <span className="text-xs font-black text-foreground group-hover:text-primary transition-colors">{p.name}</span>
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{p.sku}</span>
+                           </div>
+                           <ChevronRight size={14} className="text-gray-300 group-hover:text-primary transition-all" />
+                        </button>
+                      ))}
+                   </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <button 
-          onClick={() => {
-            setSortBy(sortBy === 'dueDate' ? 'none' : 'dueDate');
-            if (sortBy !== 'dueDate') setSortOrder('asc');
-          }}
-          className={`btn-secondary whitespace-nowrap gap-3 shadow-neo-active ${sortBy === 'dueDate' ? 'bg-neo-blue' : 'bg-white'}`}
-        >
-          <Clock size={18} strokeWidth={3} /> 
-          <span className="font-space uppercase tracking-widest text-xs">
-            Hạn giao {sortBy === 'dueDate' && (sortOrder === 'asc' ? '↑' : '↓')}
-          </span>
-        </button>
-        <button 
-          onClick={() => {
-            setSortBy(sortBy === 'priority' ? 'none' : 'priority');
-            if (sortBy !== 'priority') setSortOrder('desc');
-          }}
-          className={`btn-secondary whitespace-nowrap gap-3 shadow-neo-active ${sortBy === 'priority' ? 'bg-neo-pink' : 'bg-white'}`}
-        >
-          <Filter size={18} strokeWidth={3} /> 
-          <span className="font-space uppercase tracking-widest text-xs">
-            Ưu tiên {sortBy === 'priority' && (sortOrder === 'desc' ? '↑' : '↓')}
-          </span>
-        </button>
-      </div>
+            
+            <div className="flex gap-2">
+              <button 
+                onClick={() => {
+                  setSortBy(sortBy === 'dueDate' ? 'none' : 'dueDate');
+                  if (sortBy !== 'dueDate') setSortOrder('asc');
+                }}
+                className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 shadow-neo-active
+                  ${sortBy === 'dueDate' ? 'bg-neo-blue text-black border-black border-2' : 'bg-white text-muted-text border-black/5 hover:border-black'}`}
+              >
+                <Clock size={16} strokeWidth={3} /> {sortBy === 'dueDate' && (sortOrder === 'asc' ? '↑' : '↓')} Hạn giao
+              </button>
+              <button 
+                onClick={() => {
+                  setSortBy(sortBy === 'priority' ? 'none' : 'priority');
+                  if (sortBy !== 'priority') setSortOrder('desc');
+                }}
+                className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 shadow-neo-active
+                  ${sortBy === 'priority' ? 'bg-neo-pink text-black border-black border-2' : 'bg-white text-muted-text border-black/5 hover:border-black'}`}
+              >
+                <Filter size={16} strokeWidth={3} /> {sortBy === 'priority' && (sortOrder === 'desc' ? '↑' : '↓')} Ưu tiên
+              </button>
+            </div>
+          </div>
 
-      {/* Quick Status Filters */}
-      <div className="flex flex-wrap items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
-        {(['all', 'Pending', 'Processing', 'QualityControl', 'Completed'] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilterStatus(s)}
-            className={`px-6 py-3 rounded-xl border-2 border-black font-black text-[10px] uppercase tracking-widest transition-all shadow-neo-active flex items-center gap-3
-              ${filterStatus === s ? 'bg-black text-white shadow-none translate-x-0.5 translate-y-0.5' : 'bg-white text-black hover:bg-gray-50'}`}
-          >
-            <span>{s === 'all' ? 'Tất cả' : s === 'Pending' ? 'Chờ xử lý' : s === 'Processing' ? 'Đang sản xuất' : s === 'QualityControl' ? 'Kiểm tra QC' : 'Hoàn thành'}</span>
-            <span className={`px-2 py-0.5 rounded-lg text-[9px] border border-black/10 ${filterStatus === s ? 'bg-white/20' : 'bg-black/5'}`}>
-              {getStatusCount(s as any)}
-            </span>
-          </button>
-        ))}
+          {/* Layer 2: Quick Status Filters (Tabs Style) */}
+          <div className="px-4 py-2 bg-gray-50/50 flex flex-wrap items-center gap-2 overflow-x-auto scrollbar-none">
+            {(['all', 'Pending', 'Processing', 'QualityControl', 'Completed'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(s)}
+                className={`px-4 py-2 rounded-xl border-2 font-black text-[9px] uppercase tracking-widest transition-all flex items-center gap-2
+                  ${filterStatus === s ? 'bg-black text-white border-black shadow-neo-active translate-x-0.5 translate-y-0.5' : 'bg-white text-black/40 border-black/5 hover:border-black hover:text-black'}`}
+              >
+                <span>{s === 'all' ? 'Tất cả' : s === 'Pending' ? 'Chờ xử lý' : s === 'Processing' ? 'Đang sản xuất' : s === 'QualityControl' ? 'Kiểm tra QC' : 'Hoàn thành'}</span>
+                <span className={`px-2 py-0.5 rounded-lg text-[8px] border ${filterStatus === s ? 'bg-white/20 border-white/20' : 'bg-black/5 border-black/5'}`}>
+                  {getStatusCount(s as any)}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Layer 3: Column Headers (Desktop Only) - Integrated for "Nguyên khối" look */}
+          <div className="hidden md:flex divide-x-2 divide-black/[0.08] bg-white">
+            {(["Pending", "Processing", "QualityControl", "Completed"] as Status[]).map((status) => {
+              const count = getStatusCount(status);
+              return (
+                <div key={status} className="flex-1 p-4 flex items-center justify-between group cursor-default bg-white hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className={cn("w-3 h-3 rounded-full border border-black/20 shadow-sm", 
+                      status === "Pending" ? "bg-gray-400" : 
+                      status === "Processing" ? "bg-primary" : 
+                      status === "QualityControl" ? "bg-amber-500" : "bg-green-500"
+                    )} />
+                    <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">
+                      {status === 'Pending' ? 'Chờ xử lý' : status === 'Processing' ? 'Đang sản xuất' : status === 'QualityControl' ? 'Kiểm tra QC' : 'Hoàn thành'}
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-black text-black/60 bg-gray-100 px-2.5 py-1 rounded-full border border-black/5 tabular-nums">
+                    {count}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Content Area */}
@@ -577,16 +668,17 @@ export default function ProductionPage() {
                                 <th className="px-5 py-4 border-b border-black/5 font-black text-center">SL</th>
                                 <th className="px-5 py-4 border-b border-black/5 font-black text-center">Lỗi (K/V)</th>
                                 <th className="px-5 py-4 border-b border-black/5 font-black">Ghi chú</th>
+                                <th className="px-5 py-4 border-b border-black/5 font-black w-24 text-right">Thao tác</th>
                              </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100">
                              {logsLoading ? (
                                 <tr>
-                                   <td colSpan={5} className="px-5 py-16 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Đang tải lịch sử...</td>
+                                   <td colSpan={6} className="px-5 py-16 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Đang tải lịch sử...</td>
                                 </tr>
                              ) : logs.length === 0 ? (
                                 <tr>
-                                   <td colSpan={5} className="px-5 py-16 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">Chưa có ghi nhận nào cho lệnh này</td>
+                                   <td colSpan={6} className="px-5 py-16 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">Chưa có ghi nhận nào cho lệnh này</td>
                                 </tr>
                              ) : (() => {
                                 const grouped = logs.reduce((acc: any, log: any) => {
@@ -604,7 +696,7 @@ export default function ProductionPage() {
                                       className="bg-gray-50/80 cursor-pointer hover:bg-gray-100 transition-colors"
                                       onClick={() => setExpandedDates(prev => ({ ...prev, [dateStr]: !prev[dateStr] }))}
                                     >
-                                      <td colSpan={5} className="px-5 py-3 border-y border-black/10">
+                                      <td colSpan={6} className="px-5 py-3 border-y border-black/10">
                                          <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                <div className={cn("transition-transform duration-200", expandedDates[dateStr] ? "rotate-90" : "rotate-0")}>
@@ -652,6 +744,24 @@ export default function ProductionPage() {
                                          </td>
                                          <td className="px-5 py-4 border-b border-gray-50">
                                             <p className="text-[10px] text-muted-foreground line-clamp-1 max-w-[200px] italic">{log.note || '---'}</p>
+                                         </td>
+                                         <td className="px-5 py-4 border-b border-gray-50 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                               <button 
+                                                 onClick={() => handleEditLog(log)}
+                                                 className="p-1.5 hover:bg-neo-blue/10 hover:text-neo-blue rounded-lg transition-colors"
+                                                 title="Chỉnh sửa"
+                                               >
+                                                  <Edit3 size={14} />
+                                               </button>
+                                               <button 
+                                                 onClick={() => handleDeleteLog(log.id)}
+                                                 className="p-1.5 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors"
+                                                 title="Xóa"
+                                               >
+                                                  <Trash2 size={14} />
+                                               </button>
+                                            </div>
                                          </td>
                                       </tr>
                                     ))}
@@ -702,6 +812,113 @@ export default function ProductionPage() {
             quantityCompleted: selectedOrder.quantityCompleted
           }}
         />
+      )}
+
+      {/* Edit Log Modal */}
+      {showEditModal && editingLog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+           <div className="bg-white border-4 border-black rounded-[2.5rem] w-full max-w-xl shadow-neo overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="bg-neo-blue p-6 border-b-4 border-black flex items-center justify-between">
+                 <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white border-2 border-black rounded-lg flex items-center justify-center">
+                       <PencilLine size={20} className="text-neo-blue" />
+                    </div>
+                    <div>
+                       <h2 className="text-lg font-black uppercase tracking-tight text-white">Chỉnh sửa ghi nhận</h2>
+                       <p className="text-[10px] text-white/70 font-bold uppercase tracking-widest">Hiệu chỉnh sản lượng và thông tin chi tiết</p>
+                    </div>
+                 </div>
+                 <button 
+                   onClick={() => setShowEditModal(false)}
+                   className="w-10 h-10 bg-white border-2 border-black rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-neo-active active:translate-x-[2px] active:translate-y-[2px]"
+                 >
+                    <X size={24} strokeWidth={3} />
+                 </button>
+              </div>
+
+              <div className="p-8 space-y-6">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Sản lượng hoàn thành</label>
+                       <input 
+                         type="number" 
+                         defaultValue={editingLog.quantityProduced}
+                         id="edit-qty"
+                         className="w-full bg-gray-50 border-2 border-black rounded-xl px-4 py-3 font-bold text-sm focus:bg-white outline-none transition-all tabular-nums text-black"
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Nhân sự (Mã/Tên)</label>
+                       <input 
+                         type="text" 
+                         defaultValue={editingLog.staffName}
+                         id="edit-staff"
+                         disabled
+                         className="w-full bg-gray-100 border-2 border-black/10 rounded-xl px-4 py-3 font-bold text-sm text-gray-400 italic"
+                       />
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 text-red-500">
+                       <label className="text-[10px] font-black uppercase tracking-widest opacity-60 pl-1 font-bold">Lỗi kỹ thuật (KT)</label>
+                       <input 
+                         type="number" 
+                         defaultValue={editingLog.technicalErrorCount}
+                         id="edit-tech"
+                         className="w-full bg-red-50 border-2 border-black rounded-xl px-4 py-3 font-bold text-sm focus:bg-white outline-none transition-all tabular-nums text-black"
+                       />
+                    </div>
+                    <div className="space-y-2 text-amber-500">
+                       <label className="text-[10px] font-black uppercase tracking-widest opacity-60 pl-1 font-bold">Lỗi vật tư (VT)</label>
+                       <input 
+                         type="number" 
+                         defaultValue={editingLog.materialErrorCount}
+                         id="edit-mat"
+                         className="w-full bg-amber-50 border-2 border-black rounded-xl px-4 py-3 font-bold text-sm focus:bg-white outline-none transition-all tabular-nums text-black"
+                       />
+                    </div>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Ghi chú chi tiết</label>
+                    <textarea 
+                      id="edit-note"
+                      rows={3}
+                      defaultValue={editingLog.note}
+                      className="w-full bg-gray-50 border-2 border-black rounded-xl px-4 py-3 font-bold text-sm focus:bg-white outline-none transition-all resize-none text-black"
+                      placeholder="Nhập lý do điều chỉnh hoặc lỗi phát sinh..."
+                    />
+                 </div>
+              </div>
+
+              <div className="p-8 bg-gray-50 border-t-4 border-black flex gap-4">
+                 <button 
+                   onClick={() => setShowEditModal(false)}
+                   className="flex-1 bg-white border-2 border-black px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-all font-bold"
+                 >
+                    Hủy bỏ
+                 </button>
+                 <button 
+                   onClick={() => {
+                     const qty = (document.getElementById('edit-qty') as HTMLInputElement).value;
+                     const tech = (document.getElementById('edit-tech') as HTMLInputElement).value;
+                     const mat = (document.getElementById('edit-mat') as HTMLInputElement).value;
+                     const note = (document.getElementById('edit-note') as HTMLTextAreaElement).value;
+                     handleSaveEditLog({
+                       quantityProduced: Number(qty),
+                       technicalErrorCount: Number(tech),
+                       materialErrorCount: Number(mat),
+                       note: note
+                     });
+                   }}
+                   className="flex-[2] bg-neo-blue text-white border-2 border-black px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-neo hover:shadow-neo-hover active:translate-x-[2px] active:translate-y-[2px] transition-all font-bold"
+                 >
+                    Lưu thay đổi
+                 </button>
+              </div>
+           </div>
+        </div>
       )}
     </div>
   );
