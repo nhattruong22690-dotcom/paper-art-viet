@@ -1,3 +1,5 @@
+"use server";
+
 import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 /**
@@ -227,28 +229,33 @@ export async function createBatchWorkLogs(
 ) {
   const results: any[] = [];
 
-  // 1. Create logs
-  for (const log of logs) {
-    const { data: newLog, error: logError } = await supabase
-      .from('WorkLog')
-      .insert({
-        production_order_id: log.productionOrderId,
-        employee_id: log.employeeId,
-        staff_name: log.staffName,
-        type: 'production',
-        quantity: log.quantityProduced,
-        technical_error_count: log.technicalErrorCount,
-        material_error_count: log.materialErrorCount,
-        error_note: log.errorNote,
-        note: log.note,
-        status: 'completed',
-        start_time: new Date(log.startTime || new Date()).toISOString(),
-        end_time: new Date(log.endTime || new Date()).toISOString(),
-      })
-      .select()
-      .single();
+    // 1. Create logs
+    for (const log of logs) {
+      console.log('Processing log for order:', log.productionOrderId);
+      
+      const { data: newLog, error: logError } = await supabase
+        .from('WorkLog')
+        .insert({
+          production_order_id: log.productionOrderId,
+          employee_id: log.employeeId || null,
+          staff_name: log.staffName || 'Unknown',
+          type: 'production',
+          quantity: Number(log.quantityProduced) || 0,
+          technical_error_count: Number(log.technicalErrorCount) || 0,
+          material_error_count: Number(log.materialErrorCount) || 0,
+          error_note: log.note || '', // Dùng log.note nếu errorNote không có
+          note: log.note || '',
+          status: 'completed',
+          start_time: log.startTime ? new Date(log.startTime).toISOString() : new Date().toISOString(),
+          end_time: log.endTime ? new Date(log.endTime).toISOString() : new Date().toISOString(),
+        })
+        .select()
+        .single();
 
-    if (logError) throw logError;
+      if (logError) {
+        console.error('Supabase Error inserting WorkLog:', logError);
+        throw new Error(`Lỗi khi tạo WorkLog: ${logError.message}`);
+      }
 
     // 2. Update Production Order progress
     const { data: currentPO } = await supabase

@@ -159,14 +159,22 @@ export default function ProductionBatchForm({
         })
       });
 
+      const contentType = res.headers.get("content-type");
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Lỗi khi ghi nhận dữ liệu.");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const errData = await res.json();
+          throw new Error(errData.error || `Lỗi server (${res.status})`);
+        } else {
+          const textError = await res.text();
+          console.error("Server returned non-JSON error:", textError);
+          throw new Error(`Lỗi hệ thống (${res.status}). Vui lòng kiểm tra console server.`);
+        }
       }
 
       onSuccess();
       onClose();
     } catch (err: any) {
+      console.error("Submit error:", err);
       setErrorStatus(err.message);
     } finally {
       setIsSubmitting(false);
