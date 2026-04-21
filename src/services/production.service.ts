@@ -245,7 +245,8 @@ export async function splitProductionOrders(
     .eq('order_id', orderId);
 
   if (orderItemId) {
-    query = query.eq('order_item_id', orderItemId);
+    // Fetch both records matching the specific line item AND orphaned records (null ID) for this product
+    query = query.or(`order_item_id.eq.${orderItemId},and(order_item_id.is.null,product_id.eq.${productId})`);
   } else {
     query = query.eq('product_id', productId);
   }
@@ -272,6 +273,9 @@ export async function splitProductionOrders(
     const { error: updateError } = await supabase
       .from('ProductionOrder')
       .update({
+        order_id: orderId,
+        product_id: productId,
+        order_item_id: orderItemId,
         quantity_target: Number(alloc.quantity),
         allocation_type: alloc.type,
         assigned_to: alloc.assignedTo,
