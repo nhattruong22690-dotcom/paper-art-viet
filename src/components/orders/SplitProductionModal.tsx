@@ -151,7 +151,7 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
   const updateRow = (type: 'internal' | 'outsourced', id: string, field: keyof SplitAllocation, value: any) => {
     const list = type === 'internal' ? internalAllocations : outsourcedAllocations;
     const item = list.find(a => a.id === id);
-    if (item?.hasStarted) return; // Prevent editing started orders
+    if (item?.hasStarted && field !== 'facilityId') return; // Allow facility selection even if started
 
     if (type === 'internal') {
       setInternalAllocations(internalAllocations.map(a => a.id === id ? { ...a, [field]: value } : a));
