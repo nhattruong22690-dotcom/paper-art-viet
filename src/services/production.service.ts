@@ -281,12 +281,17 @@ export async function splitProductionOrders(
 
   if (deleteError) throw deleteError;
 
+  // 3. Chỉ insert khi có dữ liệu (nếu rỗng = xóa sạch toàn bộ phân bổ)
+  if (allocations.length === 0) {
+    return [];
+  }
+
   const { data: created, error: insertError } = await supabase
     .from('ProductionOrder')
     .insert(allocations.map(alloc => ({
       order_id: orderId,
       product_id: productId,
-      order_item_id: orderItemId, // Phân bổ theo từng dòng chi tiết
+      order_item_id: orderItemId,
       quantity_target: alloc.quantity,
       quantity_completed: 0,
       allocation_type: alloc.type,
