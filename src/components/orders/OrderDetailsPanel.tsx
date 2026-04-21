@@ -900,7 +900,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                       const isNewItem = String(item.id).startsWith('new-');
                       return (
                         <div key={item.id} className={cn(
-                          "bg-white border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all divide-y divide-border border-l-4",
+                          "bg-white border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all divide-y divide-border border-l-8",
                           stats.totalDone >= item.quantity 
                             ? (stats.isSurplus ? "border-l-indigo-500" : "border-l-emerald-500")
                             : stats.totalDone > 0 ? "border-l-amber-500" : "border-l-slate-200"
