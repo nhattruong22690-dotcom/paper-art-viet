@@ -46,6 +46,7 @@ export interface ProductionOrder {
   orderId?: string;
   allocationType: 'internal' | 'outsourced';
   priority: "Urgent" | "High" | "Medium" | "Low";
+  assignedTo?: string;
 }
 
 const statusConfig = {
