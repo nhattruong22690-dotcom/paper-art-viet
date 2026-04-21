@@ -40,6 +40,7 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
   const [workshops, setWorkshops] = useState<any[]>([]);
   const [outsourcers, setOutsourcers] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialData, setInitialData] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
@@ -93,17 +94,30 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           hasStarted: (po.quantityCompleted || 0) > 0
         }));
 
-      setInternalAllocations(internals.length > 0 ? internals : [{
+      const finalInternals = internals.length > 0 ? internals : [{
         id: 'init-1',
         facilityId: '',
-        type: 'internal',
+        type: 'internal' as const,
         quantity: 0,
         deadline: orderDeadline?.slice(0, 10) || '',
         isExisting: false
-      }]);
+      }];
+
+      setInternalAllocations(finalInternals);
       setOutsourcedAllocations(externals);
+      setInitialData(JSON.stringify({ i: finalInternals, e: externals }));
     }
-  }, [isOpen, orderItem]);
+  }, [isOpen, orderItem, orderDeadline]);
+
+  const hasChanges = JSON.stringify({ i: internalAllocations, e: outsourcedAllocations }) !== initialData;
+
+  const handleClose = async () => {
+    if (hasChanges) {
+      const confirmed = await confirm('Bạn có thay đổi chưa lưu. Bạn có chắc chắn muốn đóng cửa sổ này không?');
+      if (!confirmed) return;
+    }
+    onClose();
+  };
 
   const addRow = (type: 'internal' | 'outsourced') => {
     const newRow: SplitAllocation = {
@@ -151,12 +165,23 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
     }
   };
 
-  const totalAllocated = [...internalAllocations, ...outsourcedAllocations].reduce((sum, a) => sum + a.quantity, 0);
-  const isValid = totalAllocated > 0 && 
-                  [...internalAllocations, ...outsourcedAllocations].every(a => a.facilityId && a.quantity >= 0);
+  const totalAllocated = [...internalAllocations, ...outsourcedAllocations].reduce((sum, a) => sum + Number(a.quantity || 0), 0);
+  // Cho phép totalAllocated === 0 để xóa sạch phân bổ nếu cần
+  const isValid = [...internalAllocations, ...outsourcedAllocations].every(a => 
+    !a.facilityId || Number(a.quantity) >= 0
+  ) && [...internalAllocations, ...outsourcedAllocations].every(a => 
+    Number(a.quantity) > 0 ? !!a.facilityId : true
+  );
 
   const handleSubmit = async () => {
     if (!isValid) return;
+    
+    // Yêu cầu xác nhận nếu xóa hết sạch phân bổ
+    if (totalAllocated === 0) {
+      const confirmed = await confirm('Bạn đang để trống phân bổ. Toàn bộ lệnh sản xuất của sản phẩm này sẽ bị XÓA KHỎI hệ thống. Bạn có chắc chắn?');
+      if (!confirmed) return;
+    }
+
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/production/split', {
@@ -167,11 +192,11 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           productId: orderItem.productId,
           orderItemId: orderItem.id,
           allocations: [...internalAllocations, ...outsourcedAllocations]
-            .filter(a => a.quantity > 0)
+            .filter(a => Number(a.quantity) > 0)
             .map(a => ({
               assignedTo: a.facilityId,
               type: a.type,
-              quantity: a.quantity,
+              quantity: Number(a.quantity),
               deadline: a.deadline
             }))
         })
@@ -213,7 +238,7 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
                 <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest mt-1">Quản lý lệnh và khối lượng công việc cho từng xưởng/đối tác</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-3 hover:bg-black/5 rounded-full transition-colors order-last">
+            <button onClick={handleClose} className="p-3 hover:bg-black/5 rounded-full transition-colors order-last">
               <X size={28} strokeWidth={3} />
             </button>
           </div>
@@ -497,7 +522,7 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           <div className="grid grid-cols-2 gap-6">
             <button 
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="py-5 bg-white border-neo border-black text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
             >
               <X size={20} strokeWidth={3} /> Đóng cửa sổ
@@ -505,10 +530,10 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
             <button 
               type="button"
               onClick={handleSubmit}
-              disabled={!isValid || isSubmitting}
+              disabled={!isValid || !hasChanges || isSubmitting}
               className={cn(
                 "py-5 border-neo border-black rounded-2xl text-xs font-black uppercase tracking-widest shadow-neo transition-all flex items-center justify-center gap-3",
-                isValid && !isSubmitting ? "bg-neo-purple text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-active active:translate-y-1" : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+                isValid && hasChanges && !isSubmitting ? "bg-neo-purple text-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-active active:translate-y-1" : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
               )}
             >
               {isSubmitting ? <span className="w-6 h-6 border-4 border-black/10 border-t-black rounded-full animate-spin" /> : 

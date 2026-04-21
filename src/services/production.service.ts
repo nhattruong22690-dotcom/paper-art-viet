@@ -272,7 +272,7 @@ export async function splitProductionOrders(
     .eq('order_id', orderId);
 
   if (orderItemId) {
-    deleteQuery = deleteQuery.eq('order_item_id', orderItemId);
+    deleteQuery = deleteQuery.or(`order_item_id.eq.${orderItemId},and(order_item_id.is.null,product_id.eq.${productId})`);
   } else {
     deleteQuery = deleteQuery.eq('product_id', productId);
   }
