@@ -66,6 +66,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
       const existingPOs = orderItem.productionOrders || [];
       const internals = existingPOs
         .filter((po: any) => po.allocationType === 'internal' || !po.outsourcedName)
+        // Filter out "noise" records (no assignee and no progress)
+        .filter((po: any) => po.assignedTo || po.workshop_id || (po.quantityCompleted || 0) > 0)
         .map((po: any) => ({
           id: po.id,
           dbId: po.id,
@@ -81,6 +83,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
 
       const externals = existingPOs
         .filter((po: any) => po.allocationType === 'outsourced' || po.outsourcedName)
+        // Filter out "noise" records (no assignee and no progress)
+        .filter((po: any) => po.outsourcedName || po.outsourcer_id || (po.quantityCompleted || 0) > 0)
         .map((po: any) => ({
           id: po.id,
           dbId: po.id,
