@@ -3,13 +3,14 @@ import { splitProductionOrders } from '@/services/production.service';
 
 export async function POST(req: Request) {
   try {
-    const { orderId, productId, allocations } = await req.json();
+    const { orderId, productId, allocations, orderItemId } = await req.json();
 
     if (!orderId || !productId || !allocations || !Array.isArray(allocations)) {
       return NextResponse.json({ error: 'Thiếu thông tin phân bổ (orderId, productId, allocations)' }, { status: 400 });
     }
 
-    const result = await splitProductionOrders(orderId, productId, allocations);
+    const result = await splitProductionOrders(orderId, productId, allocations, orderItemId);
+
     
     return NextResponse.json({ success: true, data: result });
   } catch (error: any) {

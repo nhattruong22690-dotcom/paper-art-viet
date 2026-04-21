@@ -199,7 +199,21 @@ export async function updateProductionOrder(id: string, data: any) {
                             s === 'QualityControl' ? 'qc' :
                             s === 'Archived' ? 'archived' : 'completed';
   }
-  if ('allocationType' in data) dbData.allocation_type = data.allocationType;
+  if ('allocationType' in data) {
+    dbData.allocation_type = data.allocationType;
+    if (data.allocationType === 'internal') {
+      dbData.workshop_id = data.assignedTo || null;
+      dbData.outsourcer_id = null;
+      // Re-map status if it was outsourced
+      if (currentPO.current_status === 'outsourced') {
+        dbData.current_status = 'pending';
+      }
+    } else if (data.allocationType === 'outsourced') {
+      dbData.outsourcer_id = data.assignedTo || null;
+      dbData.workshop_id = null;
+      dbData.current_status = 'outsourced';
+    }
+  }
   if ('assignedTo' in data) dbData.assigned_to = data.assignedTo;
   if ('priority' in data) dbData.priority = data.priority;
   if ('contractPrice' in data) dbData.contract_price = data.contractPrice;
@@ -221,14 +235,22 @@ export async function updateProductionOrder(id: string, data: any) {
 export async function splitProductionOrders(
   orderId: string, 
   productId: string, 
-  allocations: { assignedTo: string; type: 'internal' | 'outsourced'; quantity: number; deadline?: string }[]
+  allocations: { assignedTo: string; type: 'internal' | 'outsourced'; quantity: number; deadline?: string }[],
+  orderItemId?: string
 ) {
-  // 1. Kiểm tra xem có lệnh nào của sản phẩm này đã có Work Log chưa
-  const { data: existingPOs, error: fetchError } = await supabase
+  // 1. Kiểm tra xem có lệnh nào của sản phẩm/dòng này đã có Work Log chưa
+  let query = supabase
     .from('ProductionOrder')
     .select('*, workLogs:WorkLog(id)')
-    .eq('order_id', orderId)
-    .eq('product_id', productId);
+    .eq('order_id', orderId);
+
+  if (orderItemId) {
+    query = query.eq('order_item_id', orderItemId);
+  } else {
+    query = query.eq('product_id', productId);
+  }
+
+  const { data: existingPOs, error: fetchError } = await query;
 
   if (fetchError) throw fetchError;
 
@@ -244,11 +266,18 @@ export async function splitProductionOrders(
     .eq('id', orderId)
     .single();
 
-  const { error: deleteError } = await supabase
+  let deleteQuery = supabase
     .from('ProductionOrder')
     .delete()
-    .eq('order_id', orderId)
-    .eq('product_id', productId);
+    .eq('order_id', orderId);
+
+  if (orderItemId) {
+    deleteQuery = deleteQuery.eq('order_item_id', orderItemId);
+  } else {
+    deleteQuery = deleteQuery.eq('product_id', productId);
+  }
+
+  const { error: deleteError } = await deleteQuery;
 
   if (deleteError) throw deleteError;
 
@@ -257,10 +286,11 @@ export async function splitProductionOrders(
     .insert(allocations.map(alloc => ({
       order_id: orderId,
       product_id: productId,
+      order_item_id: orderItemId, // Phân bổ theo từng dòng chi tiết
       quantity_target: alloc.quantity,
       quantity_completed: 0,
       allocation_type: alloc.type,
-      assigned_to: alloc.assignedTo, // Vẫn giữ assigned_to cho tương thích ngược
+      assigned_to: alloc.assignedTo,
       workshop_id: alloc.type === 'internal' ? alloc.assignedTo : null,
       outsourcer_id: alloc.type === 'outsourced' ? alloc.assignedTo : null,
       current_status: alloc.type === 'internal' ? 'pending' : 'outsourced',
@@ -271,6 +301,7 @@ export async function splitProductionOrders(
   if (insertError) throw insertError;
   return created;
 }
+
 
 export async function getProductionOrders() {
   const { data, error } = await supabase
@@ -513,4 +544,70 @@ export async function updateWorkLog(id: string, data: any) {
       })
       .eq('id', oldLog.production_order_id);
   }
+}
+
+export async function deleteProductionOrder(id: string) {
+  // 1. Lấy thông tin PO và Đơn hàng liên quan
+  const { data: po, error: poError } = await supabase
+    .from('ProductionOrder')
+    .select('*, order:Order(id, created_at, status)')
+    .eq('id', id)
+    .single();
+
+  if (poError || !po) throw new Error("Production Order not found");
+
+  const orderId = po.order_id;
+  const orderCreatedAt = po.order?.created_at;
+
+  // 2. Xóa toàn bộ WorkLog liên quan (Reset dữ liệu về 0 như yêu cầu)
+  const { error: logDeleteError } = await supabase
+    .from('WorkLog')
+    .delete()
+    .eq('production_order_id', id);
+
+  if (logDeleteError) throw logDeleteError;
+
+  // 3. Xóa Production Order
+  const { error: deleteError } = await supabase
+    .from('ProductionOrder')
+    .delete()
+    .eq('id', id);
+
+  if (deleteError) throw deleteError;
+
+  // 4. Kiểm tra xem còn lệnh nào khác cho đơn hàng này không
+  if (orderId) {
+    const { count } = await supabase
+      .from('ProductionOrder')
+      .select('*', { count: 'exact', head: true })
+      .eq('order_id', orderId);
+
+    // 5. Nếu không còn lệnh nào, xử lý trạng thái đơn hàng
+    if (count === 0) {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      const orderDate = new Date(orderCreatedAt);
+      
+      // Nếu đơn hàng mới (< 1 tuần), chuyển về 'new'
+      // Nếu > 1 tuần, giữ nguyên trạng thái hoặc chuyển về 'confirmed'
+      if (orderDate > oneWeekAgo) {
+        await supabase
+          .from('Order')
+          .update({ status: 'new' })
+          .eq('id', orderId);
+      } else {
+        // Hơn 1 tuần thì không cần để "Mới"
+        // Có thể chuyển về 'confirmed' nếu hiện tại là 'processing'
+        if (po.order?.status === 'processing' || po.order?.status === 'producing') {
+          await supabase
+            .from('Order')
+            .update({ status: 'confirmed' })
+            .eq('id', orderId);
+        }
+      }
+    }
+  }
+
+  return { success: true };
 }

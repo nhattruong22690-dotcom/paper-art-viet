@@ -71,6 +71,16 @@ export default function ProductionPage() {
   const [showBatchForm, setShowBatchForm] = useState(false);
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
   
+  // Facilities State for Editing
+  const [workshops, setWorkshops] = useState<any[]>([]);
+  const [outsourcers, setOutsourcers] = useState<any[]>([]);
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+  const [editForm, setEditForm] = useState({
+    quantityTarget: 0,
+    allocationType: 'internal' as 'internal' | 'outsourced',
+    assignedTo: ''
+  });
+  
   // Edit Log State
   const [editingLog, setEditingLog] = useState<any | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -153,17 +163,64 @@ export default function ProductionPage() {
         body: JSON.stringify({ id, ...updates })
       });
       if (res.ok) {
+        showToast('success', 'Đã cập nhật lệnh sản xuất thành công');
         loadOrders();
         // Update local state for immediate feedback
         setOrders(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
         if (selectedOrder && selectedOrder.id === id) {
            setSelectedOrder({...selectedOrder, ...updates});
         }
+        setIsEditingOrder(false);
       }
     } catch (err) {
       console.error("Failed to update order:", err);
+      showToast('error', 'Cập nhật thất bại');
     }
   };
+
+  const handleDeleteProductionOrder = async (id: string) => {
+    if (!await confirm("BẠN CÓ CHẮC CHẮN MUỐN XÓA LỆNH NÀY?\n\nToàn bộ ghi nhận sản lượng (Work Logs) liên quan sẽ bị xóa vĩnh viễn và số liệu hoàn thành sẽ quay về 0.")) return;
+    
+    try {
+      const res = await fetch(`/api/production/orders?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast('success', 'Đã xóa lệnh sản xuất thành công');
+        setSelectedOrder(null);
+        loadOrders();
+      } else {
+        const error = await res.json();
+        throw new Error(error.error || 'Xóa thất bại');
+      }
+    } catch (err: any) {
+      console.error("Failed to delete production order:", err);
+      showToast('error', `Không thể xóa: ${err.message}`);
+    }
+  };
+
+  const loadFacilities = async () => {
+    try {
+      const [wRes, oRes] = await Promise.all([
+        fetch('/api/production/facilities/workshops'),
+        fetch('/api/production/facilities/outsourcers')
+      ]);
+      const [wData, oData] = await Promise.all([wRes.json(), oRes.json()]);
+      setWorkshops(wData || []);
+      setOutsourcers(oData || []);
+    } catch (err) {
+      console.error("Failed to load facilities:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedOrder) {
+      setEditForm({
+        quantityTarget: selectedOrder.quantityTarget,
+        allocationType: selectedOrder.allocationType || 'internal',
+        assignedTo: selectedOrder.assignedTo || ''
+      });
+      loadFacilities();
+    }
+  }, [selectedOrder?.id]);
 
   const handleDeleteLog = async (logId: string) => {
     if (!await confirm("Bạn có chắc chắn muốn xóa ghi nhận sản xuất này? Hệ thống sẽ tự động tính toán lại sản lượng.")) return;
@@ -596,29 +653,104 @@ export default function ProductionPage() {
                     </div>
 
                     <div className="space-y-4">
-                       <p className="text-[10px] font-black text-foreground uppercase tracking-[0.2em]">Cài đặt Độ ưu tiên & Hạn SX</p>
+                       <div className="flex items-center justify-between">
+                         <p className="text-[10px] font-black text-foreground uppercase tracking-[0.2em]">Cấu hình & Hạn SX</p>
+                         <button 
+                           onClick={() => setIsEditingOrder(!isEditingOrder)}
+                           className={cn(
+                             "text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded border-2 transition-all",
+                             isEditingOrder ? "bg-neo-pink text-white border-black" : "bg-white text-primary border-primary/20 hover:border-primary"
+                           )}
+                         >
+                           {isEditingOrder ? 'Hủy sửa' : 'Sửa cấu hình'}
+                         </button>
+                       </div>
+
                        <div className="flex flex-col gap-4">
-                          <div className="flex flex-wrap gap-2">
-                             {[
-                               { val: 'Urgent', label: 'Rất gấp', color: 'bg-red-500' },
-                               { val: 'High', label: 'Khẩn cấp', color: 'bg-orange-500' },
-                               { val: 'Medium', label: 'Bình thường', color: 'bg-amber-400' },
-                               { val: 'Low', label: 'Thấp', color: 'bg-gray-400' }
-                             ].map((p) => (
-                               <button
-                                 key={p.val}
-                                 onClick={() => setSelectedOrder(selectedOrder ? { ...selectedOrder, priority: p.val as any } : null)}
-                                 className={cn(
-                                   "px-3 py-2 text-[9px] font-black rounded-lg border-2 transition-all uppercase tracking-widest flex items-center gap-1",
-                                   selectedOrder.priority === p.val
-                                     ? `${p.color} text-white border-black shadow-neo-sm`
-                                     : "bg-white text-muted-foreground border-border hover:bg-gray-50"
-                                 )}
-                               >
-                                 <AlertCircle size={10} /> {p.label}
-                               </button>
-                             ))}
-                          </div>
+                          {isEditingOrder ? (
+                            <div className="bg-white border-2 border-black p-4 rounded-xl space-y-4 shadow-neo-sm animate-in slide-in-from-right-4">
+                               <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sản lượng mục tiêu</label>
+                                    <input 
+                                      type="number"
+                                      className="form-input h-10 w-full font-black text-center border-black"
+                                      value={editForm.quantityTarget}
+                                      onChange={(e) => setEditForm({...editForm, quantityTarget: parseInt(e.target.value) || 0})}
+                                    />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Phương thức</label>
+                                    <select 
+                                      className="form-input h-10 w-full font-bold text-xs border-black cursor-pointer"
+                                      value={editForm.allocationType}
+                                      onChange={(e) => setEditForm({...editForm, allocationType: e.target.value as any, assignedTo: ''})}
+                                    >
+                                      <option value="internal">SX Nội bộ</option>
+                                      <option value="outsourced">Gia công ngoài</option>
+                                    </select>
+                                  </div>
+                               </div>
+
+                               <div className="space-y-1.5">
+                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Đơn vị thực hiện</label>
+                                 <select 
+                                   className="form-input h-10 w-full font-bold text-xs border-black cursor-pointer"
+                                   value={editForm.assignedTo}
+                                   onChange={(e) => setEditForm({...editForm, assignedTo: e.target.value})}
+                                 >
+                                   <option value="">--- Chọn đơn vị ---</option>
+                                   {editForm.allocationType === 'internal' ? (
+                                     workshops.map(w => <option key={w.id} value={w.id}>{w.name}</option>)
+                                   ) : (
+                                     outsourcers.map(o => <option key={o.id} value={o.id}>{o.name}</option>)
+                                   )}
+                                 </select>
+                               </div>
+
+                               <div className="flex items-center gap-2 pt-2">
+                                 <button 
+                                   onClick={() => handleUpdateOrder(selectedOrder.id, { 
+                                     quantityTarget: editForm.quantityTarget,
+                                     allocationType: editForm.allocationType,
+                                     assignedTo: editForm.assignedTo
+                                   })}
+                                   className="flex-1 bg-black text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-neo-purple transition-all shadow-neo-sm"
+                                 >
+                                   Lưu thay đổi
+                                 </button>
+                                 <button 
+                                   onClick={() => handleDeleteProductionOrder(selectedOrder.id)}
+                                   className="bg-red-50 text-red-500 border-2 border-red-200 p-2 rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-neo-sm"
+                                   title="Xóa lệnh sản xuất"
+                                 >
+                                   <Trash2 size={16} />
+                                 </button>
+                               </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                               {[
+                                 { val: 'Urgent', label: 'Rất gấp', color: 'bg-red-500' },
+                                 { val: 'High', label: 'Khẩn cấp', color: 'bg-orange-500' },
+                                 { val: 'Medium', label: 'Bình thường', color: 'bg-amber-400' },
+                                 { val: 'Low', label: 'Thấp', color: 'bg-gray-400' }
+                               ].map((p) => (
+                                 <button
+                                   key={p.val}
+                                   onClick={() => setSelectedOrder(selectedOrder ? { ...selectedOrder, priority: p.val as any } : null)}
+                                   className={cn(
+                                     "px-3 py-2 text-[9px] font-black rounded-lg border-2 transition-all uppercase tracking-widest flex items-center gap-1",
+                                     selectedOrder.priority === p.val
+                                       ? `${p.color} text-white border-black shadow-neo-sm`
+                                       : "bg-white text-muted-foreground border-border hover:bg-gray-50"
+                                   )}
+                                 >
+                                   <AlertCircle size={10} /> {p.label}
+                                 </button>
+                               ))}
+                            </div>
+                          )}
 
                           <div className="flex items-center gap-3">
                              <span className="text-[10px] font-black text-foreground border-b-2 border-black/10 pb-0.5 uppercase tracking-tighter shrink-0">Hạn hoàn thành SX:</span>

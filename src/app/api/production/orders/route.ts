@@ -27,3 +27,20 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+    }
+
+    const { deleteProductionOrder } = await import('@/services/production.service');
+    const result = await deleteProductionOrder(id);
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error('Delete Production Order API Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

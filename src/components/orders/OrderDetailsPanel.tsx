@@ -361,13 +361,24 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
     }
   };
 
-  const getItemProgress = (productId: string, orderItemQuantity: number) => {
-    const itemPOs = order.productionOrders?.filter((po: any) => po.productId === productId) || [];
+  const getItemProgress = (productId: string, orderItemQuantity: number, orderItemId?: string) => {
+    const itemPOs = order.productionOrders?.filter((po: any) => {
+      // Ưu tiên lọc theo order_item_id nếu có
+      if (orderItemId && (po.orderItemId || po.order_item_id)) {
+        return (po.orderItemId || po.order_item_id) === orderItemId;
+      }
+      // Fallback về productId (cho các đơn cũ chưa có order_item_id)
+      return po.productId === productId;
+    }) || [];
+    
     const totalAllocated = itemPOs.reduce((acc: number, po: any) => acc + (po.quantityTarget || 0), 0);
     const totalDone = itemPOs.reduce((acc: number, po: any) => acc + (po.quantityCompleted || 0), 0);
     const remaining = Math.max(0, orderItemQuantity - totalAllocated);
     const percent = orderItemQuantity > 0 ? Math.round((totalDone / orderItemQuantity) * 100) : 0;
-    return { percent, totalDone, totalAllocated, remaining, pos: itemPOs };
+    
+    const isSurplus = totalAllocated > orderItemQuantity || totalDone > orderItemQuantity;
+    
+    return { percent, totalDone, totalAllocated, remaining, pos: itemPOs, isSurplus };
   };
 
   const handleEditBOM = (productId: string, orderItemId: string) => {
@@ -815,7 +826,13 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                             "fluid-text-xs font-black px-2 py-1 rounded border border-gray-200 uppercase tracking-widest",
                             getStatusColor(order.status)
                           )}>
-                            {order.status === 'new' ? 'Mới' :
+                            {order.status === 'new' ? (
+                              (() => {
+                                const orderDate = new Date(order.createdAt || order.created_at);
+                                const diffDays = (new Date().getTime() - orderDate.getTime()) / (1000 * 3600 * 24);
+                                return diffDays > 7 ? 'CHỜ XỬ LÝ' : 'Mới';
+                              })()
+                            ) :
                               order.status === 'in_production' ? 'Sản xuất' :
                                 order.status === 'packing' ? 'Đóng gói' :
                                   order.status === 'shipping' ? 'Giao hàng' :
@@ -879,10 +896,16 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                 {!isProductionCollapsed && (
                   <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                     {(isEditing ? editData.orderItems : order.orderItems || []).map((item: any) => {
-                      const stats = getItemProgress(item.productId, item.quantity);
+                      const stats = getItemProgress(item.productId, item.quantity, item.id);
                       const isNewItem = String(item.id).startsWith('new-');
                       return (
-                        <div key={item.id} className="bg-white border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all divide-y divide-border">
+                        <div key={item.id} className={cn(
+                          "bg-white border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all divide-y divide-border border-l-4",
+                          stats.totalDone >= item.quantity 
+                            ? (stats.isSurplus ? "border-l-indigo-500" : "border-l-emerald-500")
+                            : stats.totalDone > 0 ? "border-l-amber-500" : "border-l-slate-200"
+                        )}>
+
                           {/* Main Item Info */}
                           <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div className="flex items-center gap-4">
@@ -1025,13 +1048,29 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                 <div className="flex items-center gap-4">
                                   <div className="text-right">
                                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Tiến độ</p>
-                                    <p className="text-sm font-bold text-primary">{stats.percent}%</p>
+                                    <div className="flex items-center gap-1.5 justify-end">
+                                       <p className={cn(
+                                         "text-sm font-black italic",
+                                         stats.totalDone >= item.quantity 
+                                           ? (stats.isSurplus ? "text-indigo-600" : "text-emerald-600")
+                                           : stats.totalDone > 0 ? "text-amber-600" : "text-slate-400"
+                                       )}>
+                                         {stats.totalDone} / {item.quantity}
+                                       </p>
+                                       <span className={cn(
+                                         "text-[10px] font-bold",
+                                         stats.percent >= 100 ? "text-green-500" : "text-primary"
+                                       )}>
+                                         ({stats.percent}%)
+                                       </span>
+                                     </div>
                                   </div>
                                   <button
                                     onClick={() => {
                                       setActiveItemForSplit({
                                         ...item,
-                                        deadlineDelivery: order.deadlineDelivery
+                                        deadlineDelivery: order.deadlineDelivery,
+                                        productionOrders: stats.pos
                                       });
                                       setIsSplitModalOpen(true);
                                     }}
@@ -1140,13 +1179,18 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                           </div>
                                         </div>
                                         <div className="text-right shrink-0">
-                                          <span className={`text-[10px] font-bold ${po.currentStatus === 'completed' ? 'text-green-600' : 'text-primary'
-                                            }`}>
+                                          <span className={cn(
+                                            "text-[10px] font-bold",
+                                            po.currentStatus === 'completed' ? 'text-green-600' : 'text-primary'
+                                          )}>
                                             {Math.round((po.quantityCompleted / po.quantityTarget) * 100)}%
                                           </span>
                                           <div className="w-12 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
                                             <div
-                                              className={`h-full ${po.currentStatus === 'completed' ? 'bg-green-600' : 'bg-primary'}`}
+                                              className={cn(
+                                                "h-full transition-all duration-500",
+                                                po.currentStatus === 'completed' ? 'bg-green-500' : 'bg-primary'
+                                              )}
                                               style={{ width: `${Math.min(100, (po.quantityCompleted / po.quantityTarget) * 100)}%` }}
                                             />
                                           </div>
