@@ -269,6 +269,7 @@ export async function splitProductionOrders(
   }
 
   // 3. Thực hiện cập nhật các bản ghi hiện có
+  for (const alloc of toUpdate) {
     console.log(`Updating PO ${alloc.id}:`, alloc);
     const { error: updateError } = await supabase
       .from('ProductionOrder')
