@@ -94,18 +94,9 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           hasStarted: (po.quantityCompleted || 0) > 0
         }));
 
-      const finalInternals = internals.length > 0 ? internals : [{
-        id: 'init-1',
-        facilityId: '',
-        type: 'internal' as const,
-        quantity: 0,
-        deadline: orderDeadline?.slice(0, 10) || '',
-        isExisting: false
-      }];
-
-      setInternalAllocations(finalInternals);
+      setInternalAllocations(internals);
       setOutsourcedAllocations(externals);
-      setInitialData(JSON.stringify({ i: finalInternals, e: externals }));
+      setInitialData(JSON.stringify({ i: internals, e: externals }));
     }
   }, [isOpen, orderItem, orderDeadline]);
 
