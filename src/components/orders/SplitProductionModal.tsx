@@ -33,7 +33,7 @@ interface SplitProductionModalProps {
 }
 
 export default function SplitProductionModal({ isOpen, onClose, onSuccess, orderId, orderItem }: SplitProductionModalProps) {
-  const { showToast, showModal } = useNotification();
+  const { showToast, showModal, confirm } = useNotification();
   const [internalAllocations, setInternalAllocations] = useState<SplitAllocation[]>([]);
   const [outsourcedAllocations, setOutsourcedAllocations] = useState<SplitAllocation[]>([]);
   const orderDeadline = orderItem?.order?.deadlineDelivery || orderItem?.deadlineDelivery || '';
@@ -204,6 +204,9 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
 
       if (res.ok) {
         showToast('success', 'Đã cập nhật phân bổ thành công');
+        // Reset dirty state so modal can close cleanly
+        const current = JSON.stringify({ i: internalAllocations, e: outsourcedAllocations });
+        setInitialData(current);
         onSuccess();
         onClose();
       } else {
@@ -221,7 +224,7 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-md" onClick={handleClose} />
       
       <div className="relative bg-white border-neo border-black w-full max-w-5xl h-[92vh] rounded-[32px] 
                     shadow-neo overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
