@@ -128,8 +128,7 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
         return;
       }
 
-      const confirmed = await showModal('confirm', 'Xác nhận xóa lệnh?', 
-        'Dữ liệu lệnh sản xuất này sẽ bị xóa vĩnh viễn khỏi hệ thống khi bạn nhấn "Xác nhận Phân bổ". Bạn có chắc chắn?');
+      const confirmed = await confirm('Xác nhận xóa lệnh? Dữ liệu lệnh sản xuất này sẽ bị xóa vĩnh viễn khỏi hệ thống khi bạn nhấn "Xác nhận Phân bổ".');
       if (!confirmed) return;
     }
 
