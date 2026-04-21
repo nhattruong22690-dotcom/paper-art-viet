@@ -356,6 +356,7 @@ export async function getOrderById(id: string) {
       deadlineProduction: po.deadline_production,
       currentStatus: po.current_status,
       allocationType: po.allocation_type,
+      productionCode: po.id ? `LSX-${po.id.slice(0, 8).toUpperCase()}` : null,
       product: po.product ? {
         ...po.product,
         sku: po.product.code
@@ -569,6 +570,29 @@ export async function deleteOrder(id: string) {
   if (error) throw error;
 
   return { ...order, deletedPOCount: poCount || 0 };
+}
+
+/**
+ * Lưu trữ đơn hàng và tất cả các lệnh sản xuất liên quan.
+ */
+export async function archiveOrderById(id: string) {
+  // 1. Cập nhật trạng thái đơn hàng
+  const { error: orderError } = await supabase
+    .from('Order')
+    .update({ status: 'archived' })
+    .eq('id', id);
+
+  if (orderError) throw orderError;
+
+  // 2. Cập nhật trạng thái của tất cả Lệnh sản xuất liên quan
+  const { error: poError } = await supabase
+    .from('ProductionOrder')
+    .update({ current_status: 'Archived' })
+    .eq('order_id', id);
+
+  if (poError) throw poError;
+
+  return { success: true };
 }
 
 /**

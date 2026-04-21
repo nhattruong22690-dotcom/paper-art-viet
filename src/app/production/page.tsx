@@ -137,6 +137,13 @@ export default function ProductionPage() {
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
+    if (newStatus === 'Archived') {
+      const isConfirmed = await confirm(
+        "XÁC NHẬN HOÀN TẤT & LƯU TRỮ\n\nLệnh sản xuất này sẽ được chuyển vào 'KHO LƯU TRỮ' và không còn xuất hiện ở danh sách đang làm việc nữa. Bạn có chắc chắn muốn hoàn tất?"
+      );
+      if (!isConfirmed) return;
+    }
+
     try {
       const res = await fetch('/api/production/orders', {
         method: 'PATCH',
@@ -283,6 +290,7 @@ export default function ProductionPage() {
       (order.title?.toLowerCase() || '').includes(s) ||
       (order.sku?.toLowerCase() || '').includes(s) ||
       (order.customer?.toLowerCase() || '').includes(s) ||
+      (order.productionCode?.toLowerCase() || '').includes(s) ||
       (order.contractCode?.toLowerCase() || '').includes(s)
     );
   });

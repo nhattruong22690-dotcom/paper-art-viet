@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import OrderCard from './OrderCard';
 import OrderDetailsPanel from './OrderDetailsPanel';
-import { Search, Filter, LayoutGrid, List, CheckCircle2, Truck, Package, Factory, ClipboardList, AlertTriangle, ShoppingCart } from 'lucide-react';
+import { Search, Filter, LayoutGrid, List, CheckCircle2, Truck, Package, Factory, ClipboardList, AlertTriangle, ShoppingCart, History, ChevronRight } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -23,12 +23,14 @@ interface KanbanBoardProps {
   selectedOrderId?: string | null;
   onSelectOrder?: (id: string | null) => void;
   onRefreshRequest?: () => void;
+  isArchiveMode?: boolean;
 }
 
 export default function KanbanBoard({ 
   selectedOrderId, 
   onSelectOrder, 
-  onRefreshRequest 
+  onRefreshRequest,
+  isArchiveMode = false
 }: KanbanBoardProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,7 +88,12 @@ export default function KanbanBoard({
        return matchesSearch && order.isAllocated === false;
     }
 
-    return matchesSearch;
+    // Lọc theo chế độ Archive
+    if (isArchiveMode) {
+      return matchesSearch && order.status === 'archived';
+    } else {
+      return matchesSearch && order.status !== 'archived';
+    }
   });
 
   const getOrdersByStage = (stageId: string) => {
@@ -206,9 +213,52 @@ export default function KanbanBoard({
         </div>
       </div>
 
-
-
-      {/* Desktop Kanban Grid */}
+      {isArchiveMode ? (
+        /* Archive List View */
+        <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+           <div className="bg-white border-2 border-black rounded-2xl overflow-hidden shadow-neo">
+             <div className="bg-gray-100 px-6 py-3 border-b-2 border-black flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest text-black/40">Danh sách đơn hàng đã lưu trữ</span>
+                <span className="bg-black text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">{filteredOrders.length} Đơn hàng</span>
+             </div>
+             <div className="divide-y-2 divide-black/5">
+                {filteredOrders.length > 0 ? filteredOrders.map(order => (
+                  <div 
+                    key={order.id} 
+                    onClick={() => onSelectOrder?.(order.id)}
+                    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg border border-black/10 flex items-center justify-center text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                        <History size={18} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                           <span className="text-sm font-black text-black">#{order.contractCode || order.id.slice(-6).toUpperCase()}</span>
+                           <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Đã lưu trữ</span>
+                        </div>
+                        <p className="text-xs font-bold text-black/40 uppercase tracking-widest mt-0.5">{order.customer?.name || 'Vãng lai'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                       <div className="text-right">
+                          <p className="text-[10px] font-black text-black/20 uppercase tracking-widest leading-none mb-1">Tiến độ cuối</p>
+                          <p className="text-sm font-black text-emerald-600 italic">{order.overallProgress || 100}%</p>
+                       </div>
+                       <ChevronRight className="text-black/10 group-hover:text-primary group-hover:translate-x-1 transition-all" size={20} strokeWidth={3} />
+                    </div>
+                  </div>
+                )) : (
+                  <div className="py-20 text-center">
+                     <p className="text-sm font-bold text-black/20 uppercase tracking-widest italic">Kho lưu trữ hiện đang trống</p>
+                  </div>
+                )}
+             </div>
+           </div>
+        </div>
+      ) : (
+        <>
+          {/* Desktop Kanban Grid */}
       <div className="hidden md:grid grid-cols-5 gap-4 items-start min-h-[600px] mt-2">
         {STAGES.map(stage => (
           <div 
@@ -250,6 +300,8 @@ export default function KanbanBoard({
           </div>
         )}
       </div>
+        </>
+      )}
 
       {/* Sidebar removed - now handled by parent OrdersPage */}
     </div>

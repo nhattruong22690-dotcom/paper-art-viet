@@ -375,6 +375,7 @@ export async function getProductionOrders() {
       allocationType: po.allocation_type,
       orderId: po.order?.id,
       contractCode: po.order?.contract_code,
+      productionCode: `LSX-${po.id.slice(0, 8).toUpperCase()}`,
       priority: (po.priority === 'Urgent' ? 'Urgent' : 
                  po.priority === 'High' ? 'High' : 
                  po.priority === 'Low' ? 'Low' : 'Medium') as any

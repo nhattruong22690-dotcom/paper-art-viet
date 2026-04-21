@@ -19,6 +19,7 @@ interface SplitAllocation {
   // Metadata for existing POs
   isExisting?: boolean;
   dbId?: string;
+  productionCode?: string;
   quantityCompleted?: number;
   status?: string;
   hasStarted?: boolean;
@@ -77,6 +78,7 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           quantity: po.quantityTarget || po.quantity_target || 0,
           quantityCompleted: po.quantityCompleted || po.quantity_completed || 0,
           deadline: (po.deadlineProduction || po.deadline_production || orderDeadline)?.slice(0, 10) || '',
+          productionCode: po.productionCode || (po.id ? `LSX-${po.id.slice(0, 8).toUpperCase()}` : ''),
           hasStarted: (po.quantityCompleted || po.quantity_completed || 0) > 0 || (po.workLogs?.length > 0),
           isExisting: true
         }));
@@ -91,6 +93,7 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           quantity: po.quantityTarget || po.quantity_target || 0,
           quantityCompleted: po.quantityCompleted || po.quantity_completed || 0,
           deadline: (po.deadlineProduction || po.deadline_production || orderDeadline)?.slice(0, 10) || '',
+          productionCode: po.productionCode || (po.id ? `LSX-${po.id.slice(0, 8).toUpperCase()}` : ''),
           hasStarted: (po.quantityCompleted || po.quantity_completed || 0) > 0 || (po.workLogs?.length > 0),
           isExisting: true
         }));
@@ -285,7 +288,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
             </div>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-[1fr_120px_140px_100px_40px] gap-4 px-4 pb-2 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 mb-2">
+              <div className="grid grid-cols-[100px_1fr_120px_140px_100px_40px] gap-4 px-4 pb-2 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 mb-2">
+                <div className="pl-2">Mã SX</div>
                 <div>Đơn vị tiếp nhận</div>
                 <div className="text-center">Số lượng</div>
                 <div className="text-center">Hạn sản xuất</div>
@@ -295,9 +299,17 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
               
               {internalAllocations.map((alloc) => (
                 <div key={alloc.id} className={cn(
-                  "grid grid-cols-[1fr_120px_140px_100px_40px] gap-4 items-center group p-2 rounded-2xl transition-all",
+                  "grid grid-cols-[100px_1fr_120px_140px_100px_40px] gap-4 items-center group p-2 rounded-2xl transition-all",
                   alloc.hasStarted ? "bg-gray-50/50 opacity-80" : "hover:bg-slate-50/50"
                 )}>
+                  <div className="pl-2">
+                    <span className={cn(
+                      "text-[9px] font-black px-2 py-1 rounded-lg border uppercase tracking-tighter",
+                      alloc.isExisting ? "bg-gray-100 text-gray-500 border-gray-200" : "bg-amber-100 text-amber-700 border-amber-200 italic"
+                    )}>
+                      {alloc.isExisting ? alloc.productionCode : "Mới"}
+                    </span>
+                  </div>
                   <select 
                     value={alloc.facilityId}
                     onChange={(e) => updateRow('internal', alloc.id, 'facilityId', e.target.value)}
@@ -387,7 +399,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
             </div>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-[1fr_120px_140px_100px_40px] gap-4 px-4 pb-2 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 mb-2">
+              <div className="grid grid-cols-[100px_1fr_120px_140px_100px_40px] gap-4 px-4 pb-2 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 mb-2">
+                <div className="pl-2">Mã SX</div>
                 <div>Đơn vị/Thợ gia công</div>
                 <div className="text-center">Số lượng</div>
                 <div className="text-center">Hạn bàn giao</div>
@@ -397,9 +410,17 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
 
               {outsourcedAllocations.map((alloc) => (
                 <div key={alloc.id} className={cn(
-                  "grid grid-cols-[1fr_120px_140px_100px_40px] gap-4 items-center group p-2 rounded-2xl transition-all",
+                  "grid grid-cols-[100px_1fr_120px_140px_100px_40px] gap-4 items-center group p-2 rounded-2xl transition-all",
                   alloc.hasStarted ? "bg-gray-50/50 opacity-80" : "hover:bg-slate-50/50"
                 )}>
+                  <div className="pl-2">
+                    <span className={cn(
+                      "text-[9px] font-black px-2 py-1 rounded-lg border uppercase tracking-tighter",
+                      alloc.isExisting ? "bg-gray-100 text-gray-500 border-gray-200" : "bg-amber-100 text-amber-700 border-amber-200 italic"
+                    )}>
+                      {alloc.isExisting ? alloc.productionCode : "Mới"}
+                    </span>
+                  </div>
                   <select 
                     value={alloc.facilityId}
                     onChange={(e) => updateRow('outsourced', alloc.id, 'facilityId', e.target.value)}

@@ -17,7 +17,7 @@ import {
   ClipboardList,
   PencilLine,
   Search,
-  TrendingUp
+  PackageCheck
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -42,6 +42,7 @@ export interface ProductionOrder {
   deadlineProduction?: string;
   locationName: string;
   contractCode?: string;
+  productionCode?: string;
   customerCode?: string;
   orderId?: string;
   allocationType: 'internal' | 'outsourced';
@@ -104,6 +105,7 @@ export default function ProductionPipeline({
         order.customerCode?.toLowerCase().includes(search) ||
         order.locationName?.toLowerCase().includes(search) ||
         order.sku.toLowerCase().includes(search) ||
+        order.productionCode?.toLowerCase().includes(search) ||
         order.id.toLowerCase().includes(search)
       );
     });
@@ -167,7 +169,10 @@ export default function ProductionPipeline({
                     }}
                   >
                     <Briefcase size={12} className="text-primary" />
-                    <span className="truncate">Đơn: <span className="underline decoration-primary/30">#{order.contractCode || 'N/A'}</span></span>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-[9px] font-black text-primary/60 tracking-widest">{order.productionCode || '---'}</span>
+                      <span className="truncate">Đơn: <span className="underline decoration-primary/30">#{order.contractCode || 'N/A'}</span></span>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground font-bold uppercase tracking-tight px-1">
@@ -208,9 +213,9 @@ export default function ProductionPipeline({
                         onStatusChange(order.id, 'Archived');
                       }}
                       className="w-8 h-8 bg-neo-yellow border-2 border-black text-black rounded-lg flex items-center justify-center shadow-neo hover:translate-x-[1px] hover:translate-y-[1px] shadow-none transition-all"
-                      title="Xác nhận Ship & Lưu trữ"
+                      title="Hoàn tất & Lưu trữ"
                     >
-                       <TrendingUp size={16} className="rotate-90" />
+                       <PackageCheck size={18} strokeWidth={2.5} />
                     </button>
                   )}
                   <div className="w-8 h-8 bg-white border-2 border-black text-black rounded-lg flex items-center justify-center shadow-neo">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Plus, ShoppingCart, ChevronRight } from 'lucide-react';
+import { Plus, ShoppingCart, ChevronRight, History } from 'lucide-react';
 import KanbanBoard from '@/components/orders/KanbanBoard';
 import CreateSalesOrder from '@/components/orders/CreateSalesOrder';
 import OrderDetailsPanel from '@/components/orders/OrderDetailsPanel';
@@ -11,6 +11,7 @@ export default function OrdersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [isArchiveMode, setIsArchiveMode] = useState(false);
 
   const handleCreateSuccess = () => {
     setRefreshKey(prev => prev + 1);
@@ -29,24 +30,37 @@ export default function OrdersPage() {
             <span className="text-purple-600 bg-white px-2 py-0.5 rounded-lg border border-black/10">Đơn hàng</span>
           </nav>
           <h1 className="text-3xl font-bold text-foreground tracking-tight uppercase font-space">
-            Quản trị <span className="text-purple-500">Đơn hàng</span>
+            {isArchiveMode ? 'Kho' : 'Quản trị'} <span className="text-purple-500">{isArchiveMode ? 'Lưu trữ' : 'Đơn hàng'}</span>
           </h1>
         </div>
         
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="btn-primary gap-3 shadow-neo hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-        >
-          <Plus size={22} strokeWidth={3} />
-          <span className="font-space uppercase tracking-widest text-xs">Tạo đơn hàng mới</span>
-        </button>
+        <div className="flex flex-wrap gap-4">
+          <button 
+            onClick={() => setIsArchiveMode(!isArchiveMode)}
+            className={`btn-secondary gap-3 shadow-neo hover:translate-x-[2px] hover:translate-y-[2px] transition-all ${isArchiveMode ? 'bg-black text-white' : 'bg-white text-black'}`}
+          >
+            <History size={20} strokeWidth={3} />
+            <span className="font-space uppercase tracking-widest text-xs">{isArchiveMode ? 'Quay lại Đơn đang chạy' : 'Xem Đơn hàng cũ'}</span>
+          </button>
+
+          {!isArchiveMode && (
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="btn-primary gap-3 shadow-neo hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+            >
+              <Plus size={22} strokeWidth={3} />
+              <span className="font-space uppercase tracking-widest text-xs">Tạo đơn hàng mới</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <KanbanBoard 
-        key={refreshKey} 
+        key={`${refreshKey}-${isArchiveMode}`} 
         selectedOrderId={selectedOrderId}
         onSelectOrder={setSelectedOrderId}
         onRefreshRequest={() => setRefreshKey(prev => prev + 1)}
+        isArchiveMode={isArchiveMode}
       />
 
 

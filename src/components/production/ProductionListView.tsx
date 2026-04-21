@@ -8,7 +8,8 @@ import {
   TrendingUp,
   AlertCircle,
   Truck,
-  CheckCircle2
+  CheckCircle2,
+  PackageCheck
 } from "lucide-react";
 import { ProductionOrder } from "./ProductionPipeline";
 import { clsx, type ClassValue } from "clsx";
@@ -70,6 +71,7 @@ export default function ProductionListView({
         <div className="hidden md:table-header-group bg-slate-50 text-black border-y-2 border-black">
           <div className="table-row">
             <div className="table-cell px-6 py-4 text-[10px] font-black uppercase tracking-widest border-r border-black/10">SKU / Sản phẩm</div>
+            <div className="table-cell px-6 py-4 text-[10px] font-black uppercase tracking-widest border-r border-black/10">Mã LSX</div>
             <div className="table-cell px-6 py-4 text-[10px] font-black uppercase tracking-widest border-r border-black/10">Mã đơn</div>
             <div className="table-cell px-6 py-4 text-[10px] font-black uppercase tracking-widest border-r border-black/10">Khách hàng</div>
             <div className="table-cell px-6 py-4 text-[10px] font-black uppercase tracking-widest border-r border-black/10 text-center">Sản lượng</div>
@@ -94,6 +96,15 @@ export default function ProductionListView({
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-bold text-black line-clamp-2 md:line-clamp-1 italic">{order.title}</span>
                     <span className="text-[10px] font-black text-primary uppercase tracking-widest">{order.sku}</span>
+                  </div>
+                </div>
+
+                <div className="block md:table-cell px-2 py-3 md:px-6 md:py-5 md:border-r md:border-black/5 border-b border-dashed border-black/10 md:border-b-0">
+                  <div className="flex items-center justify-between md:block w-full">
+                    <div className="flex md:hidden text-[9px] font-black text-black/40 uppercase tracking-widest mb-1">Mã LSX</div>
+                    <span className="text-xs font-black text-foreground bg-gray-100 px-2 py-1 rounded shadow-sm border border-black/5 uppercase tracking-tighter italic">
+                      {order.productionCode || '---'}
+                    </span>
                   </div>
                 </div>
                 
@@ -201,9 +212,9 @@ export default function ProductionListView({
                       <button 
                         onClick={(e) => { e.stopPropagation(); onStatusChange(order.id, 'Archived') }}
                         className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-neo-yellow shadow-neo-active transition-all"
-                        title="Giao hàng & Lưu trữ"
+                        title="Hoàn tất & Lưu trữ"
                       >
-                        <TrendingUp size={14} className="rotate-90" />
+                        <PackageCheck size={16} strokeWidth={2.5} />
                       </button>
                     )}
                   </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { formatNumber } from '@/utils/format';
-import { X, Trash2, Edit3, Edit, Save, Calendar, User, FileText, CheckCircle2, ChevronRight, ChevronDown, Plus, Factory, Zap, Briefcase, UserCheck, History, RotateCcw, Activity, Layers, RefreshCw, AlertTriangle, Package, Globe, Search, Download } from 'lucide-react';
+import { X, Trash2, Edit3, Edit, Save, Calendar, User, FileText, CheckCircle2, ChevronRight, ChevronDown, Plus, Factory, Zap, Briefcase, UserCheck, History, RotateCcw, Activity, Layers, RefreshCw, AlertTriangle, Package, Globe, Search, Download, PackageCheck } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
 import { getMilestoneTemplate } from '@/services/systemConfig.service';
@@ -106,6 +106,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
       case 'packing': return 'bg-purple-100 text-purple-700 border-purple-200';
       case 'shipping': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
       case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'archived': return 'bg-gray-800 text-white border-black shadow-sm';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
@@ -334,6 +335,34 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
       } catch (error) {
         showModal('error', 'Lỗi khi xóa đơn hàng', String(error));
         console.error('Delete error:', error);
+      }
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!order) return;
+    
+    // Kiểm tra xem tất cả các lệnh sản xuất đã hoàn thành chưa
+    const unfinishedPOs = order.productionOrders?.filter((po: any) => po.currentStatus !== 'Completed' && po.currentStatus !== 'Archived') || [];
+    const isUnfinished = unfinishedPOs.length > 0;
+    
+    let message = "XÁC NHẬN HOÀN TẤT & LƯU TRỮ\n\nĐơn hàng này sẽ được chuyển vào 'KHO LƯU TRỮ' và không còn xuất hiện ở danh sách đang làm việc nữa. Bạn có chắc chắn muốn hoàn tất?";
+    
+    if (isUnfinished) {
+      message = "⚠️ CẢNH BÁO: ĐƠN HÀNG CHƯA HOÀN THÀNH\n\nĐơn hàng này vẫn còn " + unfinishedPOs.length + " lệnh sản xuất đang chạy (chưa Hoàn tất). Việc lưu trữ sẽ làm các lệnh này biến mất khỏi màn hình điều phối chính. Bạn có chắc chắn muốn tiếp tục lưu trữ không?";
+    }
+
+    if (await customConfirm(message)) {
+      try {
+        const res = await fetch(`/api/orders/${order.id}/archive`, { method: 'POST' });
+        if (!res.ok) throw new Error('Cập nhật thất bại');
+        
+        showToast('success', 'Đã lưu trữ đơn hàng thành công');
+        onUpdate();
+        onClose();
+      } catch (error) {
+        showModal('error', 'Lỗi khi lưu trữ đơn hàng', String(error));
+        console.error('Archive error:', error);
       }
     }
   };
@@ -728,13 +757,22 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {!isEditing && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-neo-purple/10 text-primary border border-primary/20 rounded-lg hover:bg-neo-purple/20 transition-all font-bold fluid-text-xs uppercase tracking-widest"
-                  >
-                    <Edit3 className="fluid-icon-sm" /> Chỉnh sửa
-                  </button>
+                {!isEditing && order.status !== 'archived' && (
+                  <>
+                    <button
+                      onClick={handleArchive}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-neo-yellow/10 text-amber-700 border border-amber-500/20 rounded-lg hover:bg-neo-yellow/20 transition-all font-bold fluid-text-xs uppercase tracking-widest"
+                      title="Hoàn tất & Lưu trữ"
+                    >
+                      <PackageCheck className="fluid-icon-sm" /> Lưu trữ
+                    </button>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-neo-purple/10 text-primary border border-primary/20 rounded-lg hover:bg-neo-purple/20 transition-all font-bold fluid-text-xs uppercase tracking-widest"
+                    >
+                      <Edit3 className="fluid-icon-sm" /> Chỉnh sửa
+                    </button>
+                  </>
                 )}
                 <button onClick={handleDelete} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all">
                   <Trash2 className="fluid-icon-md" />
@@ -836,7 +874,8 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                               order.status === 'in_production' ? 'Sản xuất' :
                                 order.status === 'packing' ? 'Đóng gói' :
                                   order.status === 'shipping' ? 'Giao hàng' :
-                                    order.status === 'completed' ? 'Hoàn tất' : order.status}
+                                    order.status === 'completed' ? 'Hoàn tất' : 
+                                      order.status === 'archived' ? 'Đã lưu trữ' : order.status}
                           </span>
                         </div>
                       )}
@@ -1170,9 +1209,14 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                             {po.allocationType === 'internal' ? 'X' : 'GC'}
                                           </div>
                                           <div>
-                                            <p className="text-[10px] font-bold text-foreground uppercase">
-                                              {po.workshop?.name || po.outsourcer?.name || po.assignedTo || 'Chưa gán'}
-                                            </p>
+                                            <div className="flex items-center gap-2">
+                                              <p className="text-[10px] font-bold text-foreground uppercase">
+                                                {po.workshop?.name || po.outsourcer?.name || po.assignedTo || 'Chưa gán'}
+                                              </p>
+                                              <span className="text-[8px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-black border border-gray-200 uppercase tracking-tighter">
+                                                {po.productionCode}
+                                              </span>
+                                            </div>
                                             <p className="text-[9px] text-muted-foreground font-bold tracking-tight">
                                               HT: {po.quantityCompleted || 0} / {po.quantityTarget}
                                             </p>
