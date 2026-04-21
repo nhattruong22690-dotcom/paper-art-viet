@@ -189,10 +189,12 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           allocations: [...internalAllocations, ...outsourcedAllocations]
             .filter(a => Number(a.quantity) > 0)
             .map(a => ({
+              id: a.dbId, // Send existing record ID if available
               assignedTo: a.facilityId,
               type: a.type,
               quantity: Number(a.quantity),
-              deadline: a.deadline
+              deadline: a.deadline,
+              quantityCompleted: a.quantityCompleted // Send current progress for validation
             }))
         })
       });

@@ -235,10 +235,10 @@ export async function updateProductionOrder(id: string, data: any) {
 export async function splitProductionOrders(
   orderId: string, 
   productId: string, 
-  allocations: { assignedTo: string; type: 'internal' | 'outsourced'; quantity: number; deadline?: string }[],
+  allocations: { id?: string; assignedTo: string; type: 'internal' | 'outsourced'; quantity: number; deadline?: string }[],
   orderItemId?: string
 ) {
-  // 1. Kiểm tra xem có lệnh nào của sản phẩm/dòng này đã có Work Log chưa
+  // 1. Lấy dữ liệu hiện tại để so sánh
   let query = supabase
     .from('ProductionOrder')
     .select('*, workLogs:WorkLog(id)')
@@ -251,60 +251,72 @@ export async function splitProductionOrders(
   }
 
   const { data: existingPOs, error: fetchError } = await query;
-
   if (fetchError) throw fetchError;
 
-  const hasLogs = (existingPOs || []).some(po => po.workLogs?.length > 0);
-  if (hasLogs) {
-    throw new Error("Không thể chia lại lệnh sản xuất khi đã có ghi chép sản lượng (Work Log).");
+  // 2. Phân loại dữ liệu
+  const toUpdate = allocations.filter(a => !!a.id);
+  const toInsert = allocations.filter(a => !a.id);
+  const incomingIds = new Set(toUpdate.map(a => a.id));
+  
+  // Xác định các bản ghi cần xóa (có trong DB nhưng không có trong danh sách mới)
+  const toDelete = (existingPOs || []).filter(po => !incomingIds.has(po.id));
+
+  // Kiểm tra an toàn trước khi xóa
+  const cannotDelete = toDelete.filter(po => (po.quantity_completed || 0) > 0 || po.workLogs?.length > 0);
+  if (cannotDelete.length > 0) {
+    throw new Error(`Không thể xóa lệnh sản xuất đã có sản lượng (${cannotDelete[0].id}). Vui lòng kiểm tra lại.`);
   }
 
-  // 2. Thực hiện xóa và tạo mới
-  const { data: order, error: orderError } = await supabase
-    .from('Order')
-    .select('deadline_delivery')
-    .eq('id', orderId)
-    .single();
-
-  let deleteQuery = supabase
-    .from('ProductionOrder')
-    .delete()
-    .eq('order_id', orderId);
-
-  if (orderItemId) {
-    deleteQuery = deleteQuery.or(`order_item_id.eq.${orderItemId},and(order_item_id.is.null,product_id.eq.${productId})`);
-  } else {
-    deleteQuery = deleteQuery.eq('product_id', productId);
+  // 3. Thực hiện cập nhật các bản ghi hiện có
+  for (const alloc of toUpdate) {
+    const { error: updateError } = await supabase
+      .from('ProductionOrder')
+      .update({
+        quantity_target: Number(alloc.quantity),
+        allocation_type: alloc.type,
+        assigned_to: alloc.assignedTo,
+        workshop_id: alloc.type === 'internal' ? alloc.assignedTo : null,
+        outsourcer_id: alloc.type === 'outsourced' ? alloc.assignedTo : null,
+        deadline_production: alloc.deadline || new Date(),
+        // Chú ý: KHÔNG update quantity_completed để bảo toàn dữ liệu
+      })
+      .eq('id', alloc.id);
+    
+    if (updateError) throw updateError;
   }
 
-  const { error: deleteError } = await deleteQuery;
-
-  if (deleteError) throw deleteError;
-
-  // 3. Chỉ insert khi có dữ liệu (nếu rỗng = xóa sạch toàn bộ phân bổ)
-  if (allocations.length === 0) {
-    return [];
+  // 4. Thực hiện thêm mới các bản ghi
+  if (toInsert.length > 0) {
+    const { error: insertError } = await supabase
+      .from('ProductionOrder')
+      .insert(toInsert.map(alloc => ({
+        order_id: orderId,
+        product_id: productId,
+        order_item_id: orderItemId,
+        quantity_target: Number(alloc.quantity),
+        quantity_completed: 0,
+        allocation_type: alloc.type,
+        assigned_to: alloc.assignedTo,
+        workshop_id: alloc.type === 'internal' ? alloc.assignedTo : null,
+        outsourcer_id: alloc.type === 'outsourced' ? alloc.assignedTo : null,
+        current_status: alloc.type === 'internal' ? 'pending' : 'outsourced',
+        deadline_production: alloc.deadline || new Date()
+      })));
+    
+    if (insertError) throw insertError;
   }
 
-  const { data: created, error: insertError } = await supabase
-    .from('ProductionOrder')
-    .insert(allocations.map(alloc => ({
-      order_id: orderId,
-      product_id: productId,
-      order_item_id: orderItemId,
-      quantity_target: alloc.quantity,
-      quantity_completed: 0,
-      allocation_type: alloc.type,
-      assigned_to: alloc.assignedTo,
-      workshop_id: alloc.type === 'internal' ? alloc.assignedTo : null,
-      outsourcer_id: alloc.type === 'outsourced' ? alloc.assignedTo : null,
-      current_status: alloc.type === 'internal' ? 'pending' : 'outsourced',
-      deadline_production: alloc.deadline || order?.deadline_delivery || new Date()
-    })))
-    .select();
+  // 5. Thực hiện xóa các bản ghi không còn trong danh sách
+  if (toDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('ProductionOrder')
+      .delete()
+      .in('id', toDelete.map(po => po.id));
+    
+    if (deleteError) throw deleteError;
+  }
 
-  if (insertError) throw insertError;
-  return created;
+  return true; // Trả về true để báo hiệu thành công
 }
 
 
