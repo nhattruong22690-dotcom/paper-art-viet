@@ -269,7 +269,7 @@ export async function splitProductionOrders(
   }
 
   // 3. Thực hiện cập nhật các bản ghi hiện có
-  for (const alloc of toUpdate) {
+    console.log(`Updating PO ${alloc.id}:`, alloc);
     const { error: updateError } = await supabase
       .from('ProductionOrder')
       .update({
@@ -282,7 +282,8 @@ export async function splitProductionOrders(
         workshop_id: alloc.type === 'internal' ? alloc.assignedTo : null,
         outsourcer_id: alloc.type === 'outsourced' ? alloc.assignedTo : null,
         deadline_production: alloc.deadline || new Date(),
-        // Chú ý: KHÔNG update quantity_completed để bảo toàn dữ liệu
+        // Tự động cập nhật lại status nếu thay đổi từ nội bộ sang gia công hoặc ngược lại
+        current_status: alloc.type === 'internal' ? 'pending' : 'outsourced',
       })
       .eq('id', alloc.id);
     
@@ -291,6 +292,7 @@ export async function splitProductionOrders(
 
   // 4. Thực hiện thêm mới các bản ghi
   if (toInsert.length > 0) {
+    console.log(`Inserting ${toInsert.length} new POs:`, toInsert);
     const { error: insertError } = await supabase
       .from('ProductionOrder')
       .insert(toInsert.map(alloc => ({
@@ -312,6 +314,7 @@ export async function splitProductionOrders(
 
   // 5. Thực hiện xóa các bản ghi không còn trong danh sách
   if (toDelete.length > 0) {
+    console.log(`Deleting ${toDelete.length} old POs:`, toDelete.map(po => po.id));
     const { error: deleteError } = await supabase
       .from('ProductionOrder')
       .delete()

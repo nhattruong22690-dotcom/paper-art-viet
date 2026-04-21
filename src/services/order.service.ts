@@ -352,6 +352,7 @@ export async function getOrderById(id: string) {
       productId: po.product_id,
       quantityTarget: po.quantity_target,
       quantityCompleted: po.quantity_completed,
+      orderItemId: po.order_item_id,
       deadlineProduction: po.deadline_production,
       currentStatus: po.current_status,
       allocationType: po.allocation_type,

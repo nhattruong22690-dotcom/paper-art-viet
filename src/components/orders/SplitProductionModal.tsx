@@ -63,41 +63,39 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
 
   useEffect(() => {
     if (isOpen && orderItem) {
+      // Load existing POs from order item
       const existingPOs = orderItem.productionOrders || [];
+      console.log('SplitProductionModal: loading existing POs', existingPOs);
+      
       const internals = existingPOs
-        .filter((po: any) => po.allocationType === 'internal' || !po.outsourcedName)
-        // Include records if they have a facility, have progress, OR have a target quantity (to allow assignment)
-        .filter((po: any) => po.assignedTo || po.workshop_id || (po.quantityCompleted || 0) > 0 || (po.quantityTarget || 0) > 0)
+        .filter((po: any) => (po.allocationType || po.allocation_type) === 'internal')
         .map((po: any) => ({
-          id: po.id,
-          dbId: po.id,
-          facilityId: po.assignedTo || po.workshop_id || '',
+          id: po.id, // Current UI ID
+          dbId: po.id, // Database ID
+          facilityId: po.workshop_id || po.outsourcer_id || po.workshopId || po.outsourcerId || po.assignedTo || po.assigned_to || '',
           type: 'internal' as const,
-          quantity: po.quantityTarget || 0,
-          deadline: (po.deadlineProduction || orderDeadline)?.slice(0, 10) || '',
-          isExisting: true,
-          quantityCompleted: po.quantityCompleted || 0,
-          status: po.currentStatus,
-          hasStarted: (po.quantityCompleted || 0) > 0
+          quantity: po.quantityTarget || po.quantity_target || 0,
+          quantityCompleted: po.quantityCompleted || po.quantity_completed || 0,
+          deadline: (po.deadlineProduction || po.deadline_production || orderDeadline)?.slice(0, 10) || '',
+          hasStarted: (po.quantityCompleted || po.quantity_completed || 0) > 0 || (po.workLogs?.length > 0),
+          isExisting: true
         }));
 
       const externals = existingPOs
-        .filter((po: any) => po.allocationType === 'outsourced' || po.outsourcedName)
-        // Include records if they have a facility, have progress, OR have a target quantity (to allow assignment)
-        .filter((po: any) => po.outsourcedName || po.outsourcer_id || (po.quantityCompleted || 0) > 0 || (po.quantityTarget || 0) > 0)
+        .filter((po: any) => (po.allocationType || po.allocation_type) === 'outsourced')
         .map((po: any) => ({
           id: po.id,
           dbId: po.id,
-          facilityId: po.outsourcedName || po.outsourcer_id || '',
+          facilityId: po.workshop_id || po.outsourcer_id || po.workshopId || po.outsourcerId || po.assignedTo || po.assigned_to || '',
           type: 'outsourced' as const,
-          quantity: po.quantityTarget || 0,
-          deadline: (po.deadlineProduction || orderDeadline)?.slice(0, 10) || '',
-          isExisting: true,
-          quantityCompleted: po.quantityCompleted || 0,
-          status: po.currentStatus,
-          hasStarted: (po.quantityCompleted || 0) > 0
+          quantity: po.quantityTarget || po.quantity_target || 0,
+          quantityCompleted: po.quantityCompleted || po.quantity_completed || 0,
+          deadline: (po.deadlineProduction || po.deadline_production || orderDeadline)?.slice(0, 10) || '',
+          hasStarted: (po.quantityCompleted || po.quantity_completed || 0) > 0 || (po.workLogs?.length > 0),
+          isExisting: true
         }));
 
+      console.log('Processed allocations:', { internals, externals });
       setInternalAllocations(internals);
       setOutsourcedAllocations(externals);
       setInitialData(JSON.stringify({ i: internals, e: externals }));
@@ -189,12 +187,12 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
           allocations: [...internalAllocations, ...outsourcedAllocations]
             .filter(a => Number(a.quantity) > 0)
             .map(a => ({
-              id: a.dbId, // Send existing record ID if available
+              id: a.dbId,
               assignedTo: a.facilityId,
               type: a.type,
               quantity: Number(a.quantity),
               deadline: a.deadline,
-              quantityCompleted: a.quantityCompleted // Send current progress for validation
+              quantityCompleted: a.quantityCompleted
             }))
         })
       });
