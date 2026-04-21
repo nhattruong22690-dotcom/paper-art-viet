@@ -66,8 +66,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
       const existingPOs = orderItem.productionOrders || [];
       const internals = existingPOs
         .filter((po: any) => po.allocationType === 'internal' || !po.outsourcedName)
-        // Filter out "noise" records (no assignee and no progress)
-        .filter((po: any) => po.assignedTo || po.workshop_id || (po.quantityCompleted || 0) > 0)
+        // Include records if they have a facility, have progress, OR have a target quantity (to allow assignment)
+        .filter((po: any) => po.assignedTo || po.workshop_id || (po.quantityCompleted || 0) > 0 || (po.quantityTarget || 0) > 0)
         .map((po: any) => ({
           id: po.id,
           dbId: po.id,
@@ -83,8 +83,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
 
       const externals = existingPOs
         .filter((po: any) => po.allocationType === 'outsourced' || po.outsourcedName)
-        // Filter out "noise" records (no assignee and no progress)
-        .filter((po: any) => po.outsourcedName || po.outsourcer_id || (po.quantityCompleted || 0) > 0)
+        // Include records if they have a facility, have progress, OR have a target quantity (to allow assignment)
+        .filter((po: any) => po.outsourcedName || po.outsourcer_id || (po.quantityCompleted || 0) > 0 || (po.quantityTarget || 0) > 0)
         .map((po: any) => ({
           id: po.id,
           dbId: po.id,
@@ -300,7 +300,6 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
                 )}>
                   <select 
                     value={alloc.facilityId}
-                    disabled={alloc.hasStarted}
                     onChange={(e) => updateRow('internal', alloc.id, 'facilityId', e.target.value)}
                     className={cn(
                       "w-full bg-white border-2 border-black/5 rounded-xl px-5 py-3 text-sm font-bold shadow-sm transition-all outline-none focus:border-black/20",
@@ -403,7 +402,6 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
                 )}>
                   <select 
                     value={alloc.facilityId}
-                    disabled={alloc.hasStarted}
                     onChange={(e) => updateRow('outsourced', alloc.id, 'facilityId', e.target.value)}
                     className={cn(
                       "w-full bg-white border-2 border-black/5 rounded-xl px-5 py-3 text-sm font-bold shadow-sm transition-all outline-none focus:border-black/20",
