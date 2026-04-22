@@ -192,7 +192,9 @@ export default function ProductionPipeline({
                 <div className="mt-5 pt-4 border-t border-gray-100">
                   <div className="flex justify-between items-end mb-1.5">
                     <span className="text-[9px] font-black text-black/40 uppercase tracking-widest">Tiến độ sản xuất</span>
-                    <span className="text-[11px] font-black text-primary italic">{order.progress}%</span>
+                    <span className="text-[11px] font-black text-primary italic">
+                      {order.progress !== undefined ? order.progress : (order.quantityTarget > 0 ? Math.round((order.quantityCompleted / order.quantityTarget) * 100) : 0)}%
+                    </span>
                   </div>
                   <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden border border-black/5 shadow-inner">
                     <div 
@@ -200,7 +202,7 @@ export default function ProductionPipeline({
                         "h-full transition-all duration-700 ease-out",
                         order.progress > 90 ? "bg-green-500" : order.progress > 50 ? "bg-primary" : "bg-amber-500"
                       )}
-                      style={{ width: `${order.progress}%` }}
+                      style={{ width: `${order.progress !== undefined ? order.progress : (order.quantityTarget > 0 ? Math.round((order.quantityCompleted / order.quantityTarget) * 100) : 0)}%` }}
                     />
                   </div>
                 </div>

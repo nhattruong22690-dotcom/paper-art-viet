@@ -346,22 +346,29 @@ export async function getOrderById(id: string) {
         } : null)
       };
     }),
-    productionOrders: (order.productionOrders || []).map((po: any) => ({
-      ...po,
-      orderId: po.order_id,
-      productId: po.product_id,
-      quantityTarget: po.quantity_target,
-      quantityCompleted: po.quantity_completed,
-      orderItemId: po.order_item_id,
-      deadlineProduction: po.deadline_production,
-      currentStatus: po.current_status,
-      allocationType: po.allocation_type,
-      productionCode: po.id ? `LSX-${po.id.slice(0, 8).toUpperCase()}` : null,
-      product: po.product ? {
-        ...po.product,
-        sku: po.product.code
-      } : null
-    })),
+    productionOrders: (order.productionOrders || []).map((po: any) => {
+      const qtyTarget = po.quantity_target || 0;
+      const qtyDone = po.quantity_completed || 0;
+      const progress = qtyTarget > 0 ? Math.round((qtyDone / qtyTarget) * 100) : 0;
+      
+      return {
+        ...po,
+        orderId: po.order_id,
+        productId: po.product_id,
+        quantityTarget: qtyTarget,
+        quantityCompleted: qtyDone,
+        progress,
+        orderItemId: po.order_item_id,
+        deadlineProduction: po.deadline_production,
+        currentStatus: po.current_status,
+        allocationType: po.allocation_type,
+        productionCode: po.id ? `LSX-${po.id.slice(0, 8).toUpperCase()}` : null,
+        product: po.product ? {
+          ...po.product,
+          sku: po.product.code
+        } : null
+      };
+    }),
     packages: (order.packages || []).map((pk: any) => ({
       ...pk,
       orderId: pk.order_id,

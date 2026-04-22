@@ -150,10 +150,12 @@ export default function ProductionListView({
                           "h-full transition-all duration-500",
                           order.progress > 90 ? 'bg-green-500' : order.progress > 50 ? 'bg-primary' : 'bg-amber-500'
                         )}
-                        style={{ width: `${order.progress}%` }}
+                        style={{ width: `${order.progress !== undefined ? order.progress : (order.quantityTarget > 0 ? Math.round((order.quantityCompleted / order.quantityTarget) * 100) : 0)}%` }}
                       />
                     </div>
-                    <span className="text-[10px] md:text-sm font-black text-primary italic shrink-0 min-w-[32px]">{order.progress}%</span>
+                    <span className="text-[10px] md:text-sm font-black text-primary italic shrink-0 min-w-[32px]">
+                      {order.progress !== undefined ? order.progress : (order.quantityTarget > 0 ? Math.round((order.quantityCompleted / order.quantityTarget) * 100) : 0)}%
+                    </span>
                   </div>
                 </div>
                 

@@ -7,6 +7,7 @@ import { getMilestoneTemplate } from '@/services/systemConfig.service';
 import { getAllMaterials } from '@/services/material.service';
 import { useNotification } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
+import ProductionOrderDetailModal from '@/components/production/ProductionOrderDetailModal';
 import SplitProductionModal from './SplitProductionModal';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -44,10 +45,11 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
   const [editData, setEditData] = useState<any>({});
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
   const [activeItemForSplit, setActiveItemForSplit] = useState<any>(null);
+  const [selectedProductionOrder, setSelectedProductionOrder] = useState<any | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [expandedSnapshotItems, setExpandedSnapshotItems] = useState<Record<string, boolean>>({});
-  const [isProductionCollapsed, setIsProductionCollapsed] = useState(true);
+  const [isProductionCollapsed, setIsProductionCollapsed] = useState(false);
   const [isMilestonesCollapsed, setIsMilestonesCollapsed] = useState(true);
   const [isMaterialsCollapsed, setIsMaterialsCollapsed] = useState(true);
   const [activeBOMs, setActiveBOMs] = useState<Record<string, any[]>>({});
@@ -366,6 +368,64 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
       case 'completed': return { label: 'HOÀN THÀNH', bg: 'bg-[#D1FAE5]' };
       case 'in_progress': return { label: 'ĐANG LÀM', bg: 'bg-[#D8B4FE]' };
       default: return { label: 'CHỜ XỬ LÝ', bg: 'bg-[#FEF3C7]' };
+    }
+  };
+
+  const handleUpdateProductionOrder = async (id: string, updates: any) => {
+    try {
+      const res = await fetch('/api/production/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates })
+      });
+      if (res.ok) {
+        showToast('success', 'Đã cập nhật lệnh sản xuất thành công');
+        onUpdate();
+        // Cập nhật state local nếu cần
+        if (selectedProductionOrder && selectedProductionOrder.id === id) {
+          setSelectedProductionOrder({ ...selectedProductionOrder, ...updates });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update production order:", err);
+      showToast('error', 'Cập nhật thất bại');
+    }
+  };
+
+  const handleDeleteProductionOrder = async (id: string) => {
+    if (!await customConfirm("BẠN CÓ CHẮC CHẮN MUỐN XÓA LỆNH NÀY?\n\nToàn bộ ghi nhận sản lượng (Work Logs) liên quan sẽ bị xóa vĩnh viễn và số liệu hoàn thành sẽ quay về 0.")) return;
+
+    try {
+      const res = await fetch(`/api/production/orders?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast('success', 'Đã xóa lệnh sản xuất thành công');
+        setSelectedProductionOrder(null);
+        onUpdate();
+      } else {
+        const error = await res.json();
+        throw new Error(error.error || 'Xóa thất bại');
+      }
+    } catch (err: any) {
+      console.error("Failed to delete production order:", err);
+      showToast('error', `Không thể xóa: ${err.message}`);
+    }
+  };
+
+  const handleStatusChangeProductionOrder = async (id: string, newStatus: string) => {
+    try {
+      const res = await fetch('/api/production/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus })
+      });
+      if (res.ok) {
+        onUpdate();
+        if (selectedProductionOrder && selectedProductionOrder.id === id) {
+          setSelectedProductionOrder({ ...selectedProductionOrder, status: newStatus as any });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update status:", err);
     }
   };
 
@@ -1250,9 +1310,22 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                 {stats.pos.length > 0 ? (
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     {stats.pos.map((po: any) => (
-                                      <div key={po.id} className="bg-white p-3 rounded border border-border flex items-center justify-between shadow-sm">
+                                      <div 
+                                        key={po.id} 
+                                        onClick={() => setSelectedProductionOrder({
+                                          ...po,
+                                          title: item.product?.name || 'Sản phẩm',
+                                          customer: order.customer?.name || 'Khách lẻ',
+                                          dueDate: order.deadline_delivery ? new Date(order.deadline_delivery).toLocaleDateString('vi-VN') : '---',
+                                          contractCode: order.contract_code,
+                                          sku: item.product?.sku || 'N/A',
+                                          status: po.currentStatus,
+                                          progress: po.progress !== undefined ? po.progress : (po.quantityTarget > 0 ? Math.round((po.quantityCompleted / po.quantityTarget) * 100) : 0)
+                                        })}
+                                        className="bg-white p-3 rounded border border-border flex items-center justify-between shadow-sm hover:shadow-md hover:border-primary/30 cursor-pointer transition-all group"
+                                      >
                                         <div className="flex items-center gap-3">
-                                          <div className={`w-7 h-7 rounded flex items-center justify-center text-[9px] font-bold uppercase ${po.allocationType === 'internal' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-amber-50 text-amber-600 border border-amber-100'
+                                          <div className={`w-7 h-7 rounded flex items-center justify-center text-[9px] font-bold uppercase transition-transform group-hover:scale-110 ${po.allocationType === 'internal' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-amber-50 text-amber-600 border border-amber-100'
                                             }`}>
                                             {po.allocationType === 'internal' ? 'X' : 'GC'}
                                           </div>
@@ -1967,6 +2040,15 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
         }}
         orderId={orderId || ''}
         orderItem={activeItemForSplit}
+      />
+
+      <ProductionOrderDetailModal 
+        order={selectedProductionOrder}
+        onClose={() => setSelectedProductionOrder(null)}
+        onUpdate={handleUpdateProductionOrder}
+        onDelete={handleDeleteProductionOrder}
+        onStatusChange={handleStatusChangeProductionOrder}
+        onViewContract={() => setSelectedProductionOrder(null)}
       />
     </div>
   );
