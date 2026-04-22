@@ -95,7 +95,7 @@ export async function getOrderProgress() {
     return {
       id: order.id,
       contractCode: order.contract_code,
-      customer: order.customer?.name || 'Khách lẻ',
+      customer: (Array.isArray(order.customer) ? order.customer[0]?.name : (order.customer as any)?.name) || 'Khách lẻ',
       deadline: order.deadline_delivery,
       progress,
       productRatio: `${completedQty}/${totalQty}`,
@@ -121,7 +121,7 @@ export async function getUpcomingDeliveries() {
 
   return (upcomingOrders || []).map(order => ({
     id: order.id.slice(-8).toUpperCase(),
-    customer: order.customer?.name || 'Khách lẻ',
+    customer: (Array.isArray(order.customer) ? order.customer[0]?.name : (order.customer as any)?.name) || 'Khách lẻ',
     items: `${(order.orderItems || []).reduce((acc: number, i: any) => acc + (i.quantity || 0), 0)} pcs`,
     date: order.deadline_delivery ? new Date(order.deadline_delivery).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : 'N/A'
   }));
@@ -157,7 +157,7 @@ export async function getLateMilestoneOrders() {
       id: order.id,
       displayId: order.id.slice(-8).toUpperCase(),
       contractCode: order.contract_code,
-      customer: order.customer?.name || 'Khách lẻ',
+      customer: (Array.isArray(order.customer) ? order.customer[0]?.name : (order.customer as any)?.name) || 'Khách lẻ',
       lateCount: lateMilestones.length,
       lateMilestonesList: lateMilestones.map((m: any) => m.label || m.name || m.stage || 'Khâu không tên').join(', '),
       deadline: lateMilestones[0]?.deadline
