@@ -28,6 +28,7 @@ import { useNotification } from "@/context/NotificationContext";
 import { Cpu, Info, History } from 'lucide-react';
 import { formatNumber, parseNumber } from '@/utils/format';
 import { NumericInput } from '@/components/ui/NumericInput';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -200,6 +201,8 @@ export default function ProductFormModal({ isOpen, onClose, onSubmit, initialDat
   const [customCosts, setCustomCosts] = useState<any[]>([]);
   const [productionNotes, setProductionNotes] = useState<string[]>([]);
   const { showToast } = useNotification();
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {

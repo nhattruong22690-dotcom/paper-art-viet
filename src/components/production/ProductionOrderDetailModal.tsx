@@ -19,6 +19,7 @@ import { twMerge } from "tailwind-merge";
 import { ProductionOrder, Status } from './ProductionPipeline';
 import ProductionBatchForm from './ProductionBatchForm';
 import { useNotification } from '@/context/NotificationContext';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -68,6 +69,10 @@ export default function ProductionOrderDetailModal({
   
   const [editingLog, setEditingLog] = useState<any | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  useScrollLock(!!initialOrder);
+  useScrollLock(showBatchForm);
+  useScrollLock(showEditModal);
 
   useEffect(() => {
     setOrder(initialOrder);

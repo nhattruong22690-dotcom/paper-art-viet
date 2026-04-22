@@ -23,6 +23,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { BOMWithDetails } from '@/types/bom';
 import { formatNumber, formatVND } from '@/utils/format';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 
 interface BOMDetailModalProps {
@@ -35,6 +36,8 @@ export default function BOMDetailModal({ bomId, isOpen, onClose }: BOMDetailModa
   const [bom, setBom] = useState<BOMWithDetails | null>(null);
   const [costs, setCosts] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { createBatchWorkLogs } from '@/services/workLog.service';
 import { useNotification } from "@/context/NotificationContext";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface Worker {
   id: string;
@@ -61,6 +62,8 @@ export default function QuickWorkLogModal({
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch workers on mount
+  useScrollLock(isOpen);
+
   useEffect(() => {
     async function fetchWorkers() {
       try {

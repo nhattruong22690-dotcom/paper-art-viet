@@ -28,6 +28,7 @@ import {
 import { getMilestoneTemplate } from '@/services/systemConfig.service';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -330,18 +331,16 @@ export default function CreateSalesOrder({ isOpen, onClose, onSuccess }: CreateS
     }
   }, [isOpen]);
 
-  // Lock scroll when modal is open
+  useScrollLock(isOpen);
+
   useEffect(() => {
     if (isOpen) {
       const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = `${scrollBarWidth}px`;
     } else {
-      document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     }
     return () => {
-      document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     };
   }, [isOpen]);

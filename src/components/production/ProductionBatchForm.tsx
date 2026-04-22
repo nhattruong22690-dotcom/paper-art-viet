@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -72,16 +73,12 @@ export default function ProductionBatchForm({
   ]);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
       loadWorkers();
-    } else {
-      document.body.style.overflow = 'auto';
     }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
   }, [isOpen]);
 
   const loadWorkers = async () => {

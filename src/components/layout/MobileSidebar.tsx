@@ -13,6 +13,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { navigation, type Role } from '@/config/navigation';
 
 function cn(...inputs: ClassValue[]) {
@@ -39,13 +40,7 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     });
   }, [pathname]);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-  }, [isOpen]);
+  useScrollLock(isOpen);
 
   const toggleMenu = (e: React.MouseEvent, name: string) => {
     e.preventDefault();

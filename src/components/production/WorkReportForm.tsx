@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   FileText, 
@@ -13,6 +13,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useNotification } from "@/context/NotificationContext";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -37,6 +38,8 @@ export default function WorkReportForm({ productionOrderId, sku, productName, on
   const totalErrors = techErrors + matErrors;
   const errorRate = qty > 0 ? (totalErrors / qty) * 100 : 0;
   const isHighError = errorRate > 5;
+  
+  useScrollLock(true);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

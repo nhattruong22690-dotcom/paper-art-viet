@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Operation } from '@/types/bom';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface OperationManagerModalProps {
   isOpen: boolean;
@@ -27,8 +28,12 @@ export default function OperationManagerModal({ isOpen, onClose }: OperationMana
     supplier: ''
   });
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
-    if (isOpen) loadOperations();
+    if (isOpen) {
+      loadOperations();
+    }
   }, [isOpen]);
 
   const loadOperations = async () => {

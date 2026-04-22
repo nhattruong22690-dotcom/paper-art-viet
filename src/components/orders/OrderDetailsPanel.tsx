@@ -11,6 +11,7 @@ import ProductionOrderDetailModal from '@/components/production/ProductionOrderD
 import SplitProductionModal from './SplitProductionModal';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -70,19 +71,14 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
     }));
   };
 
+  useScrollLock(!!orderId);
+
   useEffect(() => {
     // Luôn tắt chế độ chỉnh sửa khi đơn hàng thay đổi hoặc bảng bị đóng
     setIsEditing(false);
     if (orderId) {
-      document.body.style.overflow = 'hidden';
       fetchOrder();
-    } else {
-      document.body.style.overflow = 'auto';
     }
-
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
   }, [orderId]);
 
   useEffect(() => {

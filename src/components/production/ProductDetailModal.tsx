@@ -36,6 +36,7 @@ import { getAllOperations } from '@/services/operation.service';
 import { formatNumber, parseNumber, formatVND } from '@/utils/format';
 import { NumericInput } from '@/components/ui/NumericInput';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 function cn(...inputs: ClassValue[]) {
    return twMerge(clsx(inputs));
@@ -117,15 +118,19 @@ export default function ProductDetailModal({ isOpen, onClose, product, onUpdate,
    const [bomOperations, setBomOperations] = useState<any[]>([]);
    const [allOperations, setAllOperations] = useState<any[]>([]);
 
+   useScrollLock(isOpen);
+
    useEffect(() => {
-      if (isOpen && product.id) {
-         setProductionTimeStd(product.productionTimeStd || 0);
-         setProductName(product.name || '');
-         setProductSKU(product.sku || '');
-         setProductUnit(product.unit || '');
-         loadProductDetail();
-         loadMaterials();
-         loadOperations();
+      if (isOpen) {
+         if (product.id) {
+            setProductionTimeStd(product.productionTimeStd || 0);
+            setProductName(product.name || '');
+            setProductSKU(product.sku || '');
+            setProductUnit(product.unit || '');
+            loadProductDetail();
+            loadMaterials();
+            loadOperations();
+         }
       }
    }, [isOpen, product.id]);
 

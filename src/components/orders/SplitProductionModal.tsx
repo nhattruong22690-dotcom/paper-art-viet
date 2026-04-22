@@ -5,6 +5,7 @@ import { X, Plus, Trash2, Check, AlertCircle, Factory, User, Package } from 'luc
 import { useNotification } from '@/context/NotificationContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -42,6 +43,8 @@ export default function SplitProductionModal({ isOpen, onClose, onSuccess, order
   const [outsourcers, setOutsourcers] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialData, setInitialData] = useState<string>('');
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {

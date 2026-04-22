@@ -18,6 +18,7 @@ import { twMerge } from 'tailwind-merge';
 import { Material } from '@/types/bom';
 import { formatNumber } from '@/utils/format';
 import { NumericInput } from '@/components/ui/NumericInput';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -49,6 +50,8 @@ export default function MaterialManagerModal({ isOpen, onClose }: MaterialManage
     price: 0,
     supplier: ''
   });
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {

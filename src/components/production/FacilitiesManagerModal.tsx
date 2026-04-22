@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Factory, User, Phone, MapPin, Star, Settings, Trash2, Edit3, ChevronRight, LayoutGrid } from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -23,6 +24,9 @@ export default function FacilitiesManagerModal({ isOpen, onClose }: FacilitiesMa
   const [loading, setLoading] = useState(true);
   const [isEditingModalOpen, setIsEditingModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+
+  useScrollLock(isOpen);
+  useScrollLock(isEditingModalOpen);
 
   useEffect(() => {
     if (isOpen) {
