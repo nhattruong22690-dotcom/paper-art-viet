@@ -87,8 +87,10 @@ export async function getOrderProgress() {
     const totalQty = (order.orderItems || []).reduce((acc: number, i: any) => acc + (i.quantity || 0), 0);
     const completedQty = (order.productionOrders || []).reduce((acc: number, po: any) => acc + (po.quantity_completed || 0), 0);
     
-    const milestones = order.estimated_stages || [];
-    const completedMilestones = milestones.filter((m: any) => m.isCompleted).length;
+    const allMilestones = order.estimated_stages || [];
+    // Chỉ đếm các khâu có thời hạn hoặc đã hoàn thành
+    const validMilestones = allMilestones.filter((m: any) => m.deadline || m.isCompleted || m.completedAt);
+    const completedMilestones = validMilestones.filter((m: any) => m.isCompleted || m.completedAt).length;
     
     const progress = totalQty > 0 ? Math.round((completedQty / totalQty) * 100) : 0;
 
@@ -99,7 +101,7 @@ export async function getOrderProgress() {
       deadline: order.deadline_delivery,
       progress,
       productRatio: `${completedQty}/${totalQty}`,
-      milestoneRatio: `${completedMilestones}/${milestones.length}`,
+      milestoneRatio: `${completedMilestones}/${validMilestones.length}`,
       status: order.status
     };
   });

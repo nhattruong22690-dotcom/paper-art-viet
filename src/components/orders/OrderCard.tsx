@@ -29,6 +29,11 @@ export default function OrderCard({ order, onClick }: OrderCardProps) {
   const hoursLeft = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
   const isUrgent = hoursLeft > 0 && hoursLeft <= 24 && progress < 80;
 
+  // Logic lọc công đoạn hợp lệ
+  const allStages = order.estimatedStages || [];
+  const validStages = allStages.filter((s: any) => s.deadline || s.isCompleted || s.completedAt);
+  const completedStages = validStages.filter((s: any) => s.isCompleted || s.completedAt).length;
+
   return (
     <div 
       draggable
@@ -82,10 +87,10 @@ export default function OrderCard({ order, onClick }: OrderCardProps) {
 
       {/* Progress Bar & Milestones */}
       <div className="space-y-2 mt-4">
-        {order.estimatedStages && order.estimatedStages.length > 0 && (
+        {validStages.length > 0 && (
           <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50/50 px-2 py-1 rounded border border-amber-100">
             <span>Các khâu dự tính:</span>
-            <span>{order.estimatedStages.filter((s: any) => s.isCompleted).length}/{order.estimatedStages.length}</span>
+            <span>{completedStages}/{validStages.length}</span>
           </div>
         )}
         

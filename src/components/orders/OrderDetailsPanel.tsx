@@ -1679,7 +1679,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                       <Calendar className={cn("fluid-icon-sm transition-transform duration-300", isMilestonesCollapsed && "rotate-12")} />
                       Thời hạn các khâu dự tính
                       <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full fluid-text-xs font-black border border-amber-200">
-                        {(isEditing ? editData.estimatedStages : order.estimatedStages || []).length} khâu
+                        {((isEditing ? editData.estimatedStages : order.estimatedStages || []).filter((m: any) => m.deadline || m.isCompleted || m.completedAt)).length} khâu
                       </span>
                     </h3>
                     <div className={cn(
@@ -1738,7 +1738,9 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                         </tr>
                       </thead>
                       <tbody>
-                        {(isEditing ? editData.estimatedStages : order.estimatedStages)?.map((m: any) => {
+                        {((isEditing ? editData.estimatedStages : order.estimatedStages) || [])
+                          .filter((m: any) => isEditing || (m.deadline || m.isCompleted || m.completedAt))
+                          .map((m: any) => {
                           const status = getMilestoneStatus(m);
                           const config = getStatusConfig(status);
                           
