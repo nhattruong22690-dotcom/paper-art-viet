@@ -296,15 +296,30 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
   };
 
   const toggleMilestone = async (milestoneId: string) => {
-    const updatedStages = order.estimatedStages.map((m: any) =>
-      m.id === milestoneId ? { 
-        ...m, 
-        isCompleted: !m.isCompleted,
-        completedAt: !m.isCompleted ? new Date().toISOString().split('T')[0] : null
-      } : m
-    );
+    const updatedStages = (order.estimatedStages || []).map((m: any) => {
+      if (m.id !== milestoneId) return m;
 
-    // Quick update to UI
+      let nextStatus = m.status || 'pending';
+      let isCompleted = m.isCompleted;
+      let completedAt = m.completedAt;
+
+      // Logic chuyển đổi trạng thái: Chờ xử lý -> Đang thực hiện -> Hoàn thành -> Chờ xử lý
+      if (isCompleted) {
+        nextStatus = 'pending';
+        isCompleted = false;
+        completedAt = null;
+      } else if (nextStatus === 'pending') {
+        nextStatus = 'in_progress';
+      } else if (nextStatus === 'in_progress') {
+        nextStatus = 'completed';
+        isCompleted = true;
+        completedAt = new Date().toISOString().split('T')[0];
+      }
+
+      return { ...m, status: nextStatus, isCompleted, completedAt };
+    });
+
+    // Cập nhật UI ngay lập tức
     setOrder({ ...order, estimatedStages: updatedStages });
     setEditData({ ...editData, estimatedStages: updatedStages });
 
@@ -318,6 +333,39 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
     } catch (error) {
       console.error('Toggle milestone error:', error);
       showToast('error', 'Không thể cập nhật trạng thái công đoạn');
+    }
+  };
+
+  const getMilestoneStatus = (m: any) => {
+    // Nếu không có thời hạn thì để trống theo yêu cầu
+    if (!m.deadline) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadline = new Date(m.deadline);
+    const completedAt = m.completedAt ? new Date(m.completedAt) : null;
+
+    // Nếu đã xong nhưng ngày HT thực tế trễ hơn thời hạn -> Trễ
+    if (m.isCompleted && completedAt && completedAt > deadline) {
+      return 'late';
+    }
+
+    // Nếu đã xong và đúng hạn -> Hoàn thành
+    if (m.isCompleted) return 'completed';
+
+    // Nếu chưa xong nhưng đã quá ngày hiện tại -> Trễ
+    if (deadline < today) return 'late';
+
+    return m.status || 'pending';
+  };
+
+  const getStatusConfig = (status: string | null) => {
+    if (!status) return null;
+    switch (status) {
+      case 'late': return { label: 'TRỄ HẠN', bg: 'bg-[#FEE2E2]' };
+      case 'completed': return { label: 'HOÀN THÀNH', bg: 'bg-[#D1FAE5]' };
+      case 'in_progress': return { label: 'ĐANG LÀM', bg: 'bg-[#D8B4FE]' };
+      default: return { label: 'CHỜ XỬ LÝ', bg: 'bg-[#FEF3C7]' };
     }
   };
 
@@ -1678,97 +1726,128 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
 
                 {!isMilestonesCollapsed && (
                   <div className="bg-white border-[0.5px] border-black/10 rounded-xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                    <table className="thin-table w-full text-left text-xs">
+                    <table className="thin-table w-full text-left text-xs border-separate border-spacing-y-0.5">
                       <thead>
-                        <tr className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                          <th>Công đoạn</th>
-                          <th className="w-28 text-center">Thời hạn</th>
-                          <th className="w-28 text-center">HT Thực tế</th>
-                          <th className="w-20 text-center">Xong</th>
-                          {isEditing && <th className="w-10"></th>}
+                        <tr className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest bg-gray-50/50">
+                          <th className="px-4 py-2">Công đoạn</th>
+                          <th className="w-40 text-center px-4 py-2">Đánh giá</th>
+                          <th className="w-24 text-center px-4 py-2">Thời hạn</th>
+                          <th className="w-24 text-center px-4 py-2">HT Thực tế</th>
+                          <th className="w-16 text-center px-4 py-2">Xong</th>
+                          {isEditing && <th className="w-10 px-4 py-2"></th>}
                         </tr>
                       </thead>
                       <tbody>
-                        {(isEditing ? editData.estimatedStages : order.estimatedStages)?.map((m: any) => (
-                          <tr key={m.id} className={cn("transition-colors", m.isCompleted ? "bg-green-50/30" : "")}>
-                            <td className="px-4 py-3 font-bold text-foreground">
-                              {isEditing ? (
-                                <input
-                                  type="text"
-                                  className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-bold"
-                                  value={m.label}
-                                  placeholder="Tên khâu..."
-                                  onChange={(e) => {
-                                    const newMilestones = editData.estimatedStages.map((ms: any) =>
-                                      ms.id === m.id ? { ...ms, label: e.target.value } : ms
-                                    );
-                                    setEditData({ ...editData, estimatedStages: newMilestones });
-                                  }}
-                                />
-                              ) : m.label || '---'}
-                            </td>
-                            <td className="px-4 py-3 text-center tabular-nums font-bold text-muted-foreground">
-                              {isEditing ? (
-                                <input
-                                  type="date"
-                                  className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-bold text-center"
-                                  value={m.deadline}
-                                  onChange={(e) => {
-                                    const newMilestones = editData.estimatedStages.map((ms: any) =>
-                                      ms.id === m.id ? { ...ms, deadline: e.target.value } : ms
-                                    );
-                                    setEditData({ ...editData, estimatedStages: newMilestones });
-                                  }}
-                                />
-                              ) : m.deadline ? new Date(m.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '---'}
-                            </td>
-                            <td className="px-4 py-3 text-center tabular-nums font-bold text-emerald-600">
-                              {isEditing ? (
-                                <input
-                                  type="date"
-                                  className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-bold text-center text-emerald-600"
-                                  value={m.completedAt || ''}
-                                  onChange={(e) => {
-                                    const newMilestones = editData.estimatedStages.map((ms: any) =>
-                                      ms.id === m.id ? { ...ms, completedAt: e.target.value, isCompleted: !!e.target.value } : ms
-                                    );
-                                    setEditData({ ...editData, estimatedStages: newMilestones });
-                                  }}
-                                />
-                              ) : m.completedAt ? new Date(m.completedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '---'}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex justify-center">
-                                <button
-                                  onClick={() => !isEditing && toggleMilestone(m.id)}
-                                  disabled={isEditing}
-                                  className={cn(
-                                    "w-5 h-5 rounded border flex items-center justify-center transition-all",
-                                    m.isCompleted ? "bg-green-500 border-green-500 text-white" : "bg-white border-gray-300 hover:border-primary"
-                                  )}
-                                >
-                                  {m.isCompleted && <CheckCircle2 className="fluid-icon-sm" strokeWidth={3} />}
-                                </button>
-                              </div>
-                            </td>
-                            {isEditing && (
-                              <td className="px-4 py-3 text-center">
-                                <button
-                                  onClick={() => {
-                                    const newItems = editData.estimatedStages.filter((ms: any) => ms.id !== m.id);
-                                    setEditData({ ...editData, estimatedStages: newItems });
-                                  }}
-                                  className="text-red-400 hover:text-red-600 transition-colors"
-                                >
-                                  <Trash2 className="fluid-icon-sm" />
-                                </button>
+                        {(isEditing ? editData.estimatedStages : order.estimatedStages)?.map((m: any) => {
+                          const status = getMilestoneStatus(m);
+                          const config = getStatusConfig(status);
+                          
+                          return (
+                            <tr key={m.id} className={cn("transition-colors group", m.isCompleted ? "bg-green-50/20" : "hover:bg-gray-50/50")}>
+                              <td className="px-4 py-3 font-bold text-foreground">
+                                {isEditing ? (
+                                  <input
+                                    type="text"
+                                    className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-bold"
+                                    value={m.label}
+                                    placeholder="Tên khâu..."
+                                    onChange={(e) => {
+                                      const newMilestones = editData.estimatedStages.map((ms: any) =>
+                                        ms.id === m.id ? { ...ms, label: e.target.value } : ms
+                                      );
+                                      setEditData({ ...editData, estimatedStages: newMilestones });
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="flex flex-col">
+                                    <span className="text-xs">{m.label || '---'}</span>
+                                  </div>
+                                )}
                               </td>
-                            )}
-                          </tr>
-                        ))}
+                              <td className="px-4 py-3 text-center">
+                                {config && (
+                                  <button
+                                    onClick={() => !isEditing && toggleMilestone(m.id)}
+                                    disabled={isEditing}
+                                    style={{ 
+                                      fontSize: 'clamp(8px, 0.6vw, 10px)',
+                                      padding: 'clamp(3px, 0.4vw, 5px) 0',
+                                      width: 'clamp(95px, 8vw, 120px)',
+                                      border: '2px solid #000000'
+                                    }}
+                                    className={cn(
+                                      "rounded-full font-bold uppercase tracking-widest transition-all duration-200 select-none shadow-[2px_2px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none whitespace-nowrap inline-flex items-center justify-center",
+                                      config.bg,
+                                      !isEditing && "hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[4px_4px_0px_#000000]"
+                                    )}
+                                  >
+                                    {config.label}
+                                  </button>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-center tabular-nums font-bold text-muted-foreground">
+                                {isEditing ? (
+                                  <input
+                                    type="date"
+                                    className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-bold text-center"
+                                    value={m.deadline}
+                                    onChange={(e) => {
+                                      const newMilestones = editData.estimatedStages.map((ms: any) =>
+                                        ms.id === m.id ? { ...ms, deadline: e.target.value } : ms
+                                      );
+                                      setEditData({ ...editData, estimatedStages: newMilestones });
+                                    }}
+                                  />
+                                ) : m.deadline ? new Date(m.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '---'}
+                              </td>
+                              <td className="px-4 py-3 text-center tabular-nums font-bold text-emerald-600">
+                                {isEditing ? (
+                                  <input
+                                    type="date"
+                                    className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-bold text-center text-emerald-600"
+                                    value={m.completedAt || ''}
+                                    onChange={(e) => {
+                                      const newMilestones = editData.estimatedStages.map((ms: any) =>
+                                        ms.id === m.id ? { ...ms, completedAt: e.target.value, isCompleted: !!e.target.value } : ms
+                                      );
+                                      setEditData({ ...editData, estimatedStages: newMilestones });
+                                    }}
+                                  />
+                                ) : m.completedAt ? new Date(m.completedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '---'}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex justify-center">
+                                  <button
+                                    onClick={() => !isEditing && toggleMilestone(m.id)}
+                                    disabled={isEditing}
+                                    className={cn(
+                                      "w-5 h-5 rounded border flex items-center justify-center transition-all shadow-sm",
+                                      m.isCompleted ? "bg-green-500 border-green-600 text-white" : "bg-white border-gray-300 hover:border-primary"
+                                    )}
+                                  >
+                                    {m.isCompleted && <CheckCircle2 size={12} strokeWidth={4} />}
+                                  </button>
+                                </div>
+                              </td>
+                              {isEditing && (
+                                <td className="px-4 py-3 text-center">
+                                  <button
+                                    onClick={() => {
+                                      const newItems = editData.estimatedStages.filter((ms: any) => ms.id !== m.id);
+                                      setEditData({ ...editData, estimatedStages: newItems });
+                                    }}
+                                    className="text-red-400 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 className="fluid-icon-sm" />
+                                  </button>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
                         {(!(isEditing ? editData.estimatedStages : order.estimatedStages) || (isEditing ? editData.estimatedStages : order.estimatedStages).length === 0) && (
                           <tr>
-                            <td colSpan={isEditing ? 4 : 3} className="px-4 py-8 text-center text-gray-400 italic fluid-text-xs uppercase font-bold tracking-widest">
+                            <td colSpan={isEditing ? 5 : 4} className="px-4 py-8 text-center text-gray-400 italic fluid-text-xs uppercase font-bold tracking-widest">
                               Chưa có dữ liệu khâu dự tính
                             </td>
                           </tr>
