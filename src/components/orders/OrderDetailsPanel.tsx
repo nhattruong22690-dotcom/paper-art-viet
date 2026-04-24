@@ -201,6 +201,13 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
 
   const handleSave = async () => {
     try {
+      // Validation: Check if all products are selected
+      const hasInvalidItem = editData.orderItems?.some((item: any) => !item.productId);
+      if (hasInvalidItem) {
+        showToast('error', 'Vui lòng chọn sản phẩm cho tất cả các dòng');
+        return;
+      }
+
       const changes = generateDiffLog(order, editData);
 
       const payload: any = {
@@ -989,7 +996,7 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
               </div>
 
               <div className="space-y-4">
-                <div className="flex justify-between items-center border-l-[0.5px] border-primary pl-3">
+                <div className="flex justify-between items-center border-l-[0.5px] border-primary pl-3 mb-4 sticky top-0 z-20 bg-white/95 backdrop-blur-sm py-2 shadow-sm rounded-r-lg">
                   <div
                     className="flex items-center gap-3 cursor-pointer group"
                     onClick={() => setIsProductionCollapsed(!isProductionCollapsed)}
@@ -1037,19 +1044,18 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                 </div>
 
                 {!isProductionCollapsed && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    {(isEditing ? editData.orderItems : order.orderItems || []).map((item: any) => {
-                      const stats = getItemProgress(item.productId, item.quantity, item.id);
-                      const isNewItem = String(item.id).startsWith('new-');
-                      return (
-                        <div key={item.id} className={cn(
-                          "bg-white border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all divide-y divide-border border-l-8",
-                          stats.totalDone >= item.quantity 
-                            ? (stats.isSurplus ? "border-l-indigo-500" : "border-l-emerald-500")
-                            : stats.totalDone > 0 ? "border-l-amber-500" : "border-l-slate-200"
-                        )}>
-
-                          {/* Main Item Info */}
+                  <div className="space-y-4">
+                    <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                      {(isEditing ? editData.orderItems : order.orderItems || []).map((item: any) => {
+                        const stats = getItemProgress(item.productId, item.quantity, item.id);
+                        const isNewItem = String(item.id).startsWith('new-');
+                        return (
+                          <div key={item.id} className={cn(
+                            "bg-white border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all divide-y divide-border border-l-8",
+                            stats.totalDone >= item.quantity 
+                              ? (stats.isSurplus ? "border-l-indigo-500" : "border-l-emerald-500")
+                              : stats.totalDone > 0 ? "border-l-amber-500" : "border-l-slate-200"
+                          )}>
                           <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div className="flex items-center gap-4">
                               <div className="w-10 h-10 bg-primary/5 rounded border border-primary/10 flex items-center justify-center text-primary font-bold fluid-text-xs uppercase">
@@ -1366,10 +1372,27 @@ export default function OrderDetailsPanel({ orderId, onClose, onUpdate, onDelete
                                 )}
                               </div>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {isEditing && (
+                      <button
+                        onClick={() => {
+                          const newItems = [
+                            ...(editData.orderItems || []),
+                            { id: 'new-' + Math.random().toString(36).substr(2, 9), productId: '', quantity: 1, price: 0, product: { name: 'Sản phẩm mới...', sku: 'NEW' } }
+                          ];
+                          setEditData({ ...editData, orderItems: newItems });
+                        }}
+                        className="w-full py-4 border-2 border-dashed border-primary/20 rounded-xl flex items-center justify-center gap-2 text-primary font-bold hover:bg-primary/5 hover:border-primary/40 transition-all group"
+                      >
+                        <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+                        THÊM SẢN PHẨM MỚI VÀO ĐƠN HÀNG
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

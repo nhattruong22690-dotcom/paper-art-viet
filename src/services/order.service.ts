@@ -1,5 +1,6 @@
 "use server";
 import { supabaseAdmin as supabase } from '@/lib/supabase';
+import crypto from 'crypto';
 
 /**
  * Tính toán giá vốn (COGS) dự kiến cho một sản phẩm dựa trên BOM hiện tại.
@@ -441,21 +442,39 @@ export async function updateOrder(id: string, data: any) {
   // Sync Order Items if provided
   if (orderItems) {
     // 1. Delete items that are no longer in the list
-    const currentItemIds = orderItems.filter((i: any) => !String(i.id).startsWith('new-')).map((i: any) => i.id);
+    const currentItemIds = orderItems.filter((i: any) => i.id && !String(i.id).startsWith('new-')).map((i: any) => i.id);
+    
     if (currentItemIds.length > 0) {
-      await supabase.from('OrderItem').delete().eq('order_id', id).not('id', 'in', `(${currentItemIds.join(',')})`);
+      const { error: deleteError } = await supabase
+        .from('OrderItem')
+        .delete()
+        .eq('order_id', id)
+        .filter('id', 'not.in', `(${currentItemIds.join(',')})`);
+      
+      if (deleteError) {
+        console.error('Error deleting items:', deleteError);
+        throw deleteError;
+      }
     } else {
-      await supabase.from('OrderItem').delete().eq('order_id', id);
+      const { error: deleteError } = await supabase
+        .from('OrderItem')
+        .delete()
+        .eq('order_id', id);
+      
+      if (deleteError) {
+        console.error('Error deleting all items:', deleteError);
+        throw deleteError;
+      }
     }
 
     // 2. Upsert items
     const itemsToUpsert = orderItems.map((i: any) => ({
-      ...(String(i.id).startsWith('new-') ? {} : { id: i.id }),
+      id: (i.id && !String(i.id).startsWith('new-')) ? i.id : crypto.randomUUID(),
       order_id: id,
       product_id: i.productId || null,
-      quantity: i.quantity,
-      price: i.price,
-      cogs_at_order: i.cogsAtOrder || 0,
+      quantity: Number(i.quantity) || 0,
+      price: Number(i.price) || 0,
+      cogs_at_order: Number(i.cogsAtOrder) || 0,
       bom_snapshot: i.bomSnapshot || []
     }));
 
@@ -465,9 +484,12 @@ export async function updateOrder(id: string, data: any) {
         .upsert(itemsToUpsert)
         .select();
       
-      if (upsertError) console.error('OrderItem Sync Error:', upsertError);
+      if (upsertError) {
+        console.error('OrderItem Upsert Error:', upsertError);
+        throw upsertError;
+      }
 
-      if (upsertedItems) {
+      if (upsertedItems && upsertedItems.length > 0) {
         await createOrderItemSnapshots(id, upsertedItems);
       }
     }
