@@ -22,7 +22,9 @@ import {
   PencilLine,
   CheckCircle2,
   TrendingUp,
-  Maximize2
+  Maximize2,
+  User,
+  ChevronDown
 } from 'lucide-react';
 import ProductionPipeline, { ProductionOrder, Status } from '@/components/production/ProductionPipeline';
 import Link from 'next/link';
@@ -59,23 +61,56 @@ export default function ProductionPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [isArchiveView, setIsArchiveView] = useState(false);
   
+  const [parentOrders, setParentOrders] = useState<{id: string, contractCode: string, customerName: string, progress: number}[]>([]);
+  const [selectedParentOrder, setSelectedParentOrder] = useState<string>('all');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [parentOrderSearch, setParentOrderSearch] = useState("");
+
   const [products, setProducts] = useState<{name: string, sku: string}[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [selectedOrder, setSelectedOrder] = useState<ProductionOrder | null>(null);
   const [viewingOrderId, setViewingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     loadOrders();
+    loadParentOrders();
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
+      }
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const loadParentOrders = async () => {
+    try {
+      const res = await fetch('/api/orders');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const activeOrders = data.filter((o: any) => 
+          o.status?.toLowerCase() !== 'completed' && 
+          o.status?.toLowerCase() !== 'hoàn tất' && 
+          o.status?.toLowerCase() !== 'archived'
+        );
+        setParentOrders(activeOrders.map((o: any) => ({
+          id: o.id,
+          contractCode: o.contractCode || o.id,
+          customerName: o.customer?.name || 'Khách lẻ',
+          progress: o.overallProgress || 0
+        })));
+      }
+    } catch (err) {
+      console.error("Failed to fetch parent orders:", err);
+    }
+  };
 
   const loadOrders = async () => {
     setLoading(true);
@@ -171,6 +206,10 @@ export default function ProductionPage() {
       if (order.status === 'Archived') return false;
     }
 
+    if (selectedParentOrder !== 'all') {
+      if (order.orderId !== selectedParentOrder) return false;
+    }
+
     const statusMatch = filterStatus === 'all' || order.status === filterStatus;
     if (!statusMatch) return false;
 
@@ -209,6 +248,11 @@ export default function ProductionPage() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 5);
+
+  const filteredParentOrders = parentOrders.filter(o => 
+    o.contractCode.toLowerCase().includes(parentOrderSearch.toLowerCase()) ||
+    o.customerName.toLowerCase().includes(parentOrderSearch.toLowerCase())
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -297,73 +341,193 @@ export default function ProductionPage() {
 
       {/* Unified Control Frame - Sticky */}
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md pt-4 pb-2 -mx-4 px-4">
-        <div className="bg-white border-2 border-black rounded-[32px] shadow-neo overflow-hidden flex flex-col divide-y-2 divide-black/[0.08]">
+        <div className="bg-white border-2 border-black rounded-[32px] shadow-neo flex flex-col divide-y-2 divide-black/[0.08]">
           
           {/* Layer 1: Filter & Search */}
-          <div className="p-4 md:p-6 flex flex-col md:flex-row gap-4 bg-white">
-            <div className="flex-1 relative group" ref={searchRef}>
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-black transition-colors" size={20} />
-              <input 
-                type="text" 
-                placeholder="Tìm kiếm lệnh sản xuất, SKU, mã đơn..."
-                className="form-input pl-12 h-12 w-full font-bold uppercase placeholder:font-normal placeholder:normal-case shadow-neo-active focus:shadow-neo !border-black/10"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setShowSuggestions(true);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-              />
+          <div className="p-4 md:p-6 flex flex-col gap-4 bg-white rounded-t-[30px]">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative group" ref={searchRef}>
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-black transition-colors" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Tìm kiếm lệnh sản xuất, SKU, mã đơn..."
+                  className="form-input pl-12 h-12 w-full font-bold uppercase placeholder:font-normal placeholder:normal-case shadow-neo-active focus:shadow-neo !border-black/10"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                />
+                
+                {/* Suggestions Dropdown */}
+                {showSuggestions && searchTerm.length >= 1 && filteredSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-black rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                     <div className="p-3 border-b border-gray-100 bg-gray-50/50">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Gợi ý sản phẩm ({filteredSuggestions.length})</p>
+                     </div>
+                     <div className="max-h-60 overflow-y-auto">
+                        {filteredSuggestions.map((p, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setSearchTerm(p.name);
+                              setShowSuggestions(false);
+                            }}
+                            className="w-full p-4 flex items-center justify-between hover:bg-primary/5 transition-colors border-b border-gray-50 last:border-none group text-left"
+                          >
+                             <div className="flex flex-col gap-0.5">
+                                <span className="text-xs font-black text-foreground group-hover:text-primary transition-colors">{p.name}</span>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{p.sku}</span>
+                             </div>
+                             <ChevronRight size={14} className="text-gray-300 group-hover:text-primary transition-all" />
+                          </button>
+                        ))}
+                     </div>
+                  </div>
+                )}
+              </div>
               
-              {/* Suggestions Dropdown */}
-              {showSuggestions && searchTerm.length >= 1 && filteredSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-black rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                   <div className="p-3 border-b border-gray-100 bg-gray-50/50">
-                      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Gợi ý sản phẩm ({filteredSuggestions.length})</p>
-                   </div>
-                   <div className="max-h-60 overflow-y-auto">
-                      {filteredSuggestions.map((p, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            setSearchTerm(p.name);
-                            setShowSuggestions(false);
-                          }}
-                          className="w-full p-4 flex items-center justify-between hover:bg-primary/5 transition-colors border-b border-gray-50 last:border-none group text-left"
-                        >
-                           <div className="flex flex-col gap-0.5">
-                              <span className="text-xs font-black text-foreground group-hover:text-primary transition-colors">{p.name}</span>
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{p.sku}</span>
-                           </div>
-                           <ChevronRight size={14} className="text-gray-300 group-hover:text-primary transition-all" />
-                        </button>
-                      ))}
-                   </div>
-                </div>
-              )}
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => {
+                    setSortBy(sortBy === 'dueDate' ? 'none' : 'dueDate');
+                    if (sortBy !== 'dueDate') setSortOrder('asc');
+                  }}
+                  className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 shadow-neo-active
+                    ${sortBy === 'dueDate' ? 'bg-neo-blue text-black border-black border-2' : 'bg-white text-muted-text border-black/5 hover:border-black'}`}
+                >
+                  <Clock size={16} strokeWidth={3} /> {sortBy === 'dueDate' && (sortOrder === 'asc' ? '↑' : '↓')} Hạn giao
+                </button>
+                <button 
+                  onClick={() => {
+                    setSortBy(sortBy === 'priority' ? 'none' : 'priority');
+                    if (sortBy !== 'priority') setSortOrder('desc');
+                  }}
+                  className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 shadow-neo-active
+                    ${sortBy === 'priority' ? 'bg-neo-pink text-black border-black border-2' : 'bg-white text-muted-text border-black/5 hover:border-black'}`}
+                >
+                  <Filter size={16} strokeWidth={3} /> {sortBy === 'priority' && (sortOrder === 'desc' ? '↑' : '↓')} Ưu tiên
+                </button>
+              </div>
             </div>
-            
-            <div className="flex gap-2">
-              <button 
-                onClick={() => {
-                  setSortBy(sortBy === 'dueDate' ? 'none' : 'dueDate');
-                  if (sortBy !== 'dueDate') setSortOrder('asc');
-                }}
-                className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 shadow-neo-active
-                  ${sortBy === 'dueDate' ? 'bg-neo-blue text-black border-black border-2' : 'bg-white text-muted-text border-black/5 hover:border-black'}`}
-              >
-                <Clock size={16} strokeWidth={3} /> {sortBy === 'dueDate' && (sortOrder === 'asc' ? '↑' : '↓')} Hạn giao
-              </button>
-              <button 
-                onClick={() => {
-                  setSortBy(sortBy === 'priority' ? 'none' : 'priority');
-                  if (sortBy !== 'priority') setSortOrder('desc');
-                }}
-                className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 shadow-neo-active
-                  ${sortBy === 'priority' ? 'bg-neo-pink text-black border-black border-2' : 'bg-white text-muted-text border-black/5 hover:border-black'}`}
-              >
-                <Filter size={16} strokeWidth={3} /> {sortBy === 'priority' && (sortOrder === 'desc' ? '↑' : '↓')} Ưu tiên
-              </button>
+
+            {/* Custom Droplist Filter */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 shrink-0">
+                <Briefcase size={16} className="text-black/50" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-black/60">Lọc theo đơn hàng:</span>
+              </div>
+              
+              <div className="relative w-full max-w-[320px]" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full flex items-center justify-between bg-gray-50 border-2 border-black/10 rounded-xl px-4 py-2 hover:border-black focus:border-black transition-all shadow-sm text-left h-11"
+                >
+                  <span className="text-xs font-black uppercase tracking-wide truncate font-space">
+                    {selectedParentOrder === 'all' 
+                      ? 'Tất cả đơn hàng' 
+                      : parentOrders.find(o => o.id === selectedParentOrder)?.contractCode || 'Tất cả đơn hàng'}
+                  </span>
+                  <ChevronDown size={16} className={cn("transition-transform duration-200 text-black/50", isDropdownOpen && "rotate-180")} />
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-black rounded-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Search Input inside Dropdown */}
+                    <div className="p-2 border-b-2 border-black/5 bg-gray-50/50">
+                      <div className="relative">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                        <input
+                          type="text"
+                          placeholder="Tìm mã hợp đồng, khách hàng..."
+                          value={parentOrderSearch}
+                          onChange={e => setParentOrderSearch(e.target.value)}
+                          className="w-full pl-8 pr-4 py-2 bg-white border border-black/10 rounded-lg text-xs font-bold outline-none focus:border-black/30 transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="max-h-[320px] overflow-y-auto scrollbar-thin">
+                      <button
+                        onClick={() => {
+                          setSelectedParentOrder('all');
+                          setIsDropdownOpen(false);
+                          setParentOrderSearch("");
+                        }}
+                        className="w-full text-left p-4 hover:bg-black/5 transition-colors border-b-2 border-black/5 last:border-none group flex items-center gap-3"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-black/10 shrink-0">
+                          <LayoutGrid size={14} className="text-gray-500" />
+                        </div>
+                        <span className="text-sm font-black uppercase text-foreground group-hover:text-primary transition-colors font-space tracking-tight">Hiển thị tất cả đơn hàng</span>
+                      </button>
+
+                      {filteredParentOrders.length === 0 ? (
+                        <div className="p-4 text-center text-xs font-bold text-black/40 uppercase tracking-widest">
+                          Không tìm thấy đơn hàng
+                        </div>
+                      ) : (
+                        filteredParentOrders.map(o => (
+                          <button
+                            key={o.id}
+                            onClick={() => {
+                              setSelectedParentOrder(o.id);
+                              setIsDropdownOpen(false);
+                              setParentOrderSearch("");
+                            }}
+                          className={cn(
+                            "w-full text-left p-4 transition-all border-b-2 border-black/5 last:border-none group relative hover:bg-black/5",
+                            selectedParentOrder === o.id ? "bg-neo-purple/10" : ""
+                          )}
+                        >
+                          {/* Selected Indicator */}
+                          {selectedParentOrder === o.id && (
+                            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary" />
+                          )}
+                          
+                          <div className="flex flex-col gap-1.5 min-w-0 w-full pl-1">
+                            <span className={cn(
+                              "text-sm font-black uppercase transition-colors truncate tracking-tight font-space",
+                              selectedParentOrder === o.id ? "text-primary" : "text-foreground group-hover:text-primary"
+                            )}>
+                              {o.contractCode}
+                            </span>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <User size={10} className="text-black/40 shrink-0" />
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate max-w-[160px]">
+                                  {o.customerName}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0 bg-white px-2 py-0.5 rounded-md border border-black/10">
+                                <span className={cn(
+                                  "text-[10px] font-black tabular-nums",
+                                  o.progress === 100 ? "text-green-600" : o.progress > 50 ? "text-primary" : "text-amber-500"
+                                )}>
+                                  {o.progress}%
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Tiny Progress bar line */}
+                            <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden mt-1 border border-black/5 shadow-inner">
+                                <div 
+                                  className={cn(
+                                    "h-full transition-all duration-700",
+                                    o.progress === 100 ? "bg-neo-mint" : o.progress > 50 ? "bg-primary" : "bg-neo-yellow"
+                                  )}
+                                  style={{ width: `${o.progress}%` }}
+                                />
+                            </div>
+                          </div>
+                        </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -385,7 +549,7 @@ export default function ProductionPage() {
           </div>
 
           {/* Layer 3: Column Headers (Desktop Only) - Integrated for "Nguyên khối" look */}
-          <div className="hidden md:flex divide-x-2 divide-black/[0.08] bg-white">
+          <div className="hidden md:flex divide-x-2 divide-black/[0.08] bg-white rounded-b-[30px] overflow-hidden">
             {(["Pending", "Processing", "QualityControl", "Completed"] as Status[]).map((status) => {
               const count = getStatusCount(status);
               return (

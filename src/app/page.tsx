@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import OrderDetailsPanel from '@/components/orders/OrderDetailsPanel';
+import DeliveryTimeline from '@/components/logistics/DeliveryTimeline';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -226,37 +227,11 @@ export default function DashboardPage() {
                <h3 className="font-bold text-foreground uppercase text-sm tracking-widest font-space">Lịch Xuất kho</h3>
             </div>
           </div>
-          <div className="p-6 overflow-y-auto flex-1 space-y-4 max-h-[550px] scrollbar-thin">
-            {(data?.deliveries || []).map((order: any, i: number) => (
-              <div key={i} className="p-6 bg-white border-neo border-black rounded-xl hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-active bg-card shadow-neo transition-all group cursor-pointer relative overflow-hidden">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">#{order.id}</span>
-                  <span className="text-[10px] font-black px-2 py-1 bg-neo-mint border-2 border-black rounded-lg">{order.date}</span>
-                </div>
-                <h4 className="font-bold text-foreground text-base group-hover:text-purple-600 transition-colors tracking-tight line-clamp-1 uppercase font-space">{order.customer}</h4>
-                <div className="flex items-center gap-2 mt-4">
-                   <PackageCheck size={16} strokeWidth={2.5} className="text-black/40" />
-                   <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{order.items} SKU thành phẩm</span>
-                </div>
-              </div>
-            ))}
-            {(!data?.deliveries || data.deliveries.length === 0) && (
-              <div className="py-28 text-center">
-                <div className="w-20 h-20 bg-white border-neo border-black rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-neo -rotate-3">
-                  <Truck size={40} strokeWidth={2} className="text-black/20" />
-                </div>
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-black/30">Kho vận trống</p>
-              </div>
-            )}
-          </div>
-          <div className="p-8 bg-neo-purple/5 border-t-neo border-black">
-            <Link 
-              href="/logistics/inventory" 
-              className="w-full neo-card !p-4 group flex items-center justify-center gap-3 text-[11px] font-black text-black uppercase tracking-[0.2em] bg-white hover:bg-neo-purple transition-all"
-            >
-              Xem tất cả vận đơn
-              <ChevronRight size={16} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+          <div className="h-[600px] overflow-hidden">
+            <DeliveryTimeline 
+              deliveries={data?.deliveries || []} 
+              onSelectOrder={(id) => setSelectedOrderId(id)}
+            />
           </div>
         </div>
 

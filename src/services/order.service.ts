@@ -176,7 +176,11 @@ export async function getOrders() {
     const items = order.orderItems || [];
     
     const totalTarget = pos.reduce((acc: number, po: any) => acc + (po.quantity_target || 0), 0);
-    const totalCompleted = pos.reduce((acc: number, po: any) => acc + (po.quantity_completed || 0), 0);
+    const totalCompleted = pos.reduce((acc: number, po: any) => {
+      // Capping completed quantity at target for progress calculation
+      const completed = Math.min(po.quantity_completed || 0, po.quantity_target || 0);
+      return acc + completed;
+    }, 0);
     const progress = totalTarget > 0 ? Math.round((totalCompleted / totalTarget) * 100) : 0;
 
     // Check if every item is fully allocated for production

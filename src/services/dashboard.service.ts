@@ -78,8 +78,7 @@ export async function getOrderProgress() {
     `)
     .neq('status', 'completed')
     .not('deadline_delivery', 'is', null)
-    .order('deadline_delivery', { ascending: true })
-    .limit(8);
+    .order('deadline_delivery', { ascending: false });
 
   if (error) throw error;
 
@@ -111,22 +110,44 @@ export async function getUpcomingDeliveries() {
   const { data: upcomingOrders, error } = await supabase
     .from('Order')
     .select(`
-      *,
-      customer:Customer(*),
-      orderItems:OrderItem(*)
+      id,
+      contract_code,
+      deadline_delivery,
+      status,
+      customer:Customer(name),
+      orderItems:OrderItem(quantity),
+      productionOrders:ProductionOrder(quantity_completed, quantity_target)
     `)
     .neq('status', 'completed')
-    .limit(5)
-    .order('deadline_delivery', { ascending: true });
+    .neq('status', 'cancelled')
+    .not('deadline_delivery', 'is', null)
+    .order('deadline_delivery', { ascending: true })
+    .limit(30);
 
   if (error) throw error;
 
-  return (upcomingOrders || []).map(order => ({
-    id: order.id.slice(-8).toUpperCase(),
-    customer: (Array.isArray(order.customer) ? order.customer[0]?.name : (order.customer as any)?.name) || 'Khách lẻ',
-    items: `${(order.orderItems || []).reduce((acc: number, i: any) => acc + (i.quantity || 0), 0)} pcs`,
-    date: order.deadline_delivery ? new Date(order.deadline_delivery).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : 'N/A'
-  }));
+  return (upcomingOrders || []).map(order => {
+    const totalQty = (order.orderItems || []).reduce((acc: number, i: any) => acc + (i.quantity || 0), 0);
+    const completedQty = (order.productionOrders || []).reduce((acc: number, po: any) => {
+      // Cap at target quantity to match order.service logic
+      const target = po.quantity_target || 0;
+      const done = po.quantity_completed || 0;
+      return acc + Math.min(done, target);
+    }, 0);
+    
+    const progress = totalQty > 0 ? Math.round((completedQty / totalQty) * 100) : 0;
+
+    return {
+      id: order.id,
+      displayId: order.id.slice(-8).toUpperCase(),
+      contractCode: order.contract_code,
+      customer: (Array.isArray(order.customer) ? order.customer[0]?.name : (order.customer as any)?.name) || 'Khách lẻ',
+      items: totalQty,
+      deadline: order.deadline_delivery,
+      status: order.status,
+      progress
+    };
+  });
 }
 
 export async function getLateMilestoneOrders() {
